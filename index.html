@@ -73,16 +73,179 @@
       position: relative;
     }
 
-    /* 모바일/좁은 화면 반응형 분기 */
+    /* 모바일/좁은 화면 반응형 분기 (극적인 다이어트 컴팩트 스타일) */
     @media (max-width: 768px) {
       body {
         justify-content: center;
         min-height: 100dvh;   /* dvh = 주소창 제외 실제 뷰포트 높이 */
-        padding: 16px 12px;
+        padding: 6px 4px;
         overflow-y: auto;
       }
       .game-layout {
-        max-width: 440px;
+        max-width: 390px; /* 좌우폭을 살짝 줄여 상하 가로세로 밸런스 확보 */
+      }
+      .game-container {
+        padding: 12px;
+        gap: 8px;
+        border-radius: 18px;
+      }
+      .hud {
+        padding: 6px 12px;
+        border-radius: 10px;
+      }
+      .hud-value {
+        font-size: 16px;
+      }
+      .timer-container {
+        height: 20px;
+        border-radius: 10px;
+      }
+      .timer-text {
+        font-size: 11px;
+      }
+      .board-wrapper {
+        padding: 4px;
+        border-radius: 14px;
+      }
+      .board {
+        gap: 3px;
+      }
+      .tile {
+        font-size: min(5.8vw, 5.8vh, 20px);
+        background-size: 90% 90%;
+      }
+      .leaderboard-panel {
+        padding: 8px 10px;
+        margin-top: 6px;
+        border-radius: 12px;
+      }
+      .leaderboard-header {
+        margin-bottom: 6px;
+        padding-bottom: 4px;
+      }
+      .leaderboard-title {
+        font-size: 13px;
+      }
+      .leaderboard-list {
+        max-height: 100px; /* 리스트 최대 높이를 단축해 상하 여유 공간 확보 */
+        gap: 4px;
+      }
+      .leaderboard-item {
+        padding: 5px 8px;
+        border-radius: 8px;
+      }
+      .player-name, .player-score, .rank-badge {
+        font-size: 11px;
+      }
+      .rank-badge {
+        width: 38px;
+      }
+
+      /* 대기실 대시보드 모바일 고밀도 다이어트 */
+      .lobby-overlay-card {
+        gap: 8px;
+      }
+      .lobby-header-title {
+        font-size: 20px;
+      }
+      .lobby-room-badge {
+        font-size: 11px;
+        padding: 3px 10px;
+        margin-bottom: 0px;
+      }
+      .lobby-p-list-box {
+        max-height: 130px; /* 대기 인원 목록 스크롤 스케일 단축 */
+        padding: 8px;
+        gap: 4px;
+        border-radius: 12px;
+      }
+      .lobby-p-item {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+      }
+      .lobby-ready-msg {
+        font-size: 9px;
+      }
+      .btn-start {
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 10px;
+      }
+      .lobby-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+
+      /* 메인화면 웰컴 오버레이 모바일 스케일 다운 */
+      .welcome-card {
+        gap: 8px;
+      }
+      .welcome-icon {
+        width: 65px;
+        height: 65px;
+      }
+      .welcome-title {
+        font-size: 30px;
+      }
+      .welcome-best {
+        padding: 4px 14px;
+        font-size: 11px;
+      }
+      .welcome-best-label {
+        font-size: 9px;
+      }
+      .how-to-play {
+        padding: 8px 10px;
+        gap: 4px;
+        border-radius: 12px;
+      }
+      .htp-title {
+        font-size: 10px;
+      }
+      .htp-row {
+        font-size: 11px;
+      }
+      
+      /* 대기방 카드 폼 다이어트 */
+      .multi-lobby-card {
+        padding: 12px;
+        gap: 10px;
+        border-radius: 16px;
+      }
+      .lobby-input-grp {
+        gap: 4px;
+      }
+      .lobby-lbl {
+        font-size: 10px;
+      }
+      .lobby-input {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+    }
+
+    /* 📱 세로 화면 높이가 협소한 소형 폰/디바이스를 위한 뷰포트 비례 전체 스케일 다운 기법 */
+    @media (max-height: 740px) {
+      .game-layout {
+        transform: scale(0.92);
+        transform-origin: center center;
+        margin: -15px 0;
+      }
+    }
+    @media (max-height: 660px) {
+      .game-layout {
+        transform: scale(0.85);
+        transform-origin: center center;
+        margin: -30px 0;
+      }
+    }
+    @media (max-height: 580px) {
+      .game-layout {
+        transform: scale(0.78);
+        transform-origin: center center;
+        margin: -45px 0;
       }
     }
 
