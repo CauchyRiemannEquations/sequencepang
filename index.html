@@ -270,7 +270,18 @@
     }
 
     .tile.falling {
-      transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      animation: tilefall 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes tilefall {
+      from {
+        transform: translateY(var(--fall-from, -60px));
+        opacity: 0.3;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
     /* SVG */
@@ -1049,7 +1060,19 @@
         comboVal.textContent = combo;
         comboBadge.style.display = 'inline-block';
 
-        const bonusTime = 1.0 + (combo * 0.3);
+        // ── 수열 종류·공차별 시간 보너스 ──────────────────────────
+        let bonusTime = 0;
+        if (isGP && !isAP) {
+          // 등비수열: 공비 클수록 어렵고 보너스 큼
+          bonusTime = ratio >= 2 ? 1.2 : 0.9;
+        } else {
+          // 등차수열: 공차가 클수록 어렵고 보너스 큼
+          const absDiff = Math.abs(diff);
+          if (absDiff >= 4)      bonusTime = 1.2;
+          else if (absDiff >= 2) bonusTime = 1.0;
+          else                   bonusTime = 0.7; // 공차 1은 쉬움
+        }
+        bonusTime += combo * 0.2;              // 콤보 가산 (줄임)
         timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
         updateTimerUI();
 
@@ -1155,20 +1178,36 @@
     }
 
     function renderGravityRefill() {
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        for (let c = 0; c < BOARD_SIZE; c++) {
+      // 열별로 빈칸 개수를 계산해 낙하 거리·딜레이 결정
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        let newRowCount = 0; // 이 열에서 새로 생성된 타일 수
+
+        // 먼저 몇 개가 새 값인지 파악 (renderGravity 직전 boardData 기준)
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          const tile = document.getElementById(`tile-${r}-${c}`);
+          if (tile.textContent != boardData[r][c]) newRowCount++;
+        }
+
+        let newIdx = 0; // 위에서부터 새 타일 인덱스
+        for (let r = 0; r < BOARD_SIZE; r++) {
           const tile = document.getElementById(`tile-${r}-${c}`);
           const newVal = boardData[r][c];
 
           if (tile.textContent != newVal) {
             tile.textContent = newVal;
+
+            // 낙하 거리: 빈칸 수만큼 위에서 떨어짐
+            const fallPx = (newRowCount - newIdx) * 56; // 타일 한 칸 ≒ 56px
+            tile.style.setProperty('--fall-from', `-${fallPx}px`);
+            tile.style.animationDelay = `${newIdx * 30}ms`; // 순서대로 떨어짐
+            tile.classList.remove('falling');
+            tile.offsetHeight; // reflow
             tile.classList.add('falling');
-            tile.style.transform = 'translateY(-22px)';
-            tile.offsetHeight;
-            tile.style.transform = 'translateY(0)';
             setTimeout(() => {
               tile.classList.remove('falling');
-            }, 250);
+              tile.style.animationDelay = '';
+            }, 380 + newIdx * 30);
+            newIdx++;
           }
           tile.classList.remove('selected', 'last-selected', 'matched');
           tile.style.backgroundColor = '';
