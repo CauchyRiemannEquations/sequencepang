@@ -1,0 +1,23 @@
+{
+  "name": "sequence-pang",
+  "version": "1.0.0",
+  "description": "수열팡(Sequence Pang) - 실시간 멀티플레이어 경쟁 모드 지원",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "sequence-pang",
+    "melon",
+    "puzzle",
+    "multiplayer",
+    "socket.io"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}
