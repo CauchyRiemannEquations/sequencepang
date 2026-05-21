@@ -2,7 +2,7 @@
 
 고등학생들이 수열(등차수열, 등비수열)의 개념을 직관적이고 흥미진진하게 학습할 수 있도록 개발된 **타임어택 수학 퍼즐 게임**입니다.
 
-[수열팡 게임하러 가기](bit.ly/sequencepang)
+[수열팡 게임하러 가기](cauchyriemannequations.github.io/sequencepang)
 ---
 
 ## ✨ 핵심 기능 (Features)
