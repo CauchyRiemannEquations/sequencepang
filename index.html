@@ -74,10 +74,10 @@
     /* 모바일/좁은 화면 반응형 분기 */
     @media (max-width: 768px) {
       body {
+        justify-content: center;
+        min-height: 100dvh;   /* dvh = 주소창 제외 실제 뷰포트 높이 */
+        padding: 16px 12px;
         overflow-y: auto;
-        justify-content: flex-start;
-        padding-top: 10px;
-        padding-bottom: 20px;
       }
       .game-layout {
         max-width: 440px;
@@ -680,7 +680,7 @@
             <div class="htp-title">✦ 게임 방법 ✦</div>
             <div class="htp-row"><span class="htp-icon">👆</span><span>멜론을 드래그해서 <strong style="color:#a3e635;">등차·등비수열</strong>을 만드세요!</span></div>
             <div class="htp-row"><span class="htp-icon">🔥</span><span>연속으로 맞추면 <strong style="color:#a3e635;">콤보 보너스</strong> 획득!</span></div>
-            <div class="htp-row"><span class="htp-icon">⏱️</span><span>60초 안에 최고 점수를 노려보세요!</span></div>
+            <div class="htp-row"><span class="htp-icon">⏱️</span><span>제한 시간 내에 최고 점수를 노려보세요!</span></div>
           </div>
 
           <!-- 시작 버튼 -->
@@ -744,7 +744,7 @@
     // 게임 엔진 상태 데이터
     // ----------------------------------------------------
     const BOARD_SIZE = 6;
-    const MAX_TIME = 60.0;
+    const MAX_TIME = 30.0;
     
     function getRandomNumber() {
       return Math.floor(Math.random() * 9) + 1;
@@ -1049,7 +1049,7 @@
         comboVal.textContent = combo;
         comboBadge.style.display = 'inline-block';
 
-        const bonusTime = 2.0 + (combo * 0.5);
+        const bonusTime = 1.0 + (combo * 0.3);
         timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
         updateTimerUI();
 
