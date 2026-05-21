@@ -500,11 +500,10 @@
 
     /* ===== 메인 화면 (Welcome Overlay) ===== */
     .welcome-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
+      position: relative;
       width: 100%;
-      height: 100%;
+      height: auto;
+      min-height: 100%;
       background: linear-gradient(160deg, #0b2013 0%, #163522 45%, #0d2718 100%);
       border-radius: var(--border-radius);
       display: flex;
@@ -513,17 +512,23 @@
       justify-content: center;
       padding: 24px;
       z-index: 300;
-      overflow: hidden;
+      overflow: visible;
       opacity: 1;
       visibility: visible;
       transition: opacity 0.35s ease, visibility 0.35s ease, transform 0.35s ease;
     }
 
     .welcome-overlay.hide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       opacity: 0;
       visibility: hidden;
       transform: scale(0.95);
       pointer-events: none;
+      overflow: hidden;
     }
 
     /* 배경 파티클 (떠다니는 멜론들) */
@@ -982,11 +987,10 @@
 
     /* ===== 대기방 로비 오버레이 ===== */
     .lobby-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
+      position: relative;
       width: 100%;
-      height: 100%;
+      height: auto;
+      min-height: 100%;
       background: linear-gradient(160deg, #0b2013 0%, #163522 45%, #0d2718 100%);
       border-radius: var(--border-radius);
       display: flex;
@@ -995,15 +999,22 @@
       justify-content: center;
       padding: 24px;
       z-index: 310;
+      overflow: visible;
       opacity: 1;
       visibility: visible;
       transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
     }
     .lobby-overlay.hide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       opacity: 0;
       visibility: hidden;
       transform: scale(0.95);
       pointer-events: none;
+      overflow: hidden;
     }
     .lobby-overlay-card {
       width: 100%;
@@ -1120,6 +1131,27 @@
     .countdown-text.pop {
       transform: scale(1.25);
       opacity: 1;
+    }
+
+    /* 메인화면/대기실 노출 중일 때 게임 본체 가리기 */
+    .game-container:has(.welcome-overlay:not(.hide)) .hud,
+    .game-container:has(.welcome-overlay:not(.hide)) .timer-container,
+    .game-container:has(.welcome-overlay:not(.hide)) .board-wrapper,
+    .game-container:has(.welcome-overlay:not(.hide)) .leaderboard-panel,
+    .game-container:has(.lobby-overlay:not(.hide)) .hud,
+    .game-container:has(.lobby-overlay:not(.hide)) .timer-container,
+    .game-container:has(.lobby-overlay:not(.hide)) .board-wrapper,
+    .game-container:has(.lobby-overlay:not(.hide)) .leaderboard-panel {
+      display: none !important;
+    }
+
+    /* 오버레이 활성화 시 스크롤 허용 및 body 높이 유연화 */
+    body:has(.welcome-overlay:not(.hide)),
+    body:has(.lobby-overlay:not(.hide)) {
+      overflow-y: auto !important;
+      justify-content: flex-start !important;
+      padding-top: 20px;
+      padding-bottom: 20px;
     }
   </style>
 </head>
@@ -1512,9 +1544,14 @@
 
       finalScoreText.textContent = score;
 
-      // 멀티플레이 모드일 때 최종 점수 동기화 확인 사격
-      if (isMultiplayMode && socket && socket.connected) {
-        socket.emit('updateScore', { score: score });
+      // 멀티플레이 모드일 때 최종 점수 동기화 확인 사격 및 버튼 텍스트 대응
+      if (isMultiplayMode) {
+        if (socket && socket.connected) {
+          socket.emit('updateScore', { score: score });
+        }
+        btnRetry.textContent = "🔄 대기실로 돌아가기";
+      } else {
+        btnRetry.textContent = "🔄 메인 화면으로 돌아가기";
       }
 
       gameOverOverlay.classList.add('show');
