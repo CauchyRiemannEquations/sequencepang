@@ -1216,7 +1216,7 @@
           <div id="multi-lobby-card" class="multi-lobby-card" style="display: none;">
             <div class="lobby-input-grp">
               <label for="lobby-nickname" class="lobby-lbl">내 닉네임</label>
-              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자)" maxlength="10">
+              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 9자, 공백 불가)" maxlength="9">
             </div>
             
             <div class="lobby-action-box" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-top: 4px;">
@@ -2139,11 +2139,16 @@
         lobbyNicknameInput.focus();
         return;
       }
+      if (/\s/.test(nickname)) {
+        alert("닉네임에 공백은 사용할 수 없습니다!");
+        lobbyNicknameInput.focus();
+        return;
+      }
       
-      // 무작위 6자리 방 코드 생성 (알파벳 대문자 + 숫자 조합)
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let generatedRoomId = "PANG";
-      for (let i = 0; i < 2; i++) {
+      // 무작위 6자리 방 코드 생성 (알파벳 대문자만)
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let generatedRoomId = "";
+      for (let i = 0; i < 6; i++) {
         generatedRoomId += chars.charAt(Math.floor(Math.random() * chars.length));
       }
 
@@ -2164,13 +2169,18 @@
         lobbyNicknameInput.focus();
         return;
       }
+      if (/\s/.test(nickname)) {
+        alert("닉네임에 공백은 사용할 수 없습니다!");
+        lobbyNicknameInput.focus();
+        return;
+      }
       if (!roomId) {
         alert("방 코드를 입력해주세요!");
         lobbyRoomIdInput.focus();
         return;
       }
-      if (roomId.length < 4) {
-        alert("방 코드는 최소 4자리 이상이어야 합니다!");
+      if (roomId.length !== 6 || !/^[A-Z]{6}$/.test(roomId)) {
+        alert("방 코드는 영어 알파벳 6자리여야 합니다!");
         lobbyRoomIdInput.focus();
         return;
       }
