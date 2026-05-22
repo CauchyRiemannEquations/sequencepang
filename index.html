@@ -2020,6 +2020,9 @@
         roomBadge.textContent = `방 코드: ${roomId}`;
         lobbyRoomBadge.textContent = `방 코드: ${roomId}`;
         
+        // 웰컴 오버레이를 완전히 가림 (relative 레이아웃 겹침 차단)
+        welcomeOverlay.classList.add('hide');
+        
         lobbyOverlay.classList.remove('hide');
         leaderboardPanel.style.display = 'none'; // 대기 중에는 인게임 리더보드 숨김
       });
