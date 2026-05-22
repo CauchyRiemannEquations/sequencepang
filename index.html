@@ -1338,7 +1338,7 @@
     // 게임 엔진 상태 데이터
     // ----------------------------------------------------
     const BOARD_SIZE = 6;
-    const MAX_TIME = 30.0;
+    const MAX_TIME = 40.0;
     
     function getRandomNumber() {
       return Math.floor(Math.random() * 9) + 1;
@@ -1355,6 +1355,7 @@
     let combo = 0;
     let maxCombo = 0;
     let timeLeft = MAX_TIME;
+    let comboTimeLeft = 5.0; // 콤보 제한 시간 (5초) 추적 변수
     let gameTimer = null;
 
     // DOM 캐싱
@@ -1410,6 +1411,7 @@
       combo = 0;
       maxCombo = 0;
       timeLeft = MAX_TIME;
+      comboTimeLeft = 5.0; // 콤보 타임아웃 초기화
       isGameOver = false;
       isGameActive = false; // 카운트다운이 완전히 끝날 때까지 조작 제한
       selectedTiles = [];
@@ -1421,6 +1423,7 @@
       
       scoreVal.textContent = '0';
       comboVal.textContent = '0';
+      comboBadge.textContent = '🔥';
       comboBadge.style.display = 'none';
       gameOverOverlay.classList.remove('show');
       
@@ -1519,6 +1522,38 @@
         triggerGameOver();
       }
       updateTimerUI();
+
+      // 콤보 5초 시간 제한 차감 및 만료 관리
+      if (combo > 0) {
+        comboTimeLeft -= 0.1;
+        if (comboTimeLeft <= 0) {
+          combo = 0;
+          comboVal.textContent = '0';
+          comboBadge.style.display = 'none';
+          comboBadge.textContent = '🔥';
+          playComboExpireSound();
+        } else {
+          // 콤보 배지에 남은 시간 앙증맞게 시각화
+          comboBadge.textContent = `🔥 ${comboTimeLeft.toFixed(1)}s`;
+        }
+      }
+    }
+
+    function playComboExpireSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.16);
+        gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.16);
+      } catch (e) {}
     }
 
     function updateTimerUI() {
@@ -1722,7 +1757,12 @@
           maxCombo = combo;
         }
 
-        const points = (len * 100) + ((combo - 1) * 30);
+        // 콤보 제한 시간 5초 완전 충전 리셋
+        comboTimeLeft = 5.0;
+
+        // 콤보 점수 보너스 대폭 강화 (비선형 가중치 체감형 점수 부스팅)
+        const comboBonus = combo > 1 ? (combo - 1) * 80 * (1 + (combo * 0.15)) : 0;
+        const points = Math.floor((len * 100) + comboBonus);
         score += points;
         
         if (score > bestScore) {
@@ -1743,6 +1783,7 @@
 
         comboVal.textContent = combo;
         comboBadge.style.display = 'inline-block';
+        comboBadge.textContent = `🔥 ${comboTimeLeft.toFixed(1)}s`;
 
         // ── 수열 종류·공차별 시간 보너스 ──────────────────────────
         let bonusTime = 0;
@@ -1756,7 +1797,10 @@
           else if (absDiff >= 2) bonusTime = 1.0;
           else                   bonusTime = 0.7; // 공차 1은 쉬움
         }
-        bonusTime += combo * 0.2;              // 콤보 가산 (줄임)
+        
+        // 콤보 계수 비례 추가 시간을 제거하고, 맞춤 고정 보너스(0.5초)만 가산
+        bonusTime += 0.5;
+        
         timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
         updateTimerUI();
 
@@ -1771,6 +1815,7 @@
         combo = 0;
         comboVal.textContent = combo;
         comboBadge.style.display = 'none';
+        comboBadge.textContent = '🔥';
 
         timeLeft = Math.max(0, timeLeft - 3.0); // 패널티 완화 -3초
         updateTimerUI();
