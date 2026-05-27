@@ -1213,7 +1213,8 @@
     }
 
     /* 메인화면/대기실 노출 중일 때 게임 본체 가리기 */
-    .game-container:has(.welcome-overlay:not(.hide)) {
+    .game-container:has(.welcome-overlay:not(.hide)),
+    .game-container:has(.lobby-overlay:not(.hide)) {
       background: transparent;
       box-shadow: none;
       padding: 0;
