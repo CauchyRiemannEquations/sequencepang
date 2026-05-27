@@ -30,6 +30,8 @@ app.use(express.static(__dirname));
  * }
  */
 const rooms = {};
+const MAX_ROOM_PLAYERS = 5;
+const RAID_HP_PER_PLAYER = 120000;
 
 // 특정 방의 랭킹 리스트를 정렬(점수 내림차순, 동일점 시 닉네임 사전순)하여 반환
 function getSortedLeaderboard(roomId) {
@@ -118,6 +120,10 @@ io.on('connection', (socket) => {
       return socket.emit('errorMsg', '이미 게임이 시작되어 대기실에 입장할 수 없습니다.');
     }
 
+    if (Object.keys(room.players).length >= MAX_ROOM_PLAYERS) {
+      return socket.emit('errorMsg', `이 방은 최대 ${MAX_ROOM_PLAYERS}명까지만 입장할 수 있습니다.`);
+    }
+
     // 동일 방 내 중복 닉네임 체크
     const isDuplicate = Object.values(room.players).some(
       player => player.nickname === cleanNickname
@@ -188,7 +194,14 @@ io.on('connection', (socket) => {
 
     room.isStarted = true;
     room.mode = 'bossRaid';
-    io.to(roomId).emit('raidStart');
+    const playerCount = Math.max(1, Math.min(MAX_ROOM_PLAYERS, Object.keys(room.players).length));
+    const maxHp = playerCount * RAID_HP_PER_PLAYER;
+
+    Object.values(room.players).forEach(player => {
+      player.score = 0;
+    });
+
+    io.to(roomId).emit('raidStart', { playerCount, maxHp });
   });
 
   socket.on('updateScore', ({ score }) => {
@@ -203,7 +216,7 @@ io.on('connection', (socket) => {
     player.score = score;
 
     // 여러 번 재도전 시 이 방에서 낸 최고 점수(highestScore) 갱신 및 보존
-    if (score > (player.highestScore || 0)) {
+    if (rooms[roomId].mode !== 'bossRaid' && score > (player.highestScore || 0)) {
       player.highestScore = score;
     }
 
