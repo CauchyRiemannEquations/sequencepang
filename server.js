@@ -176,6 +176,21 @@ io.on('connection', (socket) => {
   });
 
   // 3. 점수 업데이트 (updateScore)
+  socket.on('startRaid', () => {
+    const { roomId } = socket;
+    if (!roomId || !rooms[roomId]) return;
+
+    const room = rooms[roomId];
+
+    if (room.hostId !== socket.id) {
+      return socket.emit('errorMsg', '방장만 보스레이드를 시작할 수 있습니다!');
+    }
+
+    room.isStarted = true;
+    room.mode = 'bossRaid';
+    io.to(roomId).emit('raidStart');
+  });
+
   socket.on('updateScore', ({ score }) => {
     const { roomId } = socket;
 
