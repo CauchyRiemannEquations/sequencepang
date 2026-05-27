@@ -1065,16 +1065,16 @@
     }
 
     .boss-raid-panel {
-      background: #102016;
-      border: 2px solid rgba(132, 204, 22, 0.45);
+      background: linear-gradient(160deg, #0c1a13 0%, #13281b 58%, #260f13 100%);
+      border: 2px solid rgba(190, 242, 100, 0.5);
       border-radius: 18px;
-      padding: 12px;
+      padding: 10px 12px;
       display: grid;
-      grid-template-columns: 92px 1fr;
+      grid-template-columns: 84px 1fr;
       gap: 12px;
       align-items: center;
       color: #ecfdf5;
-      box-shadow: 0 12px 24px rgba(18, 30, 21, 0.26);
+      box-shadow: 0 14px 28px rgba(18, 30, 21, 0.34), inset 0 0 0 1px rgba(255,255,255,0.06);
       position: relative;
       overflow: hidden;
     }
@@ -1083,17 +1083,23 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(115deg, rgba(132, 204, 22, 0.14), transparent 44%, rgba(239, 68, 68, 0.11));
+      background:
+        radial-gradient(circle at 18% 42%, rgba(239, 68, 68, 0.28), transparent 25%),
+        linear-gradient(115deg, rgba(132, 204, 22, 0.16), transparent 44%, rgba(248, 113, 113, 0.14));
       pointer-events: none;
     }
 
+    .boss-raid-panel.hit {
+      animation: raidPanelHit 0.24s ease;
+    }
+
     .boss-portrait {
-      width: 92px;
-      height: 92px;
+      width: 84px;
+      height: 84px;
       border-radius: 16px;
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at 50% 42%, rgba(132, 204, 22, 0.22), rgba(9, 15, 11, 0.8) 70%);
+      background: radial-gradient(circle at 50% 42%, rgba(190, 242, 100, 0.28), rgba(9, 15, 11, 0.86) 70%);
       position: relative;
       z-index: 1;
     }
@@ -1102,26 +1108,38 @@
       animation: raidBossHit 0.34s ease;
     }
 
+    .boss-portrait.hit::after {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, transparent 28%, rgba(255,255,255,0.9) 45%, transparent 62%);
+      mix-blend-mode: screen;
+      animation: raidSlash 0.28s ease forwards;
+      pointer-events: none;
+    }
+
     .boss-portrait.defeated {
       filter: grayscale(1) brightness(0.72);
     }
 
     .boss-portrait img {
-      width: 118%;
-      height: 118%;
+      width: 126%;
+      height: 126%;
       object-fit: contain;
       filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));
     }
 
     .boss-info {
       display: grid;
-      gap: 8px;
+      gap: 7px;
       position: relative;
       z-index: 1;
       min-width: 0;
     }
 
-    .boss-topline {
+    .boss-topline,
+    .boss-status-row {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
@@ -1129,12 +1147,14 @@
     }
 
     .boss-title {
-      font-size: 17px;
+      font-size: 18px;
       color: #f7fee7;
       white-space: nowrap;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.45);
     }
 
-    .boss-total-damage {
+    .boss-total-damage,
+    .boss-elapsed-time {
       color: #bef264;
       font-family: 'Outfit', sans-serif;
       font-size: 13px;
@@ -1142,11 +1162,11 @@
     }
 
     .boss-hp-track {
-      height: 16px;
+      height: 18px;
       border-radius: 999px;
-      background: rgba(236, 253, 245, 0.15);
+      background: rgba(236, 253, 245, 0.16);
       overflow: hidden;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 6px 14px rgba(0,0,0,0.22);
     }
 
     .boss-hp-fill {
@@ -1155,6 +1175,20 @@
       border-radius: inherit;
       background: linear-gradient(90deg, #ef4444, #f59e0b, #84cc16);
       transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+
+    .boss-hp-fill::after {
+      content: '';
+      position: absolute;
+      inset: 2px 8px auto 8px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .boss-hp-fill.hit {
+      animation: raidHpFlash 0.36s ease;
     }
 
     .boss-meta {
@@ -1172,37 +1206,98 @@
       overflow: hidden;
       color: #d9f99d;
       white-space: nowrap;
+      max-width: 62%;
     }
 
     .boss-damage-pop {
       position: absolute;
-      top: 13px;
-      left: 58px;
+      top: 12px;
+      left: 52px;
       color: #fecaca;
       font-family: 'Outfit', sans-serif;
       font-weight: 900;
-      font-size: 20px;
+      font-size: 24px;
       opacity: 0;
       pointer-events: none;
       z-index: 2;
-      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.65);
     }
 
     .boss-damage-pop.show {
-      animation: raidDamagePop 0.8s ease forwards;
+      animation: raidDamagePop 0.78s ease forwards;
+    }
+
+    .game-container.raid-impact {
+      animation: raidScreenShake 0.22s ease;
+    }
+
+    .game-container.raid-mode .hud .hud-item:first-child {
+      display: none;
+    }
+
+    .game-container.raid-mode .leaderboard-panel {
+      display: none !important;
+    }
+
+    @keyframes raidPanelHit {
+      0% { transform: translateX(0); filter: brightness(1); }
+      35% { transform: translateX(-5px); filter: brightness(1.35); }
+      70% { transform: translateX(4px); }
+      100% { transform: translateX(0); filter: brightness(1); }
     }
 
     @keyframes raidBossHit {
       0% { transform: translateX(0) scale(1); }
-      28% { transform: translateX(-7px) scale(1.04); }
-      58% { transform: translateX(6px) scale(0.98); }
+      28% { transform: translateX(-8px) scale(1.08) rotate(-2deg); }
+      58% { transform: translateX(7px) scale(0.96) rotate(2deg); }
       100% { transform: translateX(0) scale(1); }
+    }
+
+    @keyframes raidSlash {
+      0% { opacity: 0; transform: translate(-18px, 16px) rotate(-12deg) scale(0.65); }
+      35% { opacity: 1; }
+      100% { opacity: 0; transform: translate(18px, -18px) rotate(-12deg) scale(1.2); }
+    }
+
+    @keyframes raidHpFlash {
+      0% { filter: brightness(1); }
+      34% { filter: brightness(2.1) saturate(1.5); }
+      100% { filter: brightness(1); }
     }
 
     @keyframes raidDamagePop {
       0% { opacity: 0; transform: translateY(10px) scale(0.82); }
-      18% { opacity: 1; transform: translateY(-8px) scale(1.12); }
-      100% { opacity: 0; transform: translateY(-44px) scale(0.95); }
+      18% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-48px) scale(0.95); }
+    }
+
+    @keyframes raidScreenShake {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-2px, 1px); }
+      50% { transform: translate(2px, -1px); }
+      75% { transform: translate(-1px, -1px); }
+    }
+
+    @media (max-width: 768px) {
+      .boss-raid-panel {
+        grid-template-columns: 72px 1fr;
+        padding: 9px 10px;
+        gap: 10px;
+      }
+      .boss-portrait {
+        width: 72px;
+        height: 72px;
+      }
+      .boss-title {
+        font-size: 16px;
+      }
+      .boss-total-damage,
+      .boss-elapsed-time {
+        font-size: 12px;
+      }
+      .boss-contributors {
+        max-width: 52%;
+      }
     }
 
     /* ===== 대기방 로비 오버레이 ===== */
@@ -1489,7 +1584,7 @@
           </div>
 
           <div id="lobby-waiting-info" class="lobby-ready-msg" style="color: #6aab7a; font-size: 11px;">
-            친구들에게 방 코드를 공유하고 함께 경쟁해 보세요! 🍈<br>
+            친구들에게 방 코드를 공유하고 최대 5명이 함께 도전해 보세요! 🍈<br>
             (방 코드를 클릭하면 복사됩니다)
           </div>
 
@@ -1505,14 +1600,38 @@
         <div id="countdown-text" class="countdown-text">3</div>
       </div>
 
+      <section class="boss-raid-panel" id="boss-raid-panel">
+        <div class="boss-portrait" id="raid-boss-portrait">
+          <img src="raid-boss-melon-king.png" alt="가시 멜론 군주">
+        </div>
+        <div class="boss-info">
+          <div class="boss-topline">
+            <strong class="boss-title" id="raid-boss-title">가시 멜론 군주</strong>
+            <span class="boss-elapsed-time" id="raid-elapsed-time">경과 00:00.0</span>
+          </div>
+          <div class="boss-hp-track" aria-label="보스 체력">
+            <div class="boss-hp-fill" id="raid-boss-hp-fill"></div>
+          </div>
+          <div class="boss-status-row">
+            <span id="raid-boss-hp-text">120,000 / 120,000</span>
+            <span class="boss-total-damage" id="raid-total-damage">공동 피해 0</span>
+          </div>
+          <div class="boss-meta">
+            <span id="raid-participants">참여 1/5</span>
+            <span class="boss-contributors" id="raid-contributors">참여자 없음</span>
+          </div>
+        </div>
+        <span class="boss-damage-pop" id="raid-damage-pop">-0</span>
+      </section>
+
       <!-- HUD 영역 (점수, 콤보 등) -->
       <div class="hud">
         <div class="hud-item">
-          <div class="hud-label">최고 점수</div>
+          <div class="hud-label" id="best-score-label">최고 점수</div>
           <div class="hud-value" id="best-score-val">0</div>
         </div>
         <div class="hud-item">
-          <div class="hud-label">현재 점수</div>
+          <div class="hud-label" id="score-label">현재 점수</div>
           <div class="hud-value" id="score-val">0</div>
         </div>
         <div class="hud-item">
@@ -1546,35 +1665,15 @@
         </svg>
       </div>
 
-      <section class="boss-raid-panel" id="boss-raid-panel">
-        <div class="boss-portrait" id="raid-boss-portrait">
-          <img src="raid-boss-melon-king.png" alt="가시 멜론 군주">
-        </div>
-        <div class="boss-info">
-          <div class="boss-topline">
-            <strong class="boss-title" id="raid-boss-title">가시 멜론 군주</strong>
-            <span class="boss-total-damage" id="raid-total-damage">공동 피해 0</span>
-          </div>
-          <div class="boss-hp-track" aria-label="보스 체력">
-            <div class="boss-hp-fill" id="raid-boss-hp-fill"></div>
-          </div>
-          <div class="boss-meta">
-            <span id="raid-boss-hp-text">300,000 / 300,000</span>
-            <span class="boss-contributors" id="raid-contributors">참여자 없음</span>
-          </div>
-        </div>
-        <span class="boss-damage-pop" id="raid-damage-pop">-0</span>
-      </section>
-
       <!-- 게임 오버 오버레이 -->
       <div class="overlay" id="gameover-overlay">
         <div class="gameover-card">
-          <h2 class="gameover-title">타임 오버!</h2>
-          <div class="gameover-desc">수고하셨습니다. 당신의 기록은...</div>
+          <h2 class="gameover-title" id="gameover-title">타임 오버!</h2>
+          <div class="gameover-desc" id="gameover-desc">수고하셨습니다. 당신의 기록은...</div>
           
           <div class="result-row">
-            <span class="result-label">최종 점수</span>
-            <span class="result-val"><span id="final-score">0</span>점</span>
+            <span class="result-label" id="result-label">최종 점수</span>
+            <span class="result-val"><span id="final-score">0</span><span id="result-unit">점</span></span>
           </div>
           
           <button class="btn-retry" id="btn-retry">🔄 메인 화면으로 돌아가기</button>
@@ -1634,6 +1733,7 @@
     const comboBadge = document.getElementById('combo-badge');
     const dragLine = document.getElementById('drag-line');
     const dragLineGlow = document.getElementById('drag-line-glow');
+    const scoreLabel = document.getElementById('score-label');
     
     const welcomeOverlay = document.getElementById('welcome-overlay');
     const btnSingleStart = document.getElementById('btn-single-start');
@@ -1648,6 +1748,7 @@
     const leaderboardPanel = document.getElementById('leaderboard-panel');
     const leaderboardList = document.getElementById('leaderboard-list');
     const roomBadge = document.getElementById('room-badge');
+    const bossRaidPanel = document.getElementById('boss-raid-panel');
     const raidBossPortrait = document.getElementById('raid-boss-portrait');
     const raidBossTitle = document.getElementById('raid-boss-title');
     const raidBossHpFill = document.getElementById('raid-boss-hp-fill');
@@ -1655,6 +1756,8 @@
     const raidTotalDamage = document.getElementById('raid-total-damage');
     const raidContributors = document.getElementById('raid-contributors');
     const raidDamagePop = document.getElementById('raid-damage-pop');
+    const raidElapsedTime = document.getElementById('raid-elapsed-time');
+    const raidParticipants = document.getElementById('raid-participants');
 
     const lobbyOverlay = document.getElementById('lobby-overlay');
     const lobbyRoomBadge = document.getElementById('lobby-room-badge');
@@ -1667,7 +1770,11 @@
     const countdownText = document.getElementById('countdown-text');
     
     const gameOverOverlay = document.getElementById('gameover-overlay');
+    const gameOverTitle = document.getElementById('gameover-title');
+    const gameOverDesc = document.getElementById('gameover-desc');
+    const resultLabel = document.getElementById('result-label');
     const finalScoreText = document.getElementById('final-score');
+    const resultUnit = document.getElementById('result-unit');
     const btnRetry = document.getElementById('btn-retry');
     const welcomeBestVal = document.getElementById('welcome-best-val');
 
@@ -1679,12 +1786,59 @@
     bestScoreVal.textContent = bestScore;
     welcomeBestVal.textContent = bestScore;
 
-    const RAID_BOSS_MAX_HP = 300000;
+    const RAID_MAX_PLAYERS = 5;
+    const RAID_HP_PER_PLAYER = 120000;
     let raidPlayers = [];
     let lastRaidDamage = 0;
+    let raidPlayerCount = 1;
+    let raidBossMaxHp = RAID_HP_PER_PLAYER;
+    let raidStartTime = 0;
+    let raidElapsedMs = 0;
+    let raidClearTime = null;
+    let raidTimer = null;
 
     function formatRaidNumber(value) {
       return Math.max(0, Math.floor(value)).toLocaleString('ko-KR');
+    }
+
+    function formatRaidTime(ms) {
+      const safeMs = Math.max(0, Math.floor(ms || 0));
+      const totalTenths = Math.floor(safeMs / 100);
+      const minutes = Math.floor(totalTenths / 600);
+      const seconds = Math.floor((totalTenths % 600) / 10);
+      const tenths = totalTenths % 10;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`;
+    }
+
+    function applyRaidConfig(config = {}) {
+      const nextPlayerCount = Number(config.playerCount);
+      raidPlayerCount = Math.max(1, Math.min(RAID_MAX_PLAYERS, Number.isFinite(nextPlayerCount) ? nextPlayerCount : raidPlayerCount));
+      const nextMaxHp = Number(config.maxHp);
+      raidBossMaxHp = Math.max(RAID_HP_PER_PLAYER, Number.isFinite(nextMaxHp) ? nextMaxHp : raidPlayerCount * RAID_HP_PER_PLAYER);
+    }
+
+    function updateRaidClockUI(isCleared = false) {
+      const label = isCleared ? '격파' : '경과';
+      raidElapsedTime.textContent = `${label} ${formatRaidTime(raidElapsedMs)}`;
+    }
+
+    function startRaidClock() {
+      stopRaidClock();
+      raidStartTime = performance.now();
+      raidElapsedMs = 0;
+      updateRaidClockUI();
+      raidTimer = setInterval(() => {
+        raidElapsedMs = performance.now() - raidStartTime;
+        updateRaidClockUI();
+        tickComboTimer();
+      }, 100);
+    }
+
+    function stopRaidClock() {
+      if (raidTimer) {
+        clearInterval(raidTimer);
+        raidTimer = null;
+      }
     }
 
     function getLocalRaidPlayers() {
@@ -1696,9 +1850,15 @@
     function resetRaidState() {
       raidPlayers = [{ nickname: currentNickname || '나', score: 0 }];
       lastRaidDamage = 0;
+      raidClearTime = null;
+      raidElapsedMs = 0;
+      stopRaidClock();
       raidBossPortrait.classList.remove('defeated', 'hit');
+      bossRaidPanel.classList.remove('hit');
+      raidBossHpFill.classList.remove('hit');
       raidBossTitle.textContent = '가시 멜론 군주';
       updateRaidUI(raidPlayers, true);
+      updateRaidClockUI();
     }
 
     function updateRaidUI(players = getLocalRaidPlayers(), skipHit = false) {
@@ -1708,19 +1868,21 @@
       }));
 
       const totalDamage = raidPlayers.reduce((sum, player) => sum + player.score, 0);
-      const bossHp = Math.max(0, RAID_BOSS_MAX_HP - totalDamage);
-      const hpPercent = (bossHp / RAID_BOSS_MAX_HP) * 100;
+      const bossHp = Math.max(0, raidBossMaxHp - totalDamage);
+      const hpPercent = (bossHp / raidBossMaxHp) * 100;
       const damageDelta = totalDamage - lastRaidDamage;
+      const displayPlayerCount = Math.max(raidPlayerCount, raidPlayers.length);
 
       raidBossHpFill.style.width = `${hpPercent}%`;
-      raidBossHpText.textContent = `${formatRaidNumber(bossHp)} / ${formatRaidNumber(RAID_BOSS_MAX_HP)}`;
+      raidBossHpText.textContent = `${formatRaidNumber(bossHp)} / ${formatRaidNumber(raidBossMaxHp)}`;
       raidTotalDamage.textContent = `공동 피해 ${formatRaidNumber(totalDamage)}`;
+      raidParticipants.textContent = `참여 ${displayPlayerCount}/${RAID_MAX_PLAYERS}`;
       raidContributors.textContent = raidPlayers.length
         ? raidPlayers
             .slice()
             .sort((a, b) => b.score - a.score)
             .slice(0, 3)
-            .map(player => `${player.nickname} ${formatRaidNumber(player.score)}`)
+            .map(player => `${player.nickname} ${formatRaidNumber(player.score)}딜`)
             .join(' · ')
         : '참여자 없음';
 
@@ -1731,6 +1893,7 @@
       if (bossHp <= 0) {
         raidBossPortrait.classList.add('defeated');
         raidBossTitle.textContent = '가시 멜론 군주 격파!';
+        triggerRaidClear();
       } else {
         raidBossPortrait.classList.remove('defeated');
         raidBossTitle.textContent = '가시 멜론 군주';
@@ -1743,10 +1906,44 @@
       raidDamagePop.textContent = `-${formatRaidNumber(damage)}`;
       raidDamagePop.classList.remove('show');
       raidBossPortrait.classList.remove('hit');
+      bossRaidPanel.classList.remove('hit');
+      raidBossHpFill.classList.remove('hit');
+      gameContainer.classList.remove('raid-impact');
       void raidDamagePop.offsetWidth;
       raidDamagePop.classList.add('show');
       raidBossPortrait.classList.add('hit');
-      setTimeout(() => raidBossPortrait.classList.remove('hit'), 360);
+      bossRaidPanel.classList.add('hit');
+      raidBossHpFill.classList.add('hit');
+      gameContainer.classList.add('raid-impact');
+      setTimeout(() => {
+        raidBossPortrait.classList.remove('hit');
+        bossRaidPanel.classList.remove('hit');
+        raidBossHpFill.classList.remove('hit');
+        gameContainer.classList.remove('raid-impact');
+      }, 380);
+    }
+
+    function triggerRaidClear() {
+      if (raidClearTime !== null) return;
+      raidClearTime = raidElapsedMs || Math.max(0, performance.now() - raidStartTime);
+      raidElapsedMs = raidClearTime;
+      stopRaidClock();
+      updateRaidClockUI(true);
+
+      isGameOver = true;
+      isGameActive = false;
+      isDragging = false;
+      dragLine.setAttribute('d', '');
+      dragLineGlow.setAttribute('d', '');
+      selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected'));
+
+      gameOverTitle.textContent = '보스 격파!';
+      gameOverDesc.textContent = `참여 ${Math.max(raidPlayerCount, raidPlayers.length)}명 · 공동 피해 ${formatRaidNumber(raidBossMaxHp)}`;
+      resultLabel.textContent = '격파 시간';
+      finalScoreText.textContent = formatRaidTime(raidClearTime);
+      resultUnit.textContent = '';
+      btnRetry.textContent = '🔄 대기실로 돌아가기';
+      gameOverOverlay.classList.add('show');
     }
 
     function updateLobbyModeControls() {
@@ -1760,7 +1957,12 @@
     // 1. 플레이 시작 (보드 생성 후 카운트다운 진입)
     function startGamePlay(mode = 'timeAttack') {
       currentGameMode = mode;
-      gameContainer.classList.toggle('raid-mode', currentGameMode === 'bossRaid');
+      const isRaidMode = currentGameMode === 'bossRaid';
+      gameContainer.classList.toggle('raid-mode', isRaidMode);
+      scoreLabel.textContent = isRaidMode ? '내 피해' : '현재 점수';
+      if (isRaidMode) {
+        leaderboardPanel.style.display = 'none';
+      }
       welcomeOverlay.classList.add('hide');
       lobbyOverlay.classList.add('hide'); // 대기방도 확실하게 가림
       
@@ -1783,7 +1985,7 @@
       comboBadge.textContent = '🔥';
       comboBadge.style.display = 'none';
       gameOverOverlay.classList.remove('show');
-      if (currentGameMode === 'bossRaid') {
+      if (isRaidMode) {
         resetRaidState();
       }
       
@@ -1808,13 +2010,17 @@
       }
 
       if (gameTimer) clearInterval(gameTimer);
+      stopRaidClock();
       updateTimerUI();
       dragLine.setAttribute('d', '');
+      dragLineGlow.setAttribute('d', '');
 
       // 중앙 카운트다운 시퀀스 작동 후 타이머 및 드래그 가동
       startCountdownSequence(() => {
         isGameActive = true;
-        if (currentGameMode !== 'bossRaid') {
+        if (isRaidMode) {
+          startRaidClock();
+        } else {
           gameTimer = setInterval(tickTimer, 100);
         }
       });
@@ -1885,7 +2091,12 @@
       }
       updateTimerUI();
 
-      // 콤보 5초 시간 제한 차감 및 만료 관리
+      tickComboTimer();
+    }
+
+    function tickComboTimer() {
+      if (isGameOver || !isGameActive) return;
+
       if (combo > 0) {
         comboTimeLeft -= 0.1;
         if (comboTimeLeft <= 0) {
@@ -1935,11 +2146,17 @@
       isGameOver = true;
       isDragging = false;
       clearInterval(gameTimer);
+      stopRaidClock();
 
       dragLine.setAttribute('d', '');
+      dragLineGlow.setAttribute('d', '');
       selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected'));
 
+      gameOverTitle.textContent = '타임 오버!';
+      gameOverDesc.textContent = '수고하셨습니다. 당신의 기록은...';
+      resultLabel.textContent = '최종 점수';
       finalScoreText.textContent = score;
+      resultUnit.textContent = '점';
 
       // 멀티플레이 모드일 때 최종 점수 동기화 확인 사격 및 버튼 텍스트 대응
       if (isMultiplayMode) {
@@ -2140,7 +2357,7 @@
         const points = Math.floor((len * 100) + comboBonus);
         score += points;
         
-        if (score > bestScore) {
+        if (currentGameMode !== 'bossRaid' && score > bestScore) {
           bestScore = score;
           localStorage.setItem('seq_pang_best', bestScore);
           bestScoreVal.textContent = bestScore;
@@ -2177,8 +2394,10 @@
         // 콤보 계수 비례 추가 시간을 제거하고, 맞춤 고정 보너스(0.5초)만 가산
         bonusTime += 0.5;
         
-        timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
-        updateTimerUI();
+        if (currentGameMode !== 'bossRaid') {
+          timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
+          updateTimerUI();
+        }
 
         spawnFloatingScore(points);
         spawnSequenceHintRich(sequenceKind, sequenceRule);
@@ -2197,8 +2416,10 @@
         comboBadge.style.display = 'none';
         comboBadge.textContent = '🔥';
 
-        timeLeft = Math.max(0, timeLeft - 3.0); // 패널티 완화 -3초
-        updateTimerUI();
+        if (currentGameMode !== 'bossRaid') {
+          timeLeft = Math.max(0, timeLeft - 3.0); // 패널티 완화 -3초
+          updateTimerUI();
+        }
 
         triggerFailureShock();
 
@@ -2633,9 +2854,10 @@
         updateLeaderboardUI(players);
       });
 
-      socket.on('raidStart', () => {
+      socket.on('raidStart', (config = {}) => {
+        applyRaidConfig(config);
         lobbyOverlay.classList.add('hide');
-        leaderboardPanel.style.display = 'block';
+        leaderboardPanel.style.display = 'none';
         startGamePlay('bossRaid');
       });
 
@@ -2765,6 +2987,7 @@
       leaderboardList.innerHTML = '';
       if (currentGameMode === 'bossRaid') {
         updateRaidUI(players);
+        return;
       }
 
       players.forEach((player, index) => {
