@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>수열팡 (Sequence Pang)</title>
+  <title>??? (Sequence Pang) - ???? ?? ?? ??</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -11,15 +11,24 @@
   <script type="module" src="/src/main.js"></script>
 </head>
 <body>
+
   <div class="game-layout">
+    
+    <!-- 메인 게임 컨테이너 -->
     <div class="game-container" id="game-container">
+      
+      <!-- 웰컴 오버레이 (메인 화면) -->
       <div class="welcome-overlay" id="welcome-overlay">
-        <span class="melon-particle" style="left:8%; animation-duration:9s; animation-delay:0s; font-size:32px;">🍈</span>
-        <span class="melon-particle" style="left:22%; animation-duration:12s; animation-delay:2s; font-size:20px;">🍈</span>
-        <span class="melon-particle" style="left:42%; animation-duration:8s; animation-delay:4.5s; font-size:26px;">🍈</span>
+
+        <!-- 배경 파티클 -->
+        <span class="melon-particle" style="left:8%;  animation-duration:9s;  animation-delay:0s;   font-size:32px;">🍈</span>
+        <span class="melon-particle" style="left:22%; animation-duration:12s; animation-delay:2s;   font-size:20px;">🍈</span>
+        <span class="melon-particle" style="left:42%; animation-duration:8s;  animation-delay:4.5s; font-size:26px;">🍈</span>
         <span class="melon-particle" style="left:63%; animation-duration:11s; animation-delay:1.2s; font-size:18px;">🍈</span>
-        <span class="melon-particle" style="left:80%; animation-duration:10s; animation-delay:3s; font-size:30px;">🍈</span>
+        <span class="melon-particle" style="left:80%; animation-duration:10s; animation-delay:3s;   font-size:30px;">🍈</span>
         <span class="melon-particle" style="left:91%; animation-duration:13s; animation-delay:5.5s; font-size:22px;">🍈</span>
+
+        <!-- 반짝이 -->  
         <span class="sparkle" style="top:18%; left:15%; animation-delay:0s;"></span>
         <span class="sparkle" style="top:30%; left:78%; animation-delay:0.8s;"></span>
         <span class="sparkle" style="top:70%; left:25%; animation-delay:1.4s;"></span>
@@ -27,85 +36,103 @@
         <span class="sparkle" style="top:55%; left:88%; animation-delay:1.9s;"></span>
 
         <div class="welcome-card">
+          <!-- 타이틀 -->
           <div class="welcome-title-grp">
             <div class="welcome-icon-wrap">
               <span class="melon-crown">👑</span>
-              <img class="welcome-icon" src="melon.png" alt="수열팡 멜론">
+              <img class="welcome-icon" src="melon.png" alt="melon">
             </div>
-            <p class="welcome-kicker">Clear entry, big mascot, primary choices</p>
             <h1 class="welcome-title">수열팡</h1>
-            <p class="welcome-tagline">Sequence Pang</p>
+            <p class="welcome-tagline">🍈 Sequence Pang 🍈</p>
           </div>
 
+          <!-- 베스트 스코어 -->
           <div class="welcome-best">
             <span class="welcome-best-label">최고 기록</span>
             <span id="welcome-best-val">0</span>
-            <span class="welcome-best-unit">점</span>
+            <span style="font-size:11px; color:#6aab7a;">점</span>
           </div>
 
+          <!-- 하우 투 플레이 -->
           <div class="how-to-play">
-            <div class="htp-title">게임 방법</div>
-            <div class="htp-row"><span class="htp-icon">👉</span><span>인접 타일을 드래그해 등차·등비수열을 만들어요</span></div>
-            <div class="htp-row"><span class="htp-icon">🔥</span><span>4개 이상이면 피버 블록이 등장해요</span></div>
+            <div class="htp-title">✦ 게임 방법 ✦</div>
+            <div class="htp-row"><span class="htp-icon">👆</span><span>멜론을 드래그해서 <strong style="color:#a3e635;">등차·등비수열</strong>을 만드세요!</span></div>
+            <div class="htp-row"><span class="htp-icon">🔥</span><span>연속으로 맞추면 <strong style="color:#a3e635;">콤보 보너스</strong> 획득!</span></div>
+            <div class="htp-row"><span class="htp-icon">⏱️</span><span>제한 시간 내에 최고 점수를 노려보세요!</span></div>
           </div>
 
+          <!-- 플레이 모드 선택 버튼 -->
           <div id="mode-selection" class="mode-select-box">
-            <button class="btn-start secondary" id="btn-single-start">혼자서 팡!</button>
-            <button class="btn-start" id="btn-multi-lobby">다함께 팡!</button>
+            <button class="btn-start" id="btn-single-start" style="background: linear-gradient(135deg, #166534 0%, #14532d 100%);">🍈 혼자서 팡!</button>
+            <button class="btn-start" id="btn-multi-lobby" style="background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);">⚔️ 다함께 팡! (멀티)</button>
           </div>
 
+          <!-- 멀티플레이 전용 로비 대기실 (기본 숨김) -->
           <div id="multi-lobby-card" class="multi-lobby-card" style="display: none;">
             <div class="lobby-input-grp">
-              <label for="lobby-nickname" class="lobby-lbl">닉네임</label>
-              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 9자)" maxlength="9">
+              <label for="lobby-nickname" class="lobby-lbl">내 닉네임</label>
+              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 9자, 공백 불가)" maxlength="9">
             </div>
-            <div class="lobby-action-box">
-              <button class="lobby-btn btn-cancel" id="btn-create-room">새 대기방 만들기</button>
-              <div class="lobby-divider">또는 다른 방 참가하기</div>
+            
+            <div class="lobby-action-box" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-top: 4px;">
+              <!-- 방 만들기 -->
+              <button class="lobby-btn btn-join" id="btn-create-room" style="background: linear-gradient(135deg, #166534 0%, #14532d 100%); color: white;">🍈 대기방 새로 만들기</button>
+              
+              <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 11px; margin: 4px 0;">─ 또는 다른 방 참가하기 ─</div>
+              
+              <!-- 방 참가하기 -->
               <div class="lobby-input-grp">
-                <input type="text" id="lobby-room-id" class="lobby-input lobby-room-code-input" placeholder="방 코드 6자리 입력" maxlength="6">
+                <input type="text" id="lobby-room-id" class="lobby-input" placeholder="방 코드 6자리 입력" maxlength="6" style="text-align: center; font-size: 16px; letter-spacing: 0.1em;">
               </div>
-              <button class="lobby-btn btn-join" id="btn-join-room">입력한 방 참가</button>
+              <button class="lobby-btn btn-join" id="btn-join-room">⚔️ 입력한 대기방 참가</button>
             </div>
-            <button class="lobby-btn btn-cancel" id="btn-lobby-back">돌아가기</button>
+            
+            <button class="lobby-btn btn-cancel" id="btn-lobby-back" style="width: 100%; margin-top: 4px;">돌아가기</button>
           </div>
         </div>
       </div>
 
+      <!-- 실시간 대기방 오버레이 (방 참여 후 진입) -->
       <div id="lobby-overlay" class="lobby-overlay hide">
+        <!-- 배경 파티클 -->
         <span class="melon-particle" style="left:12%; animation-duration:11s; animation-delay:1s; font-size:24px;">🍈</span>
-        <span class="melon-particle" style="left:35%; animation-duration:9s; animation-delay:3s; font-size:20px;">🍈</span>
+        <span class="melon-particle" style="left:35%; animation-duration:9s;  animation-delay:3s; font-size:20px;">🍈</span>
         <span class="melon-particle" style="left:72%; animation-duration:12s; animation-delay:0.5s; font-size:28px;">🍈</span>
-        <span class="melon-particle" style="left:88%; animation-duration:8s; animation-delay:2s; font-size:18px;">🍈</span>
+        <span class="melon-particle" style="left:88%; animation-duration:8s;  animation-delay:2s; font-size:18px;">🍈</span>
 
         <div class="lobby-overlay-card">
-          <p class="welcome-kicker">Room code, host badge, players, mode selection</p>
-          <h2 class="lobby-header-title">멀티 대기방</h2>
-          <span id="lobby-room-badge" class="lobby-room-badge" title="클릭해서 복사">ROOM CODE PANG-482</span>
-          <div class="htp-title lobby-section-title">현재 대기 중인 플레이어</div>
-          <div id="lobby-p-list" class="lobby-p-list-box"></div>
-          <div id="lobby-waiting-info" class="lobby-ready-msg">
-            친구들에게 방 코드를 공유하고 최대 5명이 함께 플레이해요.<br>
-            방 코드를 클릭하면 복사됩니다.
+          <h2 class="lobby-header-title">🍈 실시간 대기실</h2>
+          <span id="lobby-room-badge" class="lobby-room-badge" style="cursor: pointer; transition: all 0.2s;" title="클릭해서 복사">방 코드: LOADING</span>
+          
+          <div class="htp-title" style="text-align: left; margin-bottom: 2px;">👥 현재 대기 중인 플레이어</div>
+          <div id="lobby-p-list" class="lobby-p-list-box">
+            <!-- 대기 플레이어 목록 동적 주입 -->
           </div>
-          <div class="lobby-btn-row">
-            <button class="btn-start" id="btn-lobby-play">타임어택 시작</button>
-            <button class="lobby-btn btn-cancel" id="btn-lobby-exit">대기방 나가기</button>
+
+          <div id="lobby-waiting-info" class="lobby-ready-msg" style="color: #6aab7a; font-size: 11px;">
+            친구들에게 방 코드를 공유하고 최대 5명이 함께 도전해 보세요! 🍈<br>
+            (방 코드를 클릭하면 복사됩니다)
+          </div>
+
+          <div class="lobby-btn-row" style="flex-direction: column; gap: 10px;">
+            <button class="btn-start" id="btn-lobby-play" style="background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%); width: 100%;">🎮 수열팡 플레이 시작!</button>
+            <button class="lobby-btn btn-cancel" id="btn-lobby-exit" style="width: 100%;">🚪 대기방 나가기</button>
           </div>
         </div>
       </div>
 
+      <!-- 게임 시작 전 3, 2, 1 카운트다운 오버레이 -->
       <div id="countdown-overlay" class="countdown-overlay">
         <div id="countdown-text" class="countdown-text">3</div>
       </div>
 
       <section class="boss-raid-panel" id="boss-raid-panel">
         <div class="boss-portrait" id="raid-boss-portrait">
-          <img src="raid-boss-melon-king.png" alt="멜론 킹">
+          <img src="raid-boss-melon-king.png" alt="가시 멜론 군주">
         </div>
         <div class="boss-info">
           <div class="boss-topline">
-            <strong class="boss-title" id="raid-boss-title">멜론 킹</strong>
+            <strong class="boss-title" id="raid-boss-title">가시 멜론 군주</strong>
             <span class="boss-elapsed-time" id="raid-elapsed-time">경과 00:00.0</span>
           </div>
           <div class="boss-hp-track" aria-label="보스 체력">
@@ -123,24 +150,26 @@
         <span class="boss-damage-pop" id="raid-damage-pop">-0</span>
       </section>
 
+      <!-- HUD 영역 (점수, 콤보 등) -->
       <div class="hud">
         <div class="hud-item">
-          <div class="hud-label" id="best-score-label">BEST</div>
+          <div class="hud-label" id="best-score-label">최고 점수</div>
           <div class="hud-value" id="best-score-val">0</div>
         </div>
         <div class="hud-item">
-          <div class="hud-label" id="score-label">SCORE</div>
+          <div class="hud-label" id="score-label">현재 점수</div>
           <div class="hud-value" id="score-val">0</div>
         </div>
         <div class="hud-item">
-          <div class="hud-label">COMBO</div>
+          <div class="hud-label">콤보</div>
           <div class="hud-value">
             <span id="combo-val">0</span>
-            <span class="combo-badge" id="combo-badge">x</span>
+            <span class="combo-badge" id="combo-badge">🔥</span>
           </div>
         </div>
       </div>
 
+      <!-- 타이머 영역 -->
       <div class="timer-container" id="timer-container">
         <div class="timer-bar" id="timer-bar"></div>
         <div class="timer-text" id="timer-text">30.0s</div>
@@ -150,9 +179,10 @@
         <div class="fever-timer-track">
           <div class="fever-timer-fill" id="fever-timer-fill"></div>
         </div>
-        <div class="fever-timer-text" id="fever-timer-text">FEVER 0.0s</div>
+        <div class="fever-timer-text" id="fever-timer-text">피버 0.0s</div>
       </div>
 
+      <!-- 게임 보드 -->
       <div class="board-wrapper" id="board-wrapper">
         <div class="fever-notice" id="fever-notice">피버!</div>
         <div class="board" id="board"></div>
@@ -160,8 +190,8 @@
           <defs>
             <linearGradient id="drag-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stop-color="#ecfccb"></stop>
-              <stop offset="45%" stop-color="#d9ff5f"></stop>
-              <stop offset="100%" stop-color="#9af226"></stop>
+              <stop offset="45%" stop-color="#bef264"></stop>
+              <stop offset="100%" stop-color="#22c55e"></stop>
             </linearGradient>
           </defs>
           <path class="drag-line drag-line-glow" id="drag-line-glow" d=""></path>
@@ -169,26 +199,32 @@
         </svg>
       </div>
 
+      <!-- 게임 오버 오버레이 -->
       <div class="overlay" id="gameover-overlay">
         <div class="gameover-card">
-          <p class="welcome-kicker">Final score and replay routes</p>
           <h2 class="gameover-title" id="gameover-title">타임 오버!</h2>
           <div class="gameover-desc" id="gameover-desc">수고하셨습니다. 당신의 기록은...</div>
+          
           <div class="result-row">
             <span class="result-label" id="result-label">최종 점수</span>
             <span class="result-val"><span id="final-score">0</span><span id="result-unit">점</span></span>
           </div>
-          <button class="btn-retry" id="btn-retry">다시 하기</button>
+          
+          <button class="btn-retry" id="btn-retry">🔄 메인 화면으로 돌아가기</button>
         </div>
       </div>
 
+      <!-- 실시간 순위표 (Live Leaderboard) -->
       <div id="leaderboard-panel" class="leaderboard-panel" style="display: none;">
         <div class="leaderboard-header">
-          <span class="leaderboard-title">실시간 랭킹</span>
-          <span id="room-badge" class="room-badge">ROOM CODE</span>
+          <span class="leaderboard-title">🍈 실시간 랭킹 순위표</span>
+          <span id="room-badge" class="room-badge">방 코드: LOAD</span>
         </div>
-        <div id="leaderboard-list" class="leaderboard-list"></div>
+        <div id="leaderboard-list" class="leaderboard-list">
+          <!-- 실시간 랭킹 목록이 스크립트를 통해 생성됨 -->
+        </div>
       </div>
+
     </div>
   </div>
 </body>
