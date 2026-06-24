@@ -360,7 +360,7 @@ export function initGameApp() {
 
   function updateRaidUI(players = getLocalRaidPlayers(), skipHit = false) {
     raidPlayers = players.map(player => ({
-      nickname: player.nickname || '???',
+      nickname: player.nickname || '플레이어',
       score: Math.max(0, Number(player.score) || 0)
     }));
 
