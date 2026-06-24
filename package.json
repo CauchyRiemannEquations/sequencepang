@@ -1,0 +1,28 @@
+{
+  "name": "sequence-pang",
+  "version": "1.0.0",
+  "description": "수열팡(Sequence Pang) - 실시간 멀티플레이어 경쟁 모드 지원",
+  "main": "server/server.js",
+  "scripts": {
+    "dev:server": "node server/server.js",
+    "dev:client": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "start": "node server/server.js"
+  },
+  "keywords": [
+    "sequence-pang",
+    "melon",
+    "puzzle",
+    "multiplayer",
+    "socket.io"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "vite": "^5.4.21"
+  }
+}
