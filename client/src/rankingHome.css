@@ -28,6 +28,12 @@
   max-width: 420px;
 }
 
+.ranking-overlay {
+  z-index: 500;
+  position: absolute;
+  inset: 0;
+}
+
 .ranking-card {
   background: var(--card-bg);
   border-radius: 20px;
