@@ -11,20 +11,12 @@
 
 .btn-sub-action {
   min-width: 0;
-  padding: 12px 10px !important;
-  font-size: clamp(12px, 3.3vw, 15px) !important;
-  border-radius: 12px !important;
   white-space: nowrap;
-}
-
-.btn-ranking-open {
-  background: linear-gradient(135deg, #f59e0b 0%, #84cc16 100%) !important;
-  color: #12351f !important;
 }
 
 .gameover-card,
 .ranking-card {
-  width: calc(100% - 40px) !important;
+  width: calc(100% - 40px);
   max-width: 420px;
 }
 
@@ -35,11 +27,7 @@
 }
 
 .ranking-card {
-  background: var(--card-bg);
-  border-radius: 20px;
-  padding: 24px;
   text-align: center;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   transform: scale(0.8);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   max-height: min(88vh, 720px);
@@ -54,18 +42,6 @@
   margin-bottom: 14px;
 }
 
-.ranking-title {
-  font-size: 24px;
-  font-weight: normal;
-  color: var(--primary-color);
-  margin-bottom: 4px;
-}
-
-.ranking-desc {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
 .main-ranking-list {
   margin: 14px 0 18px;
 }
@@ -76,22 +52,17 @@
   }
 
   .btn-sub-action {
-    padding: 10px 8px !important;
-    font-size: clamp(11px, 3.4vw, 13px) !important;
+    padding: 10px 8px;
+    font-size: clamp(11px, 3.4vw, 13px);
   }
 
   .gameover-card,
   .ranking-card {
-    width: calc(100% - 24px) !important;
+    width: calc(100% - 24px);
     max-width: none;
   }
 
   .ranking-card {
     padding: 20px;
-    border-radius: 18px;
-  }
-
-  .ranking-title {
-    font-size: 21px;
   }
 }
