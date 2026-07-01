@@ -31,3 +31,39 @@ export function renderLeaderboard(listElement, players, currentNickname) {
     listElement.appendChild(item);
   });
 }
+
+export function renderGlobalLeaderboard(listElement, leaders) {
+  listElement.innerHTML = '';
+
+  if (!leaders.length) {
+    const emptyItem = document.createElement('li');
+    emptyItem.className = 'global-rank-empty';
+    emptyItem.textContent = '아직 등록된 기록이 없습니다.';
+    listElement.appendChild(emptyItem);
+    return;
+  }
+
+  leaders.forEach((leader, index) => {
+    const item = document.createElement('li');
+    item.className = `global-rank-item rank-${index + 1}`;
+
+    const rank = document.createElement('span');
+    rank.className = 'global-rank-number';
+    rank.textContent = index < 3 ? ['🥇', '🥈', '🥉'][index] : `${index + 1}`;
+
+    const nickname = document.createElement('span');
+    nickname.className = 'global-rank-nickname';
+    nickname.textContent = leader.nickname;
+
+    const combo = document.createElement('span');
+    combo.className = 'global-rank-combo';
+    combo.textContent = `최대 ${leader.maxCombo}콤보`;
+
+    const score = document.createElement('strong');
+    score.className = 'global-rank-score';
+    score.textContent = `${leader.score.toLocaleString('ko-KR')}점`;
+
+    item.append(rank, nickname, combo, score);
+    listElement.appendChild(item);
+  });
+}

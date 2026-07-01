@@ -2,3 +2,7 @@ node_modules/
 client/dist/
 *.log
 raid-boss-melon-king-source.png
+.env
+.env.*
+serviceAccountKey.json
+*-firebase-adminsdk-*.json

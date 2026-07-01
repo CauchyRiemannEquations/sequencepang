@@ -941,6 +941,8 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       transform: scale(0.8);
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-height: min(88vh, 720px);
+      overflow-y: auto;
     }
 
     .overlay.show .gameover-card {
@@ -1000,6 +1002,89 @@
     .btn-retry:hover {
       background: var(--primary-hover);
       transform: translateY(-2px);
+    }
+
+    .welcome-nickname-grp {
+      width: 100%;
+      text-align: left;
+    }
+
+    .global-ranking {
+      margin: 14px 0;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(15, 36, 23, 0.08);
+      border: 1px solid rgba(22, 101, 52, 0.16);
+      text-align: left;
+    }
+
+    .global-ranking-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    #score-submit-status {
+      font-family: 'Outfit', sans-serif;
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    #score-submit-status[data-state="success"] { color: #15803d; }
+    #score-submit-status[data-state="error"] { color: #dc2626; }
+
+    .global-ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .global-rank-item {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 4px 7px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.62);
+      color: var(--text-main);
+      font: 11px 'Outfit', sans-serif;
+    }
+
+    .global-rank-item.rank-1 {
+      background: rgba(250, 204, 21, 0.2);
+    }
+
+    .global-rank-number { text-align: center; }
+    .global-rank-nickname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .global-rank-combo { color: var(--text-muted); font-size: 9px; }
+    .global-rank-score { color: #166534; white-space: nowrap; }
+
+    .global-rank-empty {
+      padding: 10px;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .score-submit-retry {
+      width: 100%;
+      margin-top: 8px;
+      padding: 7px;
+      border: 1px solid rgba(22, 101, 52, 0.25);
+      border-radius: 8px;
+      background: transparent;
+      color: #166534;
+      cursor: pointer;
     }
 
     /* ===== 실시간 멀티플레이어 전용 스타일 ===== */

@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const { registerSocketHandlers } = require('./socketHandlers');
+const { scoreRouter } = require('./scoreRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +18,8 @@ registerSocketHandlers(io);
 
 const clientDistPath = path.join(__dirname, '../client/dist');
 
+app.use(express.json({ limit: '16kb' }));
+app.use('/api', scoreRouter);
 app.use(express.static(clientDistPath));
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientDistPath, 'index.html'));

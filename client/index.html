@@ -62,6 +62,10 @@
           </div>
 
           <!-- 플레이 모드 선택 버튼 -->
+          <div class="lobby-input-grp welcome-nickname-grp">
+            <label for="player-nickname" class="lobby-lbl">랭킹 닉네임</label>
+            <input type="text" id="player-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자)" maxlength="10" autocomplete="nickname">
+          </div>
           <div id="mode-selection" class="mode-select-box">
             <button class="btn-start" id="btn-single-start" style="background: linear-gradient(135deg, #166534 0%, #14532d 100%);">🍈 혼자서 팡!</button>
             <button class="btn-start" id="btn-multi-lobby" style="background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);">⚔️ 다함께 팡! (멀티)</button>
@@ -71,7 +75,7 @@
           <div id="multi-lobby-card" class="multi-lobby-card" style="display: none;">
             <div class="lobby-input-grp">
               <label for="lobby-nickname" class="lobby-lbl">내 닉네임</label>
-              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 9자, 공백 불가)" maxlength="9">
+              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자, 공백 불가)" maxlength="10" autocomplete="nickname">
             </div>
             
             <div class="lobby-action-box" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-top: 4px;">
@@ -209,6 +213,17 @@
             <span class="result-label" id="result-label">최종 점수</span>
             <span class="result-val"><span id="final-score">0</span><span id="result-unit">점</span></span>
           </div>
+
+          <section class="global-ranking" id="global-ranking">
+            <div class="global-ranking-heading">
+              <strong>🏆 전체 랭킹 TOP 10</strong>
+              <span id="score-submit-status" aria-live="polite"></span>
+            </div>
+            <ol class="global-ranking-list" id="global-ranking-list">
+              <li class="global-rank-empty">랭킹을 불러오는 중...</li>
+            </ol>
+            <button type="button" class="score-submit-retry" id="score-submit-retry" hidden>점수 등록 다시 시도</button>
+          </section>
           
           <button class="btn-retry" id="btn-retry">🔄 메인 화면으로 돌아가기</button>
         </div>

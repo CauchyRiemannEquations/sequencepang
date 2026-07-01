@@ -12,7 +12,8 @@ import {
   FEVER_AMOUNTS
 } from './gameConstants.js';
 import { createSocketClient } from './socketClient.js';
-import { renderLeaderboard } from './ui.js';
+import { fetchLeaderboard, submitScore } from './scoreClient.js';
+import { renderGlobalLeaderboard, renderLeaderboard } from './ui.js';
 
 export function initGameApp() {
   // ----------------------------------------------------
@@ -82,6 +83,7 @@ export function initGameApp() {
   let timeLeft = MAX_TIME;
   let comboTimeLeft = 5.0; // 콤보 제한 시간 (5초) 추적 변수
   let gameTimer = null;
+  let scoreSubmitted = false;
   let pendingFeverSpawn = false;
   const fever = {
     active: false,
@@ -114,6 +116,7 @@ export function initGameApp() {
   const welcomeOverlay = document.getElementById('welcome-overlay');
   const btnSingleStart = document.getElementById('btn-single-start');
   const btnMultiLobby = document.getElementById('btn-multi-lobby');
+  const playerNicknameInput = document.getElementById('player-nickname');
   const multiLobbyCard = document.getElementById('multi-lobby-card');
   const modeSelection = document.getElementById('mode-selection');
   const btnLobbyBack = document.getElementById('btn-lobby-back');
@@ -153,6 +156,10 @@ export function initGameApp() {
   const resultUnit = document.getElementById('result-unit');
   const btnRetry = document.getElementById('btn-retry');
   const welcomeBestVal = document.getElementById('welcome-best-val');
+  const globalRanking = document.getElementById('global-ranking');
+  const globalRankingList = document.getElementById('global-ranking-list');
+  const scoreSubmitStatus = document.getElementById('score-submit-status');
+  const scoreSubmitRetry = document.getElementById('score-submit-retry');
 
   btnLobbyRaid.className = 'btn-start';
   btnLobbyRaid.id = 'btn-lobby-raid';
@@ -162,6 +169,9 @@ export function initGameApp() {
 
   bestScoreVal.textContent = bestScore;
   welcomeBestVal.textContent = bestScore;
+  const savedNickname = localStorage.getItem('seq_pang_nickname') || '';
+  playerNicknameInput.value = savedNickname;
+  lobbyNicknameInput.value = savedNickname;
 
   let raidPlayers = [];
   let lastRaidDamage = 0;
@@ -470,6 +480,7 @@ export function initGameApp() {
     score = 0;
     combo = 0;
     maxCombo = 0;
+    scoreSubmitted = false;
     timeLeft = MAX_TIME;
     comboTimeLeft = 5.0; // 콤보 타임아웃 초기화
     isGameOver = false;
@@ -673,6 +684,61 @@ export function initGameApp() {
     }
 
     gameOverOverlay.classList.add('show');
+    if (currentGameMode === 'timeAttack') {
+      saveFinalScoreAndLoadLeaderboard();
+    }
+  }
+
+  function setScoreSubmitStatus(message, state = '') {
+    scoreSubmitStatus.textContent = message;
+    scoreSubmitStatus.dataset.state = state;
+  }
+
+  async function loadGlobalLeaderboard() {
+    try {
+      const { leaders = [] } = await fetchLeaderboard();
+      renderGlobalLeaderboard(globalRankingList, leaders);
+    } catch (error) {
+      globalRankingList.innerHTML = '';
+      const errorItem = document.createElement('li');
+      errorItem.className = 'global-rank-empty';
+      errorItem.textContent = error.message;
+      globalRankingList.appendChild(errorItem);
+    }
+  }
+
+  async function saveFinalScoreAndLoadLeaderboard() {
+    globalRanking.hidden = false;
+    scoreSubmitRetry.hidden = true;
+    const nickname = (currentNickname || playerNicknameInput.value).trim();
+
+    if (Array.from(nickname).length < 1 || Array.from(nickname).length > 10) {
+      setScoreSubmitStatus('닉네임을 확인해주세요.', 'error');
+      scoreSubmitRetry.hidden = false;
+      await loadGlobalLeaderboard();
+      return;
+    }
+
+    if (scoreSubmitted) {
+      await loadGlobalLeaderboard();
+      return;
+    }
+
+    setScoreSubmitStatus('점수 등록 중...', 'loading');
+    try {
+      await submitScore({
+        nickname,
+        score,
+        maxCombo,
+        mode: 'timeAttack'
+      });
+      scoreSubmitted = true;
+      setScoreSubmitStatus('등록 완료!', 'success');
+    } catch (error) {
+      setScoreSubmitStatus(error.message, 'error');
+      scoreSubmitRetry.hidden = false;
+    }
+    await loadGlobalLeaderboard();
   }
 
   // 포인터 위치 타일
@@ -1274,8 +1340,22 @@ export function initGameApp() {
   let currentGameMode = 'timeAttack';
   updateLobbyModeControls();
 
+  function rememberNickname(nickname) {
+    currentNickname = nickname;
+    playerNicknameInput.value = nickname;
+    lobbyNicknameInput.value = nickname;
+    localStorage.setItem('seq_pang_nickname', nickname);
+  }
+
   // 싱글 플레이 시작
   btnSingleStart.addEventListener('click', () => {
+    const nickname = playerNicknameInput.value.trim();
+    if (Array.from(nickname).length < 1 || Array.from(nickname).length > 10) {
+      alert('랭킹에 사용할 닉네임을 1~10자로 입력해주세요!');
+      playerNicknameInput.focus();
+      return;
+    }
+    rememberNickname(nickname);
     isMultiplayMode = false;
     leaderboardPanel.style.display = 'none';
     startGamePlay('timeAttack');
@@ -1283,6 +1363,9 @@ export function initGameApp() {
 
   // 멀티 대기방 화면으로 이동
   btnMultiLobby.addEventListener('click', () => {
+    if (playerNicknameInput.value.trim()) {
+      lobbyNicknameInput.value = playerNicknameInput.value.trim();
+    }
     modeSelection.style.display = 'none';
     multiLobbyCard.style.display = 'flex';
     lobbyNicknameInput.focus();
@@ -1306,7 +1389,7 @@ export function initGameApp() {
 
     socket.on('roomJoined', ({ roomId, nickname }) => {
       currentRoomId = roomId;
-      currentNickname = nickname;
+      rememberNickname(nickname);
       currentIsHost = false;
       updateLobbyModeControls();
 
@@ -1413,6 +1496,7 @@ export function initGameApp() {
       lobbyNicknameInput.focus();
       return;
     }
+    rememberNickname(nickname);
     
     // 무작위 6자리 방 코드 생성 (알파벳 대문자만)
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -1443,6 +1527,7 @@ export function initGameApp() {
       lobbyNicknameInput.focus();
       return;
     }
+    rememberNickname(nickname);
     if (!roomId) {
       alert("방 코드를 입력해주세요!");
       lobbyRoomIdInput.focus();
@@ -1560,6 +1645,10 @@ export function initGameApp() {
       // 싱글플레이 모드인 경우, 웰컴 메인 화면으로 귀환
       welcomeOverlay.classList.remove('hide');
     }
+  });
+
+  scoreSubmitRetry.addEventListener('click', () => {
+    saveFinalScoreAndLoadLeaderboard();
   });
     
 }
