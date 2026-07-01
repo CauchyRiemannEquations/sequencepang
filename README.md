@@ -1,4 +1,5 @@
 # 수열팡 (Sequence Pang)
+https://sequencepang.onrender.com
 
 6×6 보드의 숫자를 드래그해 등차수열·등비수열을 만드는 실시간 수학 퍼즐 게임입니다. Vite 기반 Vanilla JavaScript 클라이언트와 Express + Socket.IO 서버를 사용합니다.
 
