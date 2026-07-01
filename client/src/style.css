@@ -345,13 +345,14 @@
       visibility: hidden;
       pointer-events: none;
       transform: translateY(-2px);
-      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+      transition: none;
     }
 
     .fever-panel.show {
       opacity: 1;
       visibility: visible;
       transform: translateY(0);
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
     }
 
     .fever-timer-track {

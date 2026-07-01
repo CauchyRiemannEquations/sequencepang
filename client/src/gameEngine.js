@@ -90,7 +90,8 @@ export function initGameApp() {
     ending: false,
     amount: 0,
     timeLeftMs: 0,
-    timer: null
+    timer: null,
+    rollbackTimer: null
   };
 
   // DOM 캐싱
@@ -245,6 +246,10 @@ export function initGameApp() {
       clearInterval(fever.timer);
       fever.timer = null;
     }
+    if (fever.rollbackTimer) {
+      clearTimeout(fever.rollbackTimer);
+      fever.rollbackTimer = null;
+    }
     fever.active = false;
     fever.ending = false;
     fever.amount = 0;
@@ -266,6 +271,11 @@ export function initGameApp() {
   function startFeverMode(amount) {
     if (fever.active || fever.ending || isGameOver || !isGameActive) return;
 
+    if (fever.rollbackTimer) {
+      clearTimeout(fever.rollbackTimer);
+      fever.rollbackTimer = null;
+    }
+    boardWrapper.classList.remove('fever-rollback');
     fever.active = true;
     fever.ending = false;
     fever.amount = amount;
@@ -294,7 +304,8 @@ export function initGameApp() {
     }
 
     fever.active = false;
-    fever.ending = true;
+    fever.ending = false;
+    fever.amount = 0;
     fever.timeLeftMs = 0;
     isDragging = false;
     selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected', 'matched'));
@@ -307,12 +318,10 @@ export function initGameApp() {
     renderBoard();
     updateFeverUI();
 
-    setTimeout(() => {
-      fever.ending = false;
-      fever.amount = 0;
+    fever.rollbackTimer = setTimeout(() => {
       boardWrapper.classList.remove('fever-rollback');
       feverNotice.classList.remove('show');
-      updateFeverUI();
+      fever.rollbackTimer = null;
     }, FEVER_ROLLBACK_MS);
   }
 
