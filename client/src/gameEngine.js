@@ -161,9 +161,8 @@ export function initGameApp() {
   const scoreSubmitStatus = document.getElementById('score-submit-status');
   const scoreSubmitRetry = document.getElementById('score-submit-retry');
 
-  btnLobbyRaid.className = 'btn-start';
+  btnLobbyRaid.className = 'btn-start btn-raid btn-full';
   btnLobbyRaid.id = 'btn-lobby-raid';
-  btnLobbyRaid.style.cssText = 'background: linear-gradient(135deg, #14532d 0%, #991b1b 100%); width: 100%;';
   btnLobbyPlay.insertAdjacentElement('afterend', btnLobbyRaid);
   btnLobbyRaid.hidden = !ENABLE_BOSS_RAID;
 
@@ -461,8 +460,6 @@ export function initGameApp() {
     btnLobbyRaid.disabled = !currentIsHost;
     btnLobbyRaid.textContent = currentIsHost ? '⚔️ 보스레이드 시작 (방장)' : '⚔️ 보스레이드 대기중';
     btnLobbyRaid.title = currentIsHost ? '같은 방 모두를 보스레이드로 시작합니다.' : '보스레이드는 방장만 시작할 수 있습니다.';
-    btnLobbyRaid.style.opacity = currentIsHost ? '1' : '0.48';
-    btnLobbyRaid.style.cursor = currentIsHost ? 'pointer' : 'not-allowed';
   }
 
   // 1. 플레이 시작 (보드 생성 후 카운트다운 진입)
@@ -1012,9 +1009,7 @@ export function initGameApp() {
 
       triggerFailureShock();
 
-      selectedTiles.forEach(t => {
-        t.element.style.backgroundColor = '#fecaca';
-      });
+      selectedTiles.forEach(t => t.element.classList.add('sequence-invalid'));
       setTimeout(() => {
         clearSelection();
       }, 300);
@@ -1248,17 +1243,15 @@ export function initGameApp() {
           }, 380 + newIdx * 30);
           newIdx++;
         }
-        tile.classList.remove('selected', 'last-selected', 'matched');
+        tile.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid');
         tile.classList.toggle('fever-tile', tileData?.type === 'fever');
-        tile.style.backgroundColor = '';
       }
     }
   }
 
   function clearSelection() {
     selectedTiles.forEach(t => {
-      t.element.classList.remove('selected', 'last-selected', 'matched');
-      t.element.style.backgroundColor = '';
+      t.element.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid');
     });
     selectedTiles = [];
     dragLine.setAttribute('d', '');
@@ -1417,30 +1410,25 @@ export function initGameApp() {
         
         // 랭킹 뱃지 이모지
         let rankEmoji = `<span>${rank}등</span>`;
-        if (rank === 1) rankEmoji = `<span style="color: #f59e0b;">🏆 1등</span>`;
-        else if (rank === 2) rankEmoji = `<span style="color: #cbd5e1;">🥈 2등</span>`;
-        else if (rank === 3) rankEmoji = `<span style="color: #b45309;">🥉 3등</span>`;
+        if (rank === 1) rankEmoji = '<span class="rank-tone rank-tone-gold">🏆 1등</span>';
+        else if (rank === 2) rankEmoji = '<span class="rank-tone rank-tone-silver">🥈 2등</span>';
+        else if (rank === 3) rankEmoji = '<span class="rank-tone rank-tone-bronze">🥉 3등</span>';
 
         const pItem = document.createElement('div');
         pItem.className = `lobby-p-item ${isMe ? 'is-me' : ''}`;
-        pItem.style.display = 'flex';
-        pItem.style.justifyContent = 'space-between';
-        pItem.style.alignItems = 'center';
-        pItem.style.padding = '10px 14px';
-        pItem.style.borderRadius = '12px';
         
         const crownHtml = p.isHost ? '<span class="host-crown">👑</span>' : '';
-        const hostBadgeHtml = p.isHost ? '<span class="host-lbl" style="background:#f59e0b; color:#121e15; font-size:9px; padding:1px 5px; border-radius:6px; margin-left:6px;">방장</span>' : '';
-        const meTagHtml = isMe ? ' <small style="font-size:11px; opacity:0.8; color: var(--accent-color);">(나)</small>' : '';
+        const hostBadgeHtml = p.isHost ? '<span class="host-lbl">방장</span>' : '';
+        const meTagHtml = isMe ? ' <small class="me-tag">(나)</small>' : '';
         
         pItem.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="lobby-rank-badge" style="font-family: 'Jua', sans-serif; font-size: 13px; min-width: 42px;">${rankEmoji}</span>
-            <span class="lobby-p-name" style="font-size: 14px; font-weight: normal; color: ${isMe ? '#a3e635' : '#e2ebd5'};">
+          <div class="lobby-player-meta">
+            <span class="lobby-rank-badge">${rankEmoji}</span>
+            <span class="lobby-p-name">
               ${crownHtml}${escapeHTML(p.nickname)}${meTagHtml}${hostBadgeHtml}
             </span>
           </div>
-          <span class="lobby-p-score" style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; color: #a3e635;">
+          <span class="lobby-p-score">
             ${(p.score || 0).toLocaleString()}점
           </span>
         `;
@@ -1572,10 +1560,10 @@ export function initGameApp() {
     navigator.clipboard.writeText(currentRoomId).then(() => {
       const originalText = lobbyRoomBadge.textContent;
       lobbyRoomBadge.textContent = "📋 복사 완료!";
-      lobbyRoomBadge.style.color = "#bef264";
+      lobbyRoomBadge.classList.add('is-copied');
       setTimeout(() => {
         lobbyRoomBadge.textContent = `방 코드: ${currentRoomId}`;
-        lobbyRoomBadge.style.color = "";
+        lobbyRoomBadge.classList.remove('is-copied');
       }, 1200);
     }).catch(err => {
       console.error("복사 실패: ", err);

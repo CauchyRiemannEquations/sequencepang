@@ -1681,3 +1681,55 @@
       padding-top: 12px;
       padding-bottom: 12px;
     }
+
+    /* 상태·레이아웃 유틸리티: 시각 테마는 style.lovable.css가 담당 */
+    .is-initially-hidden {
+      display: none;
+    }
+
+    .lobby-action-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+
+    .lobby-divider {
+      margin: 4px 0;
+      text-align: center;
+    }
+
+    .lobby-room-code-input {
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .lobby-back-button {
+      margin-top: 4px;
+    }
+
+    .is-copyable {
+      cursor: pointer;
+    }
+
+    .lobby-section-title {
+      margin-bottom: 2px;
+      text-align: left;
+    }
+
+    .lobby-btn-stack {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lobby-player-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
