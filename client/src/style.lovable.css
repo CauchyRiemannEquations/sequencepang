@@ -557,8 +557,26 @@ body {
   backdrop-filter: blur(8px);
 }
 
+.overlay.show {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100vw;
+  height: 100dvh;
+  padding: 12px;
+  overflow-y: auto;
+  border-radius: 0;
+  overscroll-behavior: contain;
+}
+
+.game-container:has(.overlay.show) {
+  overflow: visible;
+}
+
 .gameover-card {
   width: min(90%, 370px);
+  max-height: calc(100dvh - 24px);
+  padding: 18px;
   background: var(--lv-forest);
   border: 1px solid rgba(216, 255, 106, .18);
   color: var(--lv-text);
@@ -567,8 +585,15 @@ body {
 
 .gameover-title {
   color: var(--lv-lime);
-  font-size: 30px;
+  margin-bottom: 4px;
+  font-size: 26px;
+  line-height: 1.1;
   text-shadow: 0 0 20px rgba(148, 242, 13, .28);
+}
+
+.gameover-desc {
+  margin-bottom: 8px;
+  font-size: 11px;
 }
 
 .gameover-desc,
@@ -577,27 +602,32 @@ body {
 }
 
 .result-row {
-  margin: 0 0 14px;
-  padding: 12px 14px;
+  margin: 0 0 8px;
+  padding: 8px 10px;
   border: 1px solid var(--lv-line);
   border-radius: 12px;
   background: rgba(6, 41, 31, .62);
+  font-size: 13px;
 }
 
 .result-val {
   color: var(--lv-gold);
   font-family: 'Outfit', sans-serif;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 800;
 }
 
 .global-ranking {
+  margin: 8px 0;
+  padding: 8px;
   background: rgba(6, 41, 31, .64);
   border: 1px solid var(--lv-line);
 }
 
 .global-ranking-heading {
+  margin-bottom: 6px;
   color: var(--lv-melon);
+  font-size: 12px;
 }
 
 #score-submit-status,
@@ -609,8 +639,15 @@ body {
 #score-submit-status[data-state='error'] { color: var(--lv-coral); }
 
 .global-rank-item {
+  min-height: 24px;
+  padding: 3px 6px;
   background: rgba(18, 74, 54, .62);
   color: var(--lv-text);
+  font-size: 10px;
+}
+
+.global-ranking-list {
+  gap: 3px;
 }
 
 .global-rank-item.rank-1 {
@@ -638,6 +675,11 @@ body {
   border: 1px solid rgba(148, 242, 13, .34);
   background: transparent;
   color: var(--lv-lime);
+}
+
+.gameover-card > .btn-retry {
+  padding: 10px;
+  font-size: 14px;
 }
 
 /* Home ranking overlay added independently on GitHub. */
@@ -749,6 +791,24 @@ body {
 
   .global-rank-combo {
     display: none;
+  }
+
+  .overlay.show {
+    padding: 6px;
+  }
+
+  .gameover-card {
+    width: min(100%, 370px);
+    max-height: calc(100dvh - 12px);
+    padding: 12px;
+  }
+
+  .gameover-title {
+    font-size: 24px;
+  }
+
+  .global-rank-item {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
   }
 
   .ranking-card {
