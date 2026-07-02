@@ -21,6 +21,7 @@ import { createSocketClient } from './socketClient.js';
 import { createGameSession, fetchLeaderboard, submitScore } from './scoreClient.js';
 import { renderGlobalLeaderboard, renderLeaderboard } from './ui.js';
 import { playSound } from './sfxManager.js';
+import { pauseMenuBgm, resumeMenuBgm } from './menuBgm.js';
 
 export function initGameApp() {
   // ----------------------------------------------------
@@ -597,8 +598,10 @@ export function initGameApp() {
     dragLineGlow.setAttribute('d', '');
 
     // 중앙 카운트다운 시퀀스 작동 후 타이머 및 드래그 가동
+    pauseMenuBgm();
     startCountdownSequence(() => {
       isGameActive = true;
+      void resumeMenuBgm();
       if (isRaidMode) {
         startRaidClock();
       } else {

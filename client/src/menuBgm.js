@@ -6,6 +6,7 @@ const MUTED_KEY = 'sequencepang-bgm-muted';
 let menuBgm = null;
 let isUnlocked = false;
 let isMuted = localStorage.getItem(MUTED_KEY) === 'true';
+let isTemporarilyPaused = false;
 
 function ensureMenuBgm() {
   if (menuBgm) return menuBgm;
@@ -18,8 +19,8 @@ function ensureMenuBgm() {
   return menuBgm;
 }
 
-async function playMenuBgm() {
-  if (isMuted) return;
+export async function playMenuBgm() {
+  if (isMuted || isTemporarilyPaused) return;
 
   const bgm = ensureMenuBgm();
 
@@ -30,9 +31,19 @@ async function playMenuBgm() {
   }
 }
 
-function pauseMenuBgm() {
+function pauseMenuBgmPlayback() {
   if (!menuBgm) return;
   menuBgm.pause();
+}
+
+export function pauseMenuBgm() {
+  isTemporarilyPaused = true;
+  pauseMenuBgmPlayback();
+}
+
+export function resumeMenuBgm() {
+  isTemporarilyPaused = false;
+  return playMenuBgm();
 }
 
 function updateMuteButton() {
@@ -50,7 +61,7 @@ function setMuted(value) {
   setSfxMuted(isMuted);
 
   if (isMuted) {
-    pauseMenuBgm();
+    pauseMenuBgmPlayback();
   } else {
     unlockAudio();
     playMenuBgm();
