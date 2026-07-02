@@ -598,10 +598,10 @@ export function initGameApp() {
     dragLineGlow.setAttribute('d', '');
 
     // 중앙 카운트다운 시퀀스 작동 후 타이머 및 드래그 가동
+    gameContainer.classList.add('game-active');
     pauseMenuBgm();
     startCountdownSequence(() => {
       isGameActive = true;
-      void resumeMenuBgm();
       if (isRaidMode) {
         startRaidClock();
       } else {
@@ -633,30 +633,7 @@ export function initGameApp() {
       
       countdownText.classList.add('pop');
       
-      // 귀엽고 아기자기한 비프음 소리 피드백
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        if (idx === counts.length - 1) {
-          // "시작!" 일 때는 조금 더 산뜻하고 높은 화음
-          oscillator.frequency.setValueAtTime(660, audioCtx.currentTime);
-          gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-          oscillator.start();
-          oscillator.stop(audioCtx.currentTime + 0.3);
-        } else {
-          // 일반 카운트는 뚜, 뚜, 뚜
-          oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
-          gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-          oscillator.start();
-          oscillator.stop(audioCtx.currentTime + 0.15);
-        }
-      } catch (e) {}
+      playSound(idx === counts.length - 1 ? 'countdownGo' : 'countdownTick');
 
       idx++;
       setTimeout(nextCount, 1000);
@@ -729,6 +706,7 @@ export function initGameApp() {
 
   function triggerGameOver() {
       isGameOver = true;
+      gameContainer.classList.remove('game-active');
       playSound('gameOver');
       isDragging = false;
       clearInterval(gameTimer);
@@ -1731,6 +1709,7 @@ export function initGameApp() {
 
   btnRetry.addEventListener('click', () => {
     isGameActive = false;
+    void resumeMenuBgm();
     gameOverOverlay.classList.remove('show');
 
     if (isMultiplayMode) {
