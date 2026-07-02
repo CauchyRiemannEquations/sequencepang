@@ -1,4 +1,4 @@
-const MENU_BGM_PATH = '/audio/bgm-menu.mp3';
+const MENU_BGM_PATH = '/bgm-menu.mp3';
 const MUTED_KEY = 'sequencepang-bgm-muted';
 
 let menuBgm = null;
