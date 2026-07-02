@@ -1,3 +1,5 @@
+import { setSfxMuted, unlockSfx } from './sfxManager.js';
+
 const MENU_BGM_PATH = '/bgm-menu.mp3';
 const MUTED_KEY = 'sequencepang-bgm-muted';
 
@@ -38,13 +40,14 @@ function updateMuteButton() {
   if (!button) return;
 
   button.textContent = isMuted ? '🔇' : '🔊';
-  button.title = isMuted ? 'BGM 켜기' : 'BGM 끄기';
-  button.setAttribute('aria-label', isMuted ? 'BGM 켜기' : 'BGM 끄기');
+  button.title = isMuted ? '소리 켜기' : '소리 끄기';
+  button.setAttribute('aria-label', isMuted ? '소리 켜기' : '소리 끄기');
 }
 
 function setMuted(value) {
   isMuted = Boolean(value);
   localStorage.setItem(MUTED_KEY, String(isMuted));
+  setSfxMuted(isMuted);
 
   if (isMuted) {
     pauseMenuBgm();
@@ -88,11 +91,13 @@ function injectBgmStyle() {
   style.textContent = `
     .bgm-toggle-button {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: auto;
+      right: auto;
+      left: 12px;
+      bottom: max(12px, env(safe-area-inset-bottom));
       z-index: 700;
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border: 1px solid rgba(163, 230, 53, 0.28);
       border-radius: 999px;
       background: rgba(15, 36, 23, 0.5);
@@ -114,6 +119,7 @@ function injectBgmStyle() {
 }
 
 function unlockAudio() {
+  void unlockSfx();
   if (isUnlocked) {
     playMenuBgm();
     return;
@@ -137,6 +143,7 @@ function setupAutoUnlock() {
 }
 
 export function initMenuBgm() {
+  setSfxMuted(isMuted);
   ensureMenuBgm();
   injectBgmStyle();
   createMuteButton();
