@@ -18,7 +18,7 @@ const BUTTON_SOUND_SELECTOR = [
 ].join(',');
 
 let audioContext = null;
-let masterVolume = 0.32;
+let masterVolume = 0.62;
 let muted = localStorage.getItem(MUTED_KEY) === 'true';
 let initialized = false;
 let lastTileSelectAt = 0;
@@ -102,13 +102,25 @@ function playGameOver() {
   playTone(261.63, 0.78, 0.45, { type: 'sine', gain: 0.045 });
 }
 
+function playCountdownTick() {
+  playTone(440, 0, 0.13, { type: 'triangle', gain: 0.11, endFrequency: 500 });
+}
+
+function playCountdownGo() {
+  playTone(659.25, 0, 0.24, { type: 'triangle', gain: 0.12 });
+  playTone(783.99, 0.07, 0.28, { type: 'sine', gain: 0.1 });
+  playTone(1046.5, 0.14, 0.32, { type: 'triangle', gain: 0.09 });
+}
+
 const soundPlayers = {
   buttonTap: playButtonTap,
   tileSelect: playTileSelect,
   sequenceSuccess: playSequenceSuccess,
   sequenceFail: playSequenceFail,
   feverStart: playFeverStart,
-  gameOver: playGameOver
+  gameOver: playGameOver,
+  countdownTick: playCountdownTick,
+  countdownGo: playCountdownGo
 };
 
 export function unlockSfx() {

@@ -124,6 +124,10 @@ function injectBgmStyle() {
       transform: translateY(-1px);
       background: rgba(22, 101, 52, 0.65);
     }
+
+    .game-container.game-active .bgm-toggle-button {
+      display: none;
+    }
   `;
 
   document.head.appendChild(style);
