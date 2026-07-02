@@ -5,7 +5,7 @@ export const TILE_NUMBER_MIN = 1;
 export const TILE_NUMBER_MAX = 9;
 
 export const ENABLE_BOSS_RAID = false;
-export const MAX_ROOM_PLAYERS = 5;
+export const MAX_ROOM_PLAYERS = 30;
 export const RAID_HP_PER_PLAYER = 120000;
 
 export const FEVER_TRIGGER_MIN_LENGTH = 4;

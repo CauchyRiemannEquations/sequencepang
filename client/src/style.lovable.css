@@ -243,6 +243,19 @@ body {
 .lobby-p-list-box {
   background: rgba(6, 41, 31, 0.66);
   border-color: var(--lv-line);
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+#btn-lobby-play:disabled {
+  cursor: wait;
+  background: rgba(18, 74, 54, 0.72);
+  color: var(--lv-muted);
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
 }
 
 .lobby-p-item {
@@ -747,6 +760,12 @@ body {
   border-color: var(--lv-lime);
 }
 
+.leaderboard-list {
+  max-height: min(28vh, 280px);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
 .player-name,
 .player-score,
 .rank-badge {
@@ -772,6 +791,14 @@ body {
 @media (max-width: 768px) {
   .game-container {
     border-radius: 22px;
+  }
+
+  .lobby-p-list-box {
+    max-height: min(34dvh, 240px);
+  }
+
+  .leaderboard-list {
+    max-height: min(18dvh, 140px);
   }
 
   .welcome-overlay,
