@@ -33,12 +33,6 @@ function pauseMenuBgm() {
   menuBgm.pause();
 }
 
-function stopMenuBgm() {
-  if (!menuBgm) return;
-  menuBgm.pause();
-  menuBgm.currentTime = 0;
-}
-
 function updateMuteButton() {
   const button = document.getElementById('btn-bgm-toggle');
   if (!button) return;
@@ -55,6 +49,7 @@ function setMuted(value) {
   if (isMuted) {
     pauseMenuBgm();
   } else {
+    unlockAudio();
     playMenuBgm();
   }
 
@@ -78,7 +73,6 @@ function createMuteButton() {
 
   button.addEventListener('click', event => {
     event.stopPropagation();
-    unlockAudio();
     toggleMuted();
   });
 
@@ -120,36 +114,26 @@ function injectBgmStyle() {
 }
 
 function unlockAudio() {
-  if (isUnlocked) return;
+  if (isUnlocked) {
+    playMenuBgm();
+    return;
+  }
 
   isUnlocked = true;
   playMenuBgm();
 }
 
 function setupAutoUnlock() {
-  window.addEventListener('pointerdown', unlockAudio, { once: true });
-  window.addEventListener('keydown', unlockAudio, { once: true });
-}
+  const unlock = () => {
+    unlockAudio();
+  };
 
-function setupBgmSceneEvents() {
-  document.addEventListener('click', event => {
-    const startGameButton = event.target.closest(
-      '#btn-single-start, #btn-lobby-play, #btn-lobby-raid'
-    );
+  // 첫 클릭/터치/키보드 입력 때 BGM 시작
+  window.addEventListener('pointerdown', unlock, { passive: true });
+  window.addEventListener('keydown', unlock);
 
-    if (startGameButton) {
-      stopMenuBgm();
-      return;
-    }
-
-    const menuLikeButton = event.target.closest(
-      '#btn-multi-lobby, #btn-show-ranking, #btn-update-notes-open'
-    );
-
-    if (menuLikeButton) {
-      playMenuBgm();
-    }
-  });
+  // 버튼 클릭에서도 한 번 더 안전하게 시도
+  document.addEventListener('click', unlock);
 }
 
 export function initMenuBgm() {
@@ -157,5 +141,7 @@ export function initMenuBgm() {
   injectBgmStyle();
   createMuteButton();
   setupAutoUnlock();
-  setupBgmSceneEvents();
+
+  // 혹시 이전에 음소거가 아니었다면, 사용자의 첫 입력 이후 바로 재생되도록 준비
+  updateMuteButton();
 }
