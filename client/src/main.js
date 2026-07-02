@@ -1,3 +1,4 @@
+import { initMenuBgm } from './menuBgm.js';
 import './style.css';
 import './rankingHome.css';
 import './style.lovable.css';
@@ -10,4 +11,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initGameApp();
   initHomeRankingUI();
   initUpdateNotesUI();
+  initMenuBgm();
 });
