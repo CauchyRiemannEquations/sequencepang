@@ -16,6 +16,13 @@ const {
 const scoreRouter = express.Router();
 const RESERVED_NICKNAMES = new Set(['null', 'undefined', 'nan', 'anonymous', 'guest']);
 const SESSION_ERROR_MESSAGE = '점수 기록을 확인할 수 없습니다.';
+const ANALYTICS_FIELDS = [
+  'clearCount',
+  'feverClearCount',
+  'repeatedPathCount',
+  'repeatedValuePatternCount',
+  'maxChainLength'
+];
 
 function normalizeNickname(value) {
   if (typeof value !== 'string') return null;
@@ -58,6 +65,15 @@ function validateScorePayload(payload) {
     return { error: SESSION_ERROR_MESSAGE, reason: 'invalid_play_duration' };
   }
 
+  const analytics = {};
+  for (const field of ANALYTICS_FIELDS) {
+    const value = payload[field];
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) {
+      return { error: '플레이 분석 값이 올바르지 않습니다.', reason: `invalid_${field}` };
+    }
+    analytics[field] = value ?? 0;
+  }
+
   return {
     value: {
       nickname,
@@ -66,7 +82,8 @@ function validateScorePayload(payload) {
       mode: payload.mode,
       gameSessionId: payload.gameSessionId,
       sessionToken: payload.sessionToken,
-      playDurationMs: payload.playDurationMs
+      playDurationMs: payload.playDurationMs,
+      ...analytics
     }
   };
 }
