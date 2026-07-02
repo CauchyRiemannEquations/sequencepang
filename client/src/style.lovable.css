@@ -536,7 +536,7 @@ body {
   border-radius: 999px;
   background: var(--lv-coral);
   color: #fff;
-  content: '×2';
+  content: '×1.5';
   font-size: 12px;
   box-shadow: 0 0 14px rgba(255, 107, 107, .46);
 }

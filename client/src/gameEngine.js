@@ -9,7 +9,13 @@ import {
   FEVER_TRIGGER_MIN_LENGTH,
   FEVER_DURATION_MS,
   FEVER_ROLLBACK_MS,
-  FEVER_AMOUNTS
+  FEVER_SCORE_MULTIPLIER,
+  FEVER_TYPES,
+  RECENT_SEQUENCE_LIMIT,
+  REPEATED_PATH_SCORE_MULTIPLIER,
+  REPEATED_PATTERN_SCORE_MULTIPLIER,
+  REPEATED_PATH_TIME_MULTIPLIER,
+  REPEATED_PATTERN_TIME_MULTIPLIER
 } from './gameConstants.js';
 import { createSocketClient } from './socketClient.js';
 import { createGameSession, fetchLeaderboard, submitScore } from './scoreClient.js';
@@ -32,19 +38,35 @@ export function initGameApp() {
   }
 
   function createFeverTileData() {
+    const feverType = pickWeightedFeverType();
     return {
       baseValue: getRandomNumber(),
       type: 'fever',
-      feverAmount: FEVER_AMOUNTS[Math.floor(Math.random() * FEVER_AMOUNTS.length)]
+      feverType: feverType.type,
+      feverAmount: feverType.amount,
+      feverLabel: feverType.label
     };
+  }
+
+  function pickWeightedFeverType() {
+    const totalWeight = FEVER_TYPES.reduce((sum, feverType) => sum + feverType.weight, 0);
+    let randomWeight = Math.random() * totalWeight;
+    for (const feverType of FEVER_TYPES) {
+      randomWeight -= feverType.weight;
+      if (randomWeight < 0) return feverType;
+    }
+    return FEVER_TYPES[FEVER_TYPES.length - 1];
   }
 
   function getDisplayValue(tileData) {
     if (!tileData) return '';
     if (tileData.type === 'fever') {
-      return `+${tileData.feverAmount}`;
+      return tileData.feverLabel;
     }
-    return tileData.baseValue + (fever.active ? fever.amount : 0);
+    if (!fever.active) return tileData.baseValue;
+    if (fever.type === 'add') return tileData.baseValue + fever.amount;
+    if (fever.type === 'multiply') return tileData.baseValue * fever.amount;
+    return tileData.baseValue;
   }
 
   function hasFeverTile() {
@@ -56,6 +78,7 @@ export function initGameApp() {
     tileElement.classList.toggle('fever-tile', tileData?.type === 'fever');
     tileElement.dataset.tileType = tileData?.type || 'normal';
     tileElement.dataset.baseValue = tileData?.baseValue ?? '';
+    tileElement.dataset.feverType = tileData?.feverType ?? '';
     tileElement.dataset.feverAmount = tileData?.feverAmount ?? '';
   }
 
@@ -87,10 +110,18 @@ export function initGameApp() {
   let currentGameSession = null;
   let singleSessionStartedAt = 0;
   let pendingFeverSpawn = false;
+  let recentSuccessfulSequences = [];
+  let clearCount = 0;
+  let feverClearCount = 0;
+  let repeatedPathCount = 0;
+  let repeatedValuePatternCount = 0;
+  let maxChainLength = 0;
   const fever = {
     active: false,
     ending: false,
+    type: null,
     amount: 0,
+    label: '',
     timeLeftMs: 0,
     timer: null,
     rollbackTimer: null
@@ -239,7 +270,7 @@ export function initGameApp() {
       : 0;
     feverTimerFill.style.width = `${percentage}%`;
     feverTimerText.textContent = fever.active
-      ? `피버 +${fever.amount} · ${(fever.timeLeftMs / 1000).toFixed(1)}s`
+      ? `피버 ${fever.label} · ${(fever.timeLeftMs / 1000).toFixed(1)}s · 점수 ×${FEVER_SCORE_MULTIPLIER}`
       : '피버 종료!';
   }
 
@@ -254,7 +285,9 @@ export function initGameApp() {
     }
     fever.active = false;
     fever.ending = false;
+    fever.type = null;
     fever.amount = 0;
+    fever.label = '';
     fever.timeLeftMs = 0;
     pendingFeverSpawn = false;
     boardWrapper.classList.remove('fever-active', 'fever-rollback');
@@ -270,7 +303,7 @@ export function initGameApp() {
     feverNotice.classList.add('show');
   }
 
-  function startFeverMode(amount) {
+  function startFeverMode(type, amount, label) {
     if (fever.active || fever.ending || isGameOver || !isGameActive) return;
 
     if (fever.rollbackTimer) {
@@ -280,9 +313,16 @@ export function initGameApp() {
     boardWrapper.classList.remove('fever-rollback');
     fever.active = true;
     fever.ending = false;
+    fever.type = type;
     fever.amount = amount;
+    fever.label = label;
     fever.timeLeftMs = FEVER_DURATION_MS;
-    showFeverNotice(`피버 +${amount}!`);
+    const notice = type === 'multiply'
+      ? '⚡ ×2 피버! 숫자가 두 배로!'
+      : amount === 3
+        ? '🔥 +3 피버! 더 큰 수열을 찾아라!'
+        : '🔥 +2 피버! 모든 숫자가 2만큼 성장!';
+    showFeverNotice(notice);
     renderBoard();
     updateFeverUI();
 
@@ -307,7 +347,9 @@ export function initGameApp() {
 
     fever.active = false;
     fever.ending = false;
+    fever.type = null;
     fever.amount = 0;
+    fever.label = '';
     fever.timeLeftMs = 0;
     isDragging = false;
     selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected', 'matched'));
@@ -499,6 +541,12 @@ export function initGameApp() {
     scoreSubmitted = false;
     timeLeft = MAX_TIME;
     comboTimeLeft = 5.0; // 콤보 타임아웃 초기화
+    recentSuccessfulSequences = [];
+    clearCount = 0;
+    feverClearCount = 0;
+    repeatedPathCount = 0;
+    repeatedValuePatternCount = 0;
+    maxChainLength = 0;
     isGameOver = false;
     isGameActive = false; // 카운트다운이 완전히 끝날 때까지 조작 제한
     selectedTiles = [];
@@ -761,7 +809,12 @@ export function initGameApp() {
         mode: 'timeAttack',
         gameSessionId: currentGameSession.gameSessionId,
         sessionToken: currentGameSession.sessionToken,
-        playDurationMs: Math.max(1, Math.round(performance.now() - singleSessionStartedAt))
+        playDurationMs: Math.max(1, Math.round(performance.now() - singleSessionStartedAt)),
+        clearCount,
+        feverClearCount,
+        repeatedPathCount,
+        repeatedValuePatternCount,
+        maxChainLength
       });
       scoreSubmitted = true;
       setScoreSubmitStatus('등록 완료!', 'success');
@@ -803,7 +856,7 @@ export function initGameApp() {
       if (tileData?.type === 'fever') {
         boardData[r][c] = createNormalTileData();
         updateTileElement(tile, boardData[r][c]);
-        startFeverMode(tileData.feverAmount);
+        startFeverMode(tileData.feverType, tileData.feverAmount, tileData.feverLabel);
         return;
       }
     }
@@ -959,6 +1012,14 @@ export function initGameApp() {
       : formatDifferenceValue(diff);
 
     if (isAP || isGP) {
+      const repeatResult = classifySequenceRepeat(values);
+      clearCount++;
+      if (fever.active) feverClearCount++;
+      if (repeatResult.type === 'path') repeatedPathCount++;
+      if (repeatResult.type === 'pattern') repeatedValuePatternCount++;
+      maxChainLength = Math.max(maxChainLength, len);
+      rememberSuccessfulSequence(values);
+
       combo++;
       if (combo > maxCombo) {
         maxCombo = combo;
@@ -970,7 +1031,8 @@ export function initGameApp() {
       // 콤보 점수 보너스 대폭 강화 (비선형 가중치 체감형 점수 부스팅)
       const comboBonus = combo > 1 ? (combo - 1) * 80 * (1 + (combo * 0.15)) : 0;
       const basePoints = Math.floor((len * 100) + comboBonus);
-      const points = fever.active ? basePoints * 2 : basePoints;
+      const feverMultiplier = fever.active ? FEVER_SCORE_MULTIPLIER : 1;
+      const points = Math.round(basePoints * repeatResult.scoreMultiplier * feverMultiplier);
       score += points;
       
       if (currentGameMode !== 'bossRaid' && score > bestScore) {
@@ -1009,6 +1071,7 @@ export function initGameApp() {
       
       // 콤보 계수 비례 추가 시간을 제거하고, 맞춤 고정 보너스(0.5초)만 가산
       bonusTime += 0.5;
+      bonusTime *= repeatResult.timeMultiplier;
       
       if (fever.active) {
         fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000));
@@ -1018,7 +1081,7 @@ export function initGameApp() {
         updateTimerUI();
       }
 
-      spawnFloatingScore(points, fever.active ? 2 : 1);
+      spawnFloatingScore(points, feverMultiplier, repeatResult.type);
       spawnSequenceHintRich(sequenceKind, sequenceRule);
       if (currentGameMode === 'bossRaid') {
         updateRaidUI(getLocalRaidPlayers());
@@ -1048,6 +1111,42 @@ export function initGameApp() {
         clearSelection();
       }, 300);
     }
+  }
+
+  function classifySequenceRepeat(values) {
+    const pathSignature = getPathSignature(selectedTiles);
+    const valueSignature = values.join(',');
+    if (recentSuccessfulSequences.some(sequence => sequence.pathSignature === pathSignature)) {
+      return {
+        type: 'path',
+        scoreMultiplier: REPEATED_PATH_SCORE_MULTIPLIER,
+        timeMultiplier: REPEATED_PATH_TIME_MULTIPLIER
+      };
+    }
+    if (recentSuccessfulSequences.some(sequence => sequence.valueSignature === valueSignature)) {
+      return {
+        type: 'pattern',
+        scoreMultiplier: REPEATED_PATTERN_SCORE_MULTIPLIER,
+        timeMultiplier: REPEATED_PATTERN_TIME_MULTIPLIER
+      };
+    }
+    return { type: 'new', scoreMultiplier: 1, timeMultiplier: 1 };
+  }
+
+  function rememberSuccessfulSequence(values) {
+    recentSuccessfulSequences.push({
+      pathSignature: getPathSignature(selectedTiles),
+      valueSignature: values.join(',')
+    });
+    if (recentSuccessfulSequences.length > RECENT_SEQUENCE_LIMIT) {
+      recentSuccessfulSequences.shift();
+    }
+  }
+
+  function getPathSignature(tiles) {
+    const forward = tiles.map(tile => `${tile.row}:${tile.col}`).join('|');
+    const reverse = [...tiles].reverse().map(tile => `${tile.row}:${tile.col}`).join('|');
+    return forward < reverse ? forward : reverse;
   }
 
   function formatDifferenceValue(value) {
@@ -1167,7 +1266,7 @@ export function initGameApp() {
     return fraction;
   }
 
-  function spawnFloatingScore(scoreVal, multiplier = 1) {
+  function spawnFloatingScore(scoreVal, multiplier = 1, repeatType = 'new') {
     const lastTile = selectedTiles[selectedTiles.length - 1].element;
     const rect = lastTile.getBoundingClientRect();
     const wrapperRect = boardWrapper.getBoundingClientRect();
@@ -1177,7 +1276,9 @@ export function initGameApp() {
 
     const floatSpan = document.createElement('span');
     floatSpan.className = 'floating-score';
-    floatSpan.textContent = multiplier > 1 ? `+${scoreVal} x${multiplier}` : `+${scoreVal}`;
+    const multiplierLabel = multiplier > 1 ? ` ×${multiplier}` : '';
+    const repeatLabel = repeatType === 'path' ? ' · 반복 경로' : repeatType === 'pattern' ? ' · 반복 수열' : '';
+    floatSpan.textContent = `+${scoreVal}${multiplierLabel}${repeatLabel}`;
     floatSpan.classList.toggle('fever-score', multiplier > 1);
     floatSpan.style.left = `${x}px`;
     floatSpan.style.top = `${y}px`;
