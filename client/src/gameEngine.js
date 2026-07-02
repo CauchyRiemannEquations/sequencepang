@@ -20,6 +20,7 @@ import {
 import { createSocketClient } from './socketClient.js';
 import { createGameSession, fetchLeaderboard, submitScore } from './scoreClient.js';
 import { renderGlobalLeaderboard, renderLeaderboard } from './ui.js';
+import { playSound } from './sfxManager.js';
 
 export function initGameApp() {
   // ----------------------------------------------------
@@ -317,6 +318,7 @@ export function initGameApp() {
     fever.amount = amount;
     fever.label = label;
     fever.timeLeftMs = FEVER_DURATION_MS;
+    playSound('feverStart');
     const notice = type === 'multiply'
       ? '⚡ ×2 피버! 숫자가 두 배로!'
       : amount === 3
@@ -724,6 +726,7 @@ export function initGameApp() {
 
   function triggerGameOver() {
       isGameOver = true;
+      playSound('gameOver');
       isDragging = false;
       clearInterval(gameTimer);
       stopRaidClock();
@@ -888,7 +891,6 @@ export function initGameApp() {
           selectedTiles[selectedTiles.length - 1].element.classList.add('last-selected');
         }
         
-        playAudioTick(true);
         updateDragLine(clientX, clientY);
         return;
       }
@@ -940,7 +942,7 @@ export function initGameApp() {
       element: tileElement
     });
 
-    playAudioTick(false);
+    playSound('tileSelect');
   }
 
   function updateDragLine(currentX, currentY) {
@@ -1012,6 +1014,7 @@ export function initGameApp() {
       : formatDifferenceValue(diff);
 
     if (isAP || isGP) {
+      playSound('sequenceSuccess');
       const repeatResult = classifySequenceRepeat(values);
       clearCount++;
       if (fever.active) feverClearCount++;
@@ -1094,6 +1097,7 @@ export function initGameApp() {
       }, 350);
 
     } else {
+      playSound('sequenceFail');
       combo = 0;
       comboVal.textContent = combo;
       comboBadge.style.display = 'none';
@@ -1293,20 +1297,6 @@ export function initGameApp() {
   function triggerFailureShock() {
     timerContainer.classList.add('shake');
     boardWrapper.classList.add('shake');
-    
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.frequency.setValueAtTime(140, audioCtx.currentTime);
-      oscillator.frequency.linearRampToValueAtTime(70, audioCtx.currentTime + 0.25);
-      gainNode.gain.setValueAtTime(0.18, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.25);
-    } catch(e) {}
 
     setTimeout(() => {
       timerContainer.classList.remove('shake');
@@ -1391,35 +1381,6 @@ export function initGameApp() {
     selectedTiles = [];
     dragLine.setAttribute('d', '');
     dragLineGlow.setAttribute('d', '');
-  }
-
-  function playAudioTick(isBacktrack = false) {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      if (isBacktrack) {
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(180, audioCtx.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(90, audioCtx.currentTime + 0.08);
-        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.08);
-      } else {
-        oscillator.type = 'sine';
-        const baseFreq = 400 + (selectedTiles.length * 65);
-        oscillator.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.06);
-      }
-    } catch (e) {}
   }
 
   // ----------------------------------------------------
