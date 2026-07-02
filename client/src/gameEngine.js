@@ -12,7 +12,7 @@ import {
   FEVER_AMOUNTS
 } from './gameConstants.js';
 import { createSocketClient } from './socketClient.js';
-import { fetchLeaderboard, submitScore } from './scoreClient.js';
+import { createGameSession, fetchLeaderboard, submitScore } from './scoreClient.js';
 import { renderGlobalLeaderboard, renderLeaderboard } from './ui.js';
 
 export function initGameApp() {
@@ -84,6 +84,8 @@ export function initGameApp() {
   let comboTimeLeft = 5.0; // 콤보 제한 시간 (5초) 추적 변수
   let gameTimer = null;
   let scoreSubmitted = false;
+  let currentGameSession = null;
+  let singleSessionStartedAt = 0;
   let pendingFeverSpawn = false;
   const fever = {
     active: false,
@@ -690,7 +692,7 @@ export function initGameApp() {
     }
 
     gameOverOverlay.classList.add('show');
-    if (currentGameMode === 'timeAttack') {
+    if (currentGameMode === 'timeAttack' && !isMultiplayMode) {
       saveFinalScoreAndLoadLeaderboard();
     }
   }
@@ -714,6 +716,8 @@ export function initGameApp() {
   }
 
   async function saveFinalScoreAndLoadLeaderboard() {
+    if (isMultiplayMode) return;
+
     globalRanking.hidden = false;
     scoreSubmitRetry.hidden = true;
     const nickname = (currentNickname || playerNicknameInput.value).trim();
@@ -730,13 +734,22 @@ export function initGameApp() {
       return;
     }
 
+    if (!currentGameSession || !singleSessionStartedAt) {
+      setScoreSubmitStatus('점수 기록을 확인할 수 없습니다.', 'error');
+      await loadGlobalLeaderboard();
+      return;
+    }
+
     setScoreSubmitStatus('점수 등록 중...', 'loading');
     try {
       await submitScore({
         nickname,
         score,
         maxCombo,
-        mode: 'timeAttack'
+        mode: 'timeAttack',
+        gameSessionId: currentGameSession.gameSessionId,
+        sessionToken: currentGameSession.sessionToken,
+        playDurationMs: Math.max(1, Math.round(performance.now() - singleSessionStartedAt))
       });
       scoreSubmitted = true;
       setScoreSubmitStatus('등록 완료!', 'success');
@@ -1350,7 +1363,7 @@ export function initGameApp() {
   }
 
   // 싱글 플레이 시작
-  btnSingleStart.addEventListener('click', () => {
+  btnSingleStart.addEventListener('click', async () => {
     const nickname = playerNicknameInput.value.trim();
     if (Array.from(nickname).length < 1 || Array.from(nickname).length > 10) {
       alert('랭킹에 사용할 닉네임을 1~10자로 입력해주세요!');
@@ -1360,7 +1373,18 @@ export function initGameApp() {
     rememberNickname(nickname);
     isMultiplayMode = false;
     leaderboardPanel.style.display = 'none';
-    startGamePlay('timeAttack');
+    btnSingleStart.disabled = true;
+    try {
+      currentGameSession = await createGameSession();
+      singleSessionStartedAt = performance.now();
+      startGamePlay('timeAttack');
+    } catch (error) {
+      currentGameSession = null;
+      singleSessionStartedAt = 0;
+      alert('게임 세션을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      btnSingleStart.disabled = false;
+    }
   });
 
   // 멀티 대기방 화면으로 이동
@@ -1503,6 +1527,8 @@ export function initGameApp() {
     }
 
     isMultiplayMode = true;
+    currentGameSession = null;
+    singleSessionStartedAt = 0;
     initSocketConnection();
 
     // 서버에 방 생성 및 입장 전송
@@ -1537,6 +1563,8 @@ export function initGameApp() {
     }
 
     isMultiplayMode = true;
+    currentGameSession = null;
+    singleSessionStartedAt = 0;
     initSocketConnection();
 
     // 서버에 방 입장 전송

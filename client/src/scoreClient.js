@@ -17,6 +17,16 @@ export function submitScore(scoreData) {
   });
 }
 
+export function createGameSession() {
+  return requestJson('/api/game-session', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: '{}'
+  });
+}
+
 export function fetchLeaderboard() {
   return requestJson('/api/leaderboard');
 }
