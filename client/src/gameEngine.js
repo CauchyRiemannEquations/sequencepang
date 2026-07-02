@@ -464,6 +464,14 @@ export function initGameApp() {
   }
 
   function updateLobbyModeControls() {
+    btnLobbyPlay.disabled = !currentIsHost;
+    btnLobbyPlay.textContent = currentIsHost
+      ? '🎮 수열팡 플레이 시작 (방장)'
+      : '⏳ 방장이 시작할 때까지 기다리는 중';
+    btnLobbyPlay.title = currentIsHost
+      ? '모든 참가자의 게임을 동시에 시작합니다.'
+      : '게임은 방장만 시작할 수 있습니다.';
+
     if (!ENABLE_BOSS_RAID) {
       btnLobbyRaid.hidden = true;
       return;
@@ -506,6 +514,8 @@ export function initGameApp() {
     comboBadge.textContent = '🔥';
     comboBadge.style.display = 'none';
     gameOverOverlay.classList.remove('show');
+    globalRanking.hidden = true;
+    scoreSubmitRetry.hidden = true;
     if (isRaidMode) {
       resetRaidState();
     }
@@ -683,6 +693,8 @@ export function initGameApp() {
 
     // 멀티플레이 모드일 때 최종 점수 동기화 확인 사격 및 버튼 텍스트 대응
     if (isMultiplayMode) {
+      globalRanking.hidden = true;
+      gameOverDesc.textContent = '멀티 모드 점수는 방 안 순위표에만 표시됩니다.';
       if (socket && socket.connected) {
         socket.emit('updateScore', { score: score });
       }
@@ -1435,8 +1447,11 @@ export function initGameApp() {
     // 대기방 인원 변동 수신 (점수 및 실시간 랭킹 순위표 포함)
     socket.on('lobbyUpdate', ({ players, hostId }) => {
       lobbyPList.innerHTML = '';
-      currentIsHost = players.some(player => player.nickname === currentNickname && player.isHost);
+      currentIsHost = socket?.id === hostId;
       updateLobbyModeControls();
+      lobbyWaitingInfo.textContent = currentIsHost
+        ? `현재 ${players.length}/${MAX_ROOM_PLAYERS}명 · 준비되면 전체 게임을 시작하세요.`
+        : `현재 ${players.length}/${MAX_ROOM_PLAYERS}명 · 방장이 시작할 때까지 기다리는 중입니다.`;
       players.forEach((p, index) => {
         const isMe = p.nickname === currentNickname;
         const rank = index + 1;
@@ -1571,11 +1586,16 @@ export function initGameApp() {
     socket.emit('joinRoom', { roomId, nickname });
   });
 
-  // 대기실에서 개별 플레이 시작 버튼 클릭 이벤트
+  // 대기실에서 방장이 전체 플레이어의 게임을 동시에 시작
   btnLobbyPlay.addEventListener('click', () => {
-    lobbyOverlay.classList.add('hide'); // 대기실 닫기
-    leaderboardPanel.style.display = 'block'; // 인게임 실시간 리더보드 노출
-    startGamePlay('timeAttack'); // 게임 생성 및 3-2-1 카운트다운 시작!
+    if (!currentIsHost) return;
+    if (!socket || !socket.connected) {
+      alert('서버 연결이 끊겼습니다. 방에 다시 입장해주세요!');
+      return;
+    }
+    btnLobbyPlay.disabled = true;
+    btnLobbyPlay.textContent = '⏳ 게임 시작 신호 전송 중...';
+    socket.emit('startGame');
   });
 
   btnLobbyRaid.addEventListener('click', () => {

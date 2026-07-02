@@ -52,7 +52,7 @@ function registerSocketHandlers(io) {
       }
 
       const isDuplicate = Object.values(room.players).some(
-        player => player.nickname === cleanNickname
+        player => player.nickname.toLocaleLowerCase() === cleanNickname.toLocaleLowerCase()
       );
 
       if (isDuplicate) {
@@ -88,7 +88,11 @@ function registerSocketHandlers(io) {
 
       room.isStarted = true;
       room.mode = 'timeAttack';
+      Object.values(room.players).forEach(player => {
+        player.score = 0;
+      });
       console.log(`🎮 [${roomId}] 방 게임 시작 신호 수신! 모든 플레이어 동시 기동`);
+      io.to(roomId).emit('leaderboardUpdate', getSortedLeaderboard(roomId));
       io.to(roomId).emit('gameStart');
     });
 
@@ -122,17 +126,18 @@ function registerSocketHandlers(io) {
       const { roomId } = socket;
       const room = roomId ? getRoom(roomId) : null;
 
-      if (!room || !room.players[socket.id]) return;
+      if (!room || !room.isStarted || !room.players[socket.id]) return;
+
+      if (!Number.isSafeInteger(score) || score < 0) return;
 
       const player = room.players[socket.id];
-      player.score = Number(score) || 0;
+      player.score = score;
 
       if (room.mode !== 'bossRaid' && player.score > (player.highestScore || 0)) {
         player.highestScore = player.score;
       }
 
       broadcastLeaderboard(roomId);
-      broadcastLobbyUpdate(roomId);
     });
 
     socket.on('requestLobbyUpdate', () => {
