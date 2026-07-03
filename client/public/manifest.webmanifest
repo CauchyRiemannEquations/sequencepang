@@ -1,7 +1,7 @@
 {
   "name": "수열팡",
   "short_name": "수열팡",
-  "description": "등차수열과 등비수열을 찾아 팡팡 터뜨리는 수학 퍼즐 게임",
+  "description": "수열을 찾아 팡팡 터뜨리는 수학 퍼즐 게임",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,17 +10,17 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/icons/maskable-icon-512.png",
+      "src": "/maskable-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
