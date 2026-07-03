@@ -156,6 +156,13 @@ body {
   font-size: 40px;
 }
 
+.welcome-beta-badge {
+  color: var(--lv-lime);
+  background: rgba(148, 242, 13, 0.12);
+  border-color: rgba(148, 242, 13, 0.58);
+  box-shadow: 0 0 14px rgba(148, 242, 13, 0.18);
+}
+
 .welcome-tagline,
 .welcome-best-label,
 .welcome-best-unit,
