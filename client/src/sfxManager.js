@@ -14,6 +14,7 @@ const BUTTON_SOUND_SELECTOR = [
   '.update-notes-close',
   '.update-notes-confirm',
   '.ranking-reset-notice-close',
+  '.ranking-reset-notice-dismiss',
   '#btn-retry',
   '#score-submit-retry'
 ].join(',');
