@@ -20,7 +20,7 @@ const BUTTON_SOUND_SELECTOR = [
 ].join(',');
 
 let audioContext = null;
-let masterVolume = 0.62;
+let masterVolume = 1.0;
 let muted = localStorage.getItem(MUTED_KEY) === 'true';
 let initialized = false;
 let lastTileSelectAt = 0;
