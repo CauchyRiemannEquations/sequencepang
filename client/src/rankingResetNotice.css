@@ -70,7 +70,13 @@
   line-height: 1.65;
 }
 
-.ranking-reset-notice-close {
+.ranking-reset-notice-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.ranking-reset-notice-close,
+.ranking-reset-notice-dismiss {
   width: 100%;
   min-height: 46px;
   border: 0;
@@ -83,6 +89,16 @@
   box-shadow: 0 8px 20px rgba(148, 242, 13, 0.2);
 }
 
-.ranking-reset-notice-close:active {
+.ranking-reset-notice-dismiss {
+  min-height: 38px;
+  background: transparent;
+  color: rgba(255, 251, 234, 0.58);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.ranking-reset-notice-close:active,
+.ranking-reset-notice-dismiss:active {
   transform: translateY(1px);
 }
