@@ -320,14 +320,8 @@ export function initGameApp() {
     fever.label = label;
     fever.timeLeftMs = FEVER_DURATION_MS;
     playSound('feverStart');
-    const notice = type === 'multiply'
-      ? '⚡ ×2 피버! 숫자가 두 배로!'
-      : amount === 3
-        ? '🔥 +3 피버! 더 큰 수열을 찾아라!'
-        : '🔥 +2 피버! 모든 숫자가 2만큼 성장!';
-    showFeverNotice(notice);
-    renderBoard();
-    updateFeverUI();
+renderBoard();
+updateFeverUI();
 
     if (fever.timer) clearInterval(fever.timer);
     fever.timer = setInterval(() => {
