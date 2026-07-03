@@ -66,7 +66,7 @@ npm.cmd run dev:server
 `scores` 컬렉션은 첫 점수 등록 시 자동 생성됩니다. 저장 필드는 다음과 같습니다.
 
 ```text
-nickname, score, maxCombo, mode, createdAt, version
+nickname, score, maxCombo, mode, rankingSeason, createdAt, version
 ```
 
 브라우저는 Firestore에 직접 접근하지 않습니다. 서버의 Firebase Admin SDK만 접근하므로 Firestore 보안 규칙은 클라이언트 접근을 막아도 됩니다.
@@ -87,7 +87,11 @@ service cloud.firestore {
 - `POST /api/scores`: 타임어택 종료 점수 저장
 - `GET /api/leaderboard`: 점수 내림차순 TOP 10 조회
 
-서버는 닉네임 1~10자, 0 이상의 정수 점수, 최대 콤보, 허용 모드를 검사합니다. 현재 비정상 점수 차단 상한은 `10,000,000점`이며 `server/constants.js`에서 관리합니다. `createdAt`은 클라이언트 값을 사용하지 않고 Firestore 서버 타임스탬프로 기록합니다.
+서버는 닉네임 1~10자, 0 이상의 안전한 정수 점수, 최대 콤보, 허용 모드를 검사합니다. 높은 점수 자체에는 별도 상한을 두지 않습니다. `createdAt`은 클라이언트 값을 사용하지 않고 Firestore 서버 타임스탬프로 기록합니다.
+
+## 랭킹 시즌
+
+기존 랭킹 기록은 삭제하지 않고 Firestore에 보존합니다. `2026-07-06 00:00 (Asia/Seoul)`부터 `rankingSeason: "2026-07-06"`인 새 점수만 전체 랭킹에 표시됩니다. 전환 시각과 시즌 이름은 `server/constants.js`의 `RANKING_RESET_AT_MS`, `RANKING_SEASON_ID`에서 관리합니다.
 
 ## Render 설정
 

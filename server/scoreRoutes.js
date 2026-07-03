@@ -4,7 +4,10 @@ const { getScoreFirestore } = require('./firestore');
 const {
   ALLOWED_SCORE_MODES,
   MAX_ACCEPTED_COMBO,
-  SCORE_VERSION
+  SCORE_VERSION,
+  RANKING_RESET_AT_MS,
+  RANKING_SEASON_ID,
+  RANKING_LEGACY_SEASON_ID
 } = require('./constants');
 const {
   issueGameSession,
@@ -35,6 +38,10 @@ function normalizeNickname(value) {
 
 function isValidScore(score) {
   return Number.isSafeInteger(score) && score >= 0;
+}
+
+function getRankingSeason(now = Date.now()) {
+  return now >= RANKING_RESET_AT_MS ? RANKING_SEASON_ID : RANKING_LEGACY_SEASON_ID;
 }
 
 function validateScorePayload(payload) {
@@ -137,6 +144,7 @@ scoreRouter.post('/scores', async (req, res) => {
     const { gameSessionId, sessionToken, ...scoreData } = validation.value;
     const document = await firestore.collection('scores').add({
       ...scoreData,
+      rankingSeason: getRankingSeason(),
       createdAt: FieldValue.serverTimestamp(),
       version: SCORE_VERSION
     });
@@ -154,17 +162,18 @@ scoreRouter.get('/leaderboard', async (_req, res) => {
   if (!firestore) return firestoreUnavailable(res);
 
   try {
-    const snapshot = await firestore
-      .collection('scores')
-      .orderBy('score', 'desc')
-      .limit(100)
-      .get();
+    const rankingSeason = getRankingSeason();
+    const scoresCollection = firestore.collection('scores');
+    const snapshot = rankingSeason === RANKING_LEGACY_SEASON_ID
+      ? await scoresCollection.orderBy('score', 'desc').limit(100).get()
+      : await scoresCollection.where('rankingSeason', '==', rankingSeason).get();
 
     const leaders = snapshot.docs
       .map(document => document.data())
       .filter(data => normalizeNickname(data.nickname)
         && isValidScore(data.score)
         && data.mode === 'timeAttack')
+      .sort((left, right) => right.score - left.score)
       .slice(0, 10)
       .map(data => ({
         nickname: normalizeNickname(data.nickname),
@@ -175,7 +184,7 @@ scoreRouter.get('/leaderboard', async (_req, res) => {
       }));
 
     res.set('Cache-Control', 'no-store');
-    return res.json({ leaders });
+    return res.json({ leaders, rankingSeason });
   } catch (error) {
     console.error('랭킹 조회 실패:', error.message);
     return res.status(500).json({ error: '랭킹을 불러오지 못했습니다.' });
@@ -186,5 +195,6 @@ module.exports = {
   scoreRouter,
   normalizeNickname,
   isValidScore,
+  getRankingSeason,
   validateScorePayload
 };
