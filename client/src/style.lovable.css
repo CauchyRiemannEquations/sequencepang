@@ -854,6 +854,21 @@ body {
   .ranking-title {
     font-size: 21px;
   }
+
+  .how-to-play {
+    padding: 4px 10px;
+    gap: 1px;
+  }
+
+  .htp-title {
+    margin-bottom: 0;
+    font-size: 9.5px;
+  }
+
+  .htp-row {
+    font-size: 10px;
+    line-height: 1.1;
+  }
 }
 
 @media (max-height: 740px) {
