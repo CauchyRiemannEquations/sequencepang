@@ -22,7 +22,7 @@ function createRankingOverlay() {
   overlay.innerHTML = `
     <div class="ranking-card" role="dialog" aria-modal="true" aria-labelledby="ranking-title">
       <div class="ranking-card-header">
-        <h2 class="ranking-title" id="ranking-title">🏆 전체 랭킹 TOP 10</h2>
+        <h2 class="ranking-title" id="ranking-title">전체 랭킹 TOP 10</h2>
         <p class="ranking-desc">최신 기록을 바로 확인해보세요.</p>
       </div>
 
@@ -77,7 +77,7 @@ function setupMainButtons() {
 
   singleButton.classList.add('btn-main-play');
   multiButton.classList.add('btn-sub-action');
-  multiButton.textContent = '⚔️ 다함께 팡!';
+  multiButton.textContent = '다함께 팡!';
 
   const subActions = document.createElement('div');
   subActions.className = 'main-sub-actions';
@@ -89,7 +89,7 @@ function setupMainButtons() {
   rankingButton.type = 'button';
   rankingButton.id = 'btn-show-ranking';
   rankingButton.className = 'btn-start btn-sub-action btn-ranking-open';
-  rankingButton.textContent = '🏆 랭킹 보기';
+  rankingButton.textContent = '랭킹 보기';
 
   subActions.appendChild(rankingButton);
   rankingButton.addEventListener('click', openRankingOverlay);
