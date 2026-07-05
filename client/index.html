@@ -49,7 +49,6 @@
           <!-- 타이틀 -->
           <div class="welcome-title-grp">
             <div class="welcome-icon-wrap">
-              <span class="melon-crown">👑</span>
               <img class="welcome-icon" src="melon.png" alt="melon">
             </div>
             <div class="welcome-title-row">
@@ -69,10 +68,10 @@
           <!-- 하우 투 플레이 -->
           <div class="how-to-play">
             <div class="htp-title">✦ 게임 방법 ✦</div>
-            <div class="htp-row"><span class="htp-icon">👆</span><span>멜론을 드래그해서 <strong class="htp-highlight">등차·등비수열</strong>을 만드세요!</span></div>
-            <div class="htp-row"><span class="htp-icon">🔥</span><span>연속으로 맞추면 <strong class="htp-highlight">콤보 보너스</strong> 획득!</span></div>
-            <div class="htp-row"><span class="htp-icon">✨</span><span><strong class="htp-highlight">4개 이상 수열</strong>을 만들면 피버 블록 등장!</span></div>
-            <div class="htp-row"><span class="htp-icon">⏱️</span><span>제한 시간 내에 최고 점수를 노려보세요!</span></div>
+            <div class="htp-row"><span>멜론을 드래그해서 <strong class="htp-highlight">등차·등비수열</strong>을 만드세요!</span></div>
+            <div class="htp-row"><span>연속으로 맞추면 <strong class="htp-highlight">콤보 보너스</strong> 획득!</span></div>
+            <div class="htp-row"><span><strong class="htp-highlight">4개 이상 수열</strong>을 만들면 피버 블록 등장!</span></div>
+            <div class="htp-row"><span>제한 시간 내에 최고 점수를 노려보세요!</span></div>
           </div>
 
           <!-- 플레이 모드 선택 버튼 -->
@@ -81,8 +80,8 @@
             <input type="text" id="player-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자)" maxlength="10" autocomplete="nickname">
           </div>
           <div id="mode-selection" class="mode-select-box">
-            <button class="btn-start btn-primary" id="btn-single-start">🍈 혼자서 팡!</button>
-            <button class="btn-start btn-accent" id="btn-multi-lobby">⚔️ 다함께 팡! (멀티)</button>
+            <button class="btn-start btn-primary" id="btn-single-start">혼자서 팡!</button>
+            <button class="btn-start btn-accent" id="btn-multi-lobby">다함께 팡!</button>
           </div>
 
           <!-- 멀티플레이 전용 로비 대기실 (기본 숨김) -->
@@ -102,7 +101,7 @@
               <div class="lobby-input-grp">
                 <input type="text" id="lobby-room-id" class="lobby-input lobby-room-code-input" placeholder="방 코드 6자리 입력" maxlength="6">
               </div>
-              <button class="lobby-btn btn-join" id="btn-join-room">⚔️ 입력한 대기방 참가</button>
+              <button class="lobby-btn btn-join" id="btn-join-room">입력한 대기방 참가</button>
             </div>
             
             <button class="lobby-btn btn-cancel btn-full lobby-back-button" id="btn-lobby-back">돌아가기</button>
@@ -119,22 +118,22 @@
         <span class="melon-particle particle-lobby-4">🍈</span>
 
         <div class="lobby-overlay-card">
-          <h2 class="lobby-header-title">🍈 실시간 대기실</h2>
+          <h2 class="lobby-header-title">실시간 대기실</h2>
           <span id="lobby-room-badge" class="lobby-room-badge is-copyable" title="클릭해서 복사">방 코드: LOADING</span>
           
-          <div class="htp-title lobby-section-title">👥 현재 대기 중인 플레이어</div>
+          <div class="htp-title lobby-section-title">현재 대기 중인 플레이어</div>
           <div id="lobby-p-list" class="lobby-p-list-box">
             <!-- 대기 플레이어 목록 동적 주입 -->
           </div>
 
           <div id="lobby-waiting-info" class="lobby-ready-msg">
-            친구들에게 방 코드를 공유하고 최대 30명이 함께 도전해 보세요! 🍈<br>
+            친구들에게 방 코드를 공유하고 최대 30명이 함께 도전해 보세요!<br>
             (방 코드를 클릭하면 복사됩니다)
           </div>
 
           <div class="lobby-btn-row lobby-btn-stack">
-            <button class="btn-start btn-accent btn-full" id="btn-lobby-play">🎮 수열팡 플레이 시작!</button>
-            <button class="lobby-btn btn-cancel btn-full" id="btn-lobby-exit">🚪 대기방 나가기</button>
+            <button class="btn-start btn-accent btn-full" id="btn-lobby-play">수열팡 플레이 시작!</button>
+            <button class="lobby-btn btn-cancel btn-full" id="btn-lobby-exit">대기방 나가기</button>
           </div>
         </div>
       </div>
@@ -230,7 +229,7 @@
 
           <section class="global-ranking" id="global-ranking">
             <div class="global-ranking-heading">
-              <strong>🏆 전체 랭킹 TOP 10</strong>
+              <strong>전체 랭킹 TOP 10</strong>
               <span id="score-submit-status" aria-live="polite"></span>
             </div>
             <ol class="global-ranking-list" id="global-ranking-list">
@@ -239,14 +238,14 @@
             <button type="button" class="score-submit-retry" id="score-submit-retry" hidden>점수 등록 다시 시도</button>
           </section>
           
-          <button class="btn-retry" id="btn-retry">🔄 메인 화면으로 돌아가기</button>
+          <button class="btn-retry" id="btn-retry">메인 화면으로 돌아가기</button>
         </div>
       </div>
 
       <!-- 실시간 순위표 (Live Leaderboard) -->
       <div id="leaderboard-panel" class="leaderboard-panel is-initially-hidden">
         <div class="leaderboard-header">
-          <span class="leaderboard-title">🍈 실시간 랭킹 순위표</span>
+          <span class="leaderboard-title">실시간 랭킹 순위표</span>
           <span id="room-badge" class="room-badge">방 코드: LOAD</span>
         </div>
         <div id="leaderboard-list" class="leaderboard-list">
