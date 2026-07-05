@@ -505,8 +505,8 @@ updateFeverUI();
   function updateLobbyModeControls() {
     btnLobbyPlay.disabled = !currentIsHost;
     btnLobbyPlay.textContent = currentIsHost
-      ? '🎮 수열팡 플레이 시작 (방장)'
-      : '⏳ 방장이 시작할 때까지 기다리는 중';
+      ? '수열팡 플레이 시작 (방장)'
+      : '방장이 시작할 때까지 기다리는 중';
     btnLobbyPlay.title = currentIsHost
       ? '모든 참가자의 게임을 동시에 시작합니다.'
       : '게임은 방장만 시작할 수 있습니다.';
@@ -608,7 +608,7 @@ updateFeverUI();
   function startCountdownSequence(onComplete) {
     countdownOverlay.classList.add('show');
     
-    const counts = ["3", "2", "1", "시작! 🍈"];
+    const counts = ["3", "2", "1", "시작!"];
     let idx = 0;
 
     function nextCount() {
@@ -724,9 +724,9 @@ updateFeverUI();
       if (socket && socket.connected) {
         socket.emit('updateScore', { score: score });
       }
-      btnRetry.textContent = "🔄 대기실로 돌아가기";
+      btnRetry.textContent = "대기실로 돌아가기";
     } else {
-      btnRetry.textContent = "🔄 메인 화면으로 돌아가기";
+      btnRetry.textContent = "메인 화면으로 돌아가기";
     }
 
     gameOverOverlay.classList.add('show');
