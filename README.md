@@ -10,7 +10,7 @@ https://sequencepang.onrender.com
 - 콤보, 시간 보너스, 최고 점수
 - 피버 블록과 10초 피버모드
 - Socket.IO 기반 멀티 대기방과 실시간 순위
-- Cloud Firestore 기반 전체 랭킹 TOP 10
+- Cloud Firestore 기반 시즌 랭킹 TOP 30
 - 보스레이드 코드는 유지하되 `ENABLE_BOSS_RAID = false`로 비활성화
 
 ## 프로젝트 구조
@@ -85,7 +85,7 @@ service cloud.firestore {
 ## 점수 API
 
 - `POST /api/scores`: 타임어택 종료 점수 저장
-- `GET /api/leaderboard`: 점수 내림차순 TOP 10 조회
+- `GET /api/leaderboard`: 현재 시즌 점수 내림차순 TOP 30 조회
 
 서버는 닉네임 1~10자, 0 이상의 안전한 정수 점수, 최대 콤보, 허용 모드를 검사합니다. 높은 점수 자체에는 별도 상한을 두지 않습니다. `createdAt`은 클라이언트 값을 사용하지 않고 Firestore 서버 타임스탬프로 기록합니다.
 

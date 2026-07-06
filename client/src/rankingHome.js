@@ -22,8 +22,8 @@ function createRankingOverlay() {
   overlay.innerHTML = `
     <div class="ranking-card" role="dialog" aria-modal="true" aria-labelledby="ranking-title">
       <div class="ranking-card-header">
-        <h2 class="ranking-title" id="ranking-title">전체 랭킹 TOP 10</h2>
-        <p class="ranking-desc">최신 기록을 바로 확인해보세요.</p>
+        <h2 class="ranking-title" id="ranking-title">시즌 랭킹 TOP 30</h2>
+        <p class="ranking-desc">이번 시즌의 최고 기록을 확인해보세요.</p>
       </div>
 
       <ol class="global-ranking-list main-ranking-list" id="main-ranking-list">
