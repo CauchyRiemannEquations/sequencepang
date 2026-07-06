@@ -44,6 +44,9 @@
 
 .main-ranking-list {
   margin: 14px 0 18px;
+  max-height: min(55vh, 520px);
+  padding-right: 4px;
+  overflow-y: auto;
 }
 
 @media (max-width: 768px) {
