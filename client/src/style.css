@@ -1066,6 +1066,9 @@
       margin: 0;
       padding: 0;
       list-style: none;
+max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
     }
 
     .global-rank-item {
