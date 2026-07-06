@@ -87,13 +87,29 @@ npm.cmd start
 
 ### 1. 정적 프론트
 
-권장: Cloudflare Pages
+권장: Vercel
 
-- GitHub 저장소 연결
-- Build command: `npm run build`
-- Build output directory: `client/dist`
+- Framework Preset: `Vite`
+- Root Directory: 저장소 루트
+- Install Command: `npm install`
+- Build Command: `npm run build`
+- Output Directory: `client/dist`
 
-환경변수:
+루트의 `vercel.json`은 SPA 새로고침과 직접 경로 진입 시 항상 `index.html`로 진입하도록 설정합니다.
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+Vercel 환경변수:
 
 ```text
 VITE_API_BASE_URL=https://sequencepang.onrender.com
@@ -105,6 +121,7 @@ VITE_SOCKET_URL=https://sequencepang.onrender.com
 - `VITE_API_BASE_URL`은 `/api/scores`, `/api/game-session`, `/api/leaderboard` 요청의 기준 주소입니다.
 - `VITE_SOCKET_URL`은 Socket.IO 연결과 `/socket.io/socket.io.js` 로딩 기준 주소입니다.
 - 두 값이 비어 있으면 같은 도메인 기준 상대경로를 사용합니다.
+- 두 값 모두 끝 슬래시를 자동 정리해서 중복 슬래시를 피합니다.
 
 ### 2. Render API 서버
 
@@ -118,8 +135,8 @@ VITE_SOCKET_URL=https://sequencepang.onrender.com
 
 ```text
 FIREBASE_SERVICE_ACCOUNT_JSON=기존 값 유지
-FRONTEND_REDIRECT_URL=https://새-프론트-주소.pages.dev
-FRONTEND_ORIGIN=https://새-프론트-주소.pages.dev
+FRONTEND_REDIRECT_URL=https://새로운-vercel-주소.vercel.app
+FRONTEND_ORIGIN=https://새로운-vercel-주소.vercel.app
 ```
 
 설명:
@@ -129,6 +146,12 @@ FRONTEND_ORIGIN=https://새-프론트-주소.pages.dev
 - `FRONTEND_ORIGIN`은 새 프론트 도메인의 CORS 허용용입니다.
 - 개발 편의를 위해 `localhost:3000`, `localhost:5173`, `127.0.0.1` 계열은 함께 허용합니다.
 - 나중에 더 엄격하게 운영하고 싶으면 `FRONTEND_ORIGIN`만 필요한 도메인으로 제한하면 됩니다.
+
+여러 프론트 도메인을 허용하고 싶으면 `FRONTEND_ORIGIN`에 쉼표로 나눠 넣으면 됩니다.
+
+```text
+FRONTEND_ORIGIN=https://sequencepang.vercel.app,https://preview-sequencepang.vercel.app
+```
 
 ## 서비스워커 캐시
 
@@ -186,3 +209,10 @@ service cloud.firestore {
 - `https://sequencepang.onrender.com`은 학생들에게 공유된 기존 링크이므로 유지합니다.
 - 새 정적 프론트를 연결한 뒤에는 Render가 해당 링크 방문자를 새 프론트로 자연스럽게 넘겨줍니다.
 - API 주소는 계속 Render를 사용하므로 기존 Firestore 데이터 구조는 그대로 유지됩니다.
+
+## 배포 확인
+
+- `https://sequencepang.onrender.com` 접속 시 Vercel 주소로 이동해야 합니다.
+- `https://sequencepang.onrender.com/api/leaderboard`는 redirect되지 않고 JSON을 반환해야 합니다.
+- Vercel 주소에서 게임 실행, 점수 저장, 랭킹 조회가 되어야 합니다.
+- 멀티플레이 버튼을 눌렀을 때 Socket.IO 연결 오류가 없어야 합니다.
