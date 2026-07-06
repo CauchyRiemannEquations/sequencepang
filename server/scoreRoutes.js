@@ -174,7 +174,7 @@ scoreRouter.get('/leaderboard', async (_req, res) => {
         && isValidScore(data.score)
         && data.mode === 'timeAttack')
       .sort((left, right) => right.score - left.score)
-      .slice(0, 10)
+      .slice(0, 30)
       .map(data => ({
         nickname: normalizeNickname(data.nickname),
         score: data.score,
