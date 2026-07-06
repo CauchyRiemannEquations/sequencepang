@@ -1453,10 +1453,10 @@ updateFeverUI();
   });
 
   // 실시간 소켓 연결 및 리스너 등록
-  function initSocketConnection() {
-    if (socket) return;
+  async function initSocketConnection() {
+    if (socket) return socket;
 
-    socket = createSocketClient();
+    socket = await createSocketClient();
 
     socket.on('connect', () => {
       console.log("🟢 서버 연결 성공: ", socket.id);
@@ -1554,10 +1554,11 @@ updateFeverUI();
     socket.on('disconnect', () => {
       console.warn("🔴 서버 연결 종료");
     });
+    return socket;
   }
 
   // 대기방 새로 만들기 클릭
-  btnCreateRoom.addEventListener('click', () => {
+  btnCreateRoom.addEventListener('click', async () => {
     const nickname = lobbyNicknameInput.value.trim();
     if (!nickname) {
       alert("닉네임을 입력해주세요!");
@@ -1581,14 +1582,20 @@ updateFeverUI();
     isMultiplayMode = true;
     currentGameSession = null;
     singleSessionStartedAt = 0;
-    initSocketConnection();
+    try {
+      await initSocketConnection();
+    } catch (error) {
+      socket = null;
+      alert('?좑툘 ?곌껐???쒖옉?섏? 紐삵뻽?듬땲?? ?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂.');
+      return;
+    }
 
     // 서버에 방 생성 및 입장 전송
     socket.emit('joinRoom', { roomId: generatedRoomId, nickname });
   });
 
   // 대기방 참여 버튼 클릭 (직접 코드 기입)
-  btnJoinRoom.addEventListener('click', () => {
+  btnJoinRoom.addEventListener('click', async () => {
     const nickname = lobbyNicknameInput.value.trim();
     const roomId = lobbyRoomIdInput.value.trim().toUpperCase();
 
@@ -1617,7 +1624,13 @@ updateFeverUI();
     isMultiplayMode = true;
     currentGameSession = null;
     singleSessionStartedAt = 0;
-    initSocketConnection();
+    try {
+      await initSocketConnection();
+    } catch (error) {
+      socket = null;
+      alert('?좑툘 ?곌껐???쒖옉?섏? 紐삵뻽?듬땲?? ?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂.');
+      return;
+    }
 
     // 서버에 방 입장 전송
     socket.emit('joinRoom', { roomId, nickname });

@@ -1,3 +1,9 @@
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+
+function buildApiUrl(path) {
+  return `${API_BASE_URL}${path}`;
+}
+
 async function requestJson(url, options) {
   const response = await fetch(url, options);
   const body = await response.json().catch(() => ({}));
@@ -8,7 +14,7 @@ async function requestJson(url, options) {
 }
 
 export function submitScore(scoreData) {
-  return requestJson('/api/scores', {
+  return requestJson(buildApiUrl('/api/scores'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -18,7 +24,7 @@ export function submitScore(scoreData) {
 }
 
 export function createGameSession() {
-  return requestJson('/api/game-session', {
+  return requestJson(buildApiUrl('/api/game-session'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -28,5 +34,5 @@ export function createGameSession() {
 }
 
 export function fetchLeaderboard() {
-  return requestJson('/api/leaderboard');
+  return requestJson(buildApiUrl('/api/leaderboard'));
 }

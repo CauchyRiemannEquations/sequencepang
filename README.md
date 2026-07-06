@@ -1,32 +1,48 @@
 # 수열팡 (Sequence Pang)
-https://sequencepang.onrender.com
 
-6×6 보드의 숫자를 드래그해 등차수열·등비수열을 만드는 실시간 수학 퍼즐 게임입니다. Vite 기반 Vanilla JavaScript 클라이언트와 Express + Socket.IO 서버를 사용합니다.
+수열팡은 6x6 숫자 보드에서 인접한 타일을 드래그해 3개 이상의 등차수열 또는 등비수열을 만들고 점수를 얻는 실시간 수학 퍼즐 게임입니다.
 
-## 주요 기능
+- 숫자 범위: `1~9`
+- 기본 제한 시간: `30초`
+- 4개 이상 긴 수열 성공 시 피버 블록 등장
+- 피버 종류: `+2`, `+3`, `×2`
+- 전체 랭킹: 싱글 `timeAttack` 모드만 저장
+- 멀티플레이: Socket.IO 기반 실시간 방/순위표 지원
 
-- 1~9 숫자 타일과 30초 타임어택
-- 3개 이상의 등차수열·등비수열 판정
-- 콤보, 시간 보너스, 최고 점수
-- 피버 블록과 10초 피버모드
-- Socket.IO 기반 멀티 대기방과 실시간 순위
-- Cloud Firestore 기반 시즌 랭킹 TOP 30
-- 보스레이드 코드는 유지하되 `ENABLE_BOSS_RAID = false`로 비활성화
+기존 주소:
+- [https://sequencepang.onrender.com](https://sequencepang.onrender.com)
 
 ## 프로젝트 구조
 
 ```text
 client/
   public/
+    apple-touch-icon.png
+    icon-192.png
+    icon-512.png
+    manifest.webmanifest
+    maskable-icon-512.png
+    melon.png
+    raid-boss-melon-king.png
+    service-worker.js
+    update-notes.md
   src/
     gameConstants.js
     gameEngine.js
     main.js
+    menuBgm.js
+    rankingHome.css
+    rankingHome.js
+    rankingResetNotice.css
+    rankingResetNotice.js
     scoreClient.js
+    sfxManager.js
     socketClient.js
     style.css
     style.lovable.css
     ui.js
+    updateNotes.css
+    updateNotes.js
 server/
   constants.js
   firestore.js
@@ -38,38 +54,108 @@ package.json
 vite.config.js
 ```
 
-## 로컬 실행
+## 로컬 개발
+
+설치:
 
 ```powershell
 npm.cmd install
+```
+
+개발 서버:
+
+```powershell
 npm.cmd run dev:server
 npm.cmd run dev:client
 ```
 
-- Node 서버: `http://localhost:3000`
+- API/Socket 서버: `http://localhost:3000`
 - Vite 개발 서버: `http://localhost:5173`
-- Vite는 `/api`와 `/socket.io` 요청을 Node 서버로 전달합니다.
+- 로컬에서는 `VITE_API_BASE_URL`, `VITE_SOCKET_URL` 없이도 기존처럼 동작합니다.
 
-## Firestore 랭킹 설정
-
-1. [Firebase Console](https://console.firebase.google.com/)에서 프로젝트를 생성합니다.
-2. **빌드 → Firestore Database → 데이터베이스 만들기**에서 Cloud Firestore를 활성화합니다.
-3. **프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성**에서 서비스 계정 JSON 파일을 받습니다.
-4. 키 파일은 저장소에 넣거나 GitHub에 올리지 않습니다.
-5. 로컬 PowerShell에서는 서버 실행 전에 다음처럼 환경변수로 넣습니다.
+## 빌드
 
 ```powershell
-$env:FIREBASE_SERVICE_ACCOUNT_JSON = Get-Content 'C:\안전한-경로\serviceAccountKey.json' -Raw
+npm.cmd run build
+npm.cmd start
+```
+
+기본값에서는 `server/server.js`가 `client/dist`를 정적 서빙합니다.  
+즉, `FRONTEND_REDIRECT_URL`을 넣지 않으면 이전 Render 단일 서버 구조로 그대로 동작합니다.
+
+## 배포 구조
+
+### 1. 정적 프론트
+
+권장: Cloudflare Pages
+
+- GitHub 저장소 연결
+- Build command: `npm run build`
+- Build output directory: `client/dist`
+
+환경변수:
+
+```text
+VITE_API_BASE_URL=https://sequencepang.onrender.com
+VITE_SOCKET_URL=https://sequencepang.onrender.com
+```
+
+설명:
+
+- `VITE_API_BASE_URL`은 `/api/scores`, `/api/game-session`, `/api/leaderboard` 요청의 기준 주소입니다.
+- `VITE_SOCKET_URL`은 Socket.IO 연결과 `/socket.io/socket.io.js` 로딩 기준 주소입니다.
+- 두 값이 비어 있으면 같은 도메인 기준 상대경로를 사용합니다.
+
+### 2. Render API 서버
+
+기존 Render Web Service는 유지합니다.  
+이 서버는 이제 실질적으로 다음만 담당합니다.
+
+- `/api/*`
+- `/socket.io/*`
+
+환경변수:
+
+```text
+FIREBASE_SERVICE_ACCOUNT_JSON=기존 값 유지
+FRONTEND_REDIRECT_URL=https://새-프론트-주소.pages.dev
+FRONTEND_ORIGIN=https://새-프론트-주소.pages.dev
+```
+
+설명:
+
+- `FRONTEND_REDIRECT_URL`이 있으면 Render는 일반 페이지 요청을 새 프론트 주소로 `302` 리다이렉트합니다.
+- `/api/*`와 Socket.IO 연결은 리다이렉트하지 않습니다.
+- `FRONTEND_ORIGIN`은 새 프론트 도메인의 CORS 허용용입니다.
+- 개발 편의를 위해 `localhost:3000`, `localhost:5173`, `127.0.0.1` 계열은 함께 허용합니다.
+- 나중에 더 엄격하게 운영하고 싶으면 `FRONTEND_ORIGIN`만 필요한 도메인으로 제한하면 됩니다.
+
+## 서비스워커 캐시
+
+서비스워커는 새 버전 캐시 이름을 사용하며, 내비게이션 요청은 네트워크 우선으로 처리합니다.
+
+- `CACHE_NAME`을 올려 구버전 캐시를 교체합니다.
+- `/` 또는 `index.html`을 코어 캐시에 고정하지 않습니다.
+- 새 프론트 배포 후 구버전 HTML이 오래 남는 현상을 줄입니다.
+
+## Firestore 설정
+
+브라우저는 Firestore에 직접 접근하지 않습니다.  
+서버의 Firebase Admin SDK만 점수 저장과 랭킹 조회를 수행합니다.
+
+1. Firebase Console에서 프로젝트 생성
+2. Cloud Firestore 활성화
+3. 서비스 계정 키(JSON) 발급
+4. Render 환경변수 `FIREBASE_SERVICE_ACCOUNT_JSON`에 JSON 전체를 저장
+
+로컬 개발 예시:
+
+```powershell
+$env:FIREBASE_SERVICE_ACCOUNT_JSON = Get-Content 'C:\path\to\serviceAccountKey.json' -Raw
 npm.cmd run dev:server
 ```
 
-`scores` 컬렉션은 첫 점수 등록 시 자동 생성됩니다. 저장 필드는 다음과 같습니다.
-
-```text
-nickname, score, maxCombo, mode, rankingSeason, createdAt, version
-```
-
-브라우저는 Firestore에 직접 접근하지 않습니다. 서버의 Firebase Admin SDK만 접근하므로 Firestore 보안 규칙은 클라이언트 접근을 막아도 됩니다.
+권장 Firestore 보안 규칙:
 
 ```text
 rules_version = '2';
@@ -82,40 +168,21 @@ service cloud.firestore {
 }
 ```
 
-## 점수 API
+## API
 
-- `POST /api/scores`: 타임어택 종료 점수 저장
-- `GET /api/leaderboard`: 현재 시즌 점수 내림차순 TOP 30 조회
+- `POST /api/game-session`
+- `POST /api/scores`
+- `GET /api/leaderboard`
 
-서버는 닉네임 1~10자, 0 이상의 안전한 정수 점수, 최대 콤보, 허용 모드를 검사합니다. 높은 점수 자체에는 별도 상한을 두지 않습니다. `createdAt`은 클라이언트 값을 사용하지 않고 Firestore 서버 타임스탬프로 기록합니다.
+점수 저장 정책:
 
-## 랭킹 시즌
+- 전체 랭킹은 싱글 `timeAttack` 모드만 저장
+- 멀티 점수는 방 안 실시간 순위표에만 반영
+- 서버가 게임 세션을 발급하고 제출 시 세션 유효성을 검증
+- 랭킹은 현재 시즌 기준 `TOP 30` 반환
 
-기존 랭킹 기록은 삭제하지 않고 Firestore에 보존합니다. `2026-07-06 00:00 (Asia/Seoul)`부터 `rankingSeason: "2026-07-06"`인 새 점수만 전체 랭킹에 표시됩니다. 전환 시각과 시즌 이름은 `server/constants.js`의 `RANKING_RESET_AT_MS`, `RANKING_SEASON_ID`에서 관리합니다.
+## 운영 메모
 
-## Render 설정
-
-현재 구성은 Render Web Service 하나가 프론트 빌드 결과와 API, Socket.IO를 함께 제공합니다.
-
-- Build Command: `npm install && npm run build`
-- Start Command: `npm start`
-- Environment Variable:
-  - Key: `FIREBASE_SERVICE_ACCOUNT_JSON`
-  - Value: 서비스 계정 JSON 전체 내용
-
-Render Dashboard에서 **sequencepang → Environment → Add Environment Variable**로 키를 추가한 뒤 저장하면 재배포가 시작됩니다. JSON을 한 줄로 붙여넣고 싶다면 로컬 PowerShell에서 다음 명령의 출력값을 사용합니다.
-
-```powershell
-Get-Content 'C:\안전한-경로\serviceAccountKey.json' -Raw | ConvertFrom-Json | ConvertTo-Json -Compress
-```
-
-환경변수가 없거나 잘못된 경우 게임 자체는 실행되지만 랭킹 API는 `503`을 반환합니다.
-
-## 프로덕션 빌드
-
-```powershell
-npm.cmd run build
-npm.cmd start
-```
-
-`server/server.js`가 `client/dist`를 정적 파일로 제공하고 SPA fallback을 처리합니다.
+- `https://sequencepang.onrender.com`은 학생들에게 공유된 기존 링크이므로 유지합니다.
+- 새 정적 프론트를 연결한 뒤에는 Render가 해당 링크 방문자를 새 프론트로 자연스럽게 넘겨줍니다.
+- API 주소는 계속 Render를 사용하므로 기존 Firestore 데이터 구조는 그대로 유지됩니다.

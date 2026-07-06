@@ -1,7 +1,6 @@
-const CACHE_NAME = 'sequencepang-v1';
+const CACHE_NAME = 'sequencepang-v2';
 
 const CORE_ASSETS = [
-  '/',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png',
@@ -31,6 +30,11 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
 
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
