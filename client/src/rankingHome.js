@@ -72,7 +72,7 @@ function createRankingOverlay() {
         <p class="ranking-desc" id="ranking-desc">오늘 기록된 최고 점수만 모아 보여줍니다.</p>
         <div class="ranking-period-tabs" role="tablist" aria-label="랭킹 기간 선택">
           <button type="button" class="ranking-period-tab" id="btn-ranking-daily" data-period="daily" data-active="true">오늘 랭킹</button>
-          <button type="button" class="ranking-period-tab" id="btn-ranking-weekly" data-period="weekly" data-active="false">이번 주 랭킹</button>
+          <button type="button" class="ranking-period-tab" id="btn-ranking-weekly" data-period="weekly" data-active="false">주간 랭킹</button>
           <button type="button" class="ranking-period-tab" id="btn-ranking-season" data-period="season" data-active="false">시즌 랭킹</button>
         </div>
         <p class="ranking-period-meta" id="ranking-period-meta"></p>

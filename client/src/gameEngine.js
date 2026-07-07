@@ -1414,7 +1414,7 @@ updateFeverUI();
   updateGameOverRankingHeader();
 
   function getGameOverRankingTitle(period = currentGameOverRankingPeriod) {
-    if (period === 'weekly') return '이번 주 랭킹 TOP 30';
+    if (period === 'weekly') return '주간 랭킹 TOP 30';
     if (period === 'season') return '시즌 랭킹 TOP 30';
     return '오늘 랭킹 TOP 30';
   }
@@ -1460,7 +1460,7 @@ updateFeverUI();
     tabs.className = 'ranking-period-tabs';
     tabs.innerHTML = `
       <button type="button" class="ranking-period-tab" id="btn-global-ranking-daily" data-period="daily" data-active="true">오늘 랭킹</button>
-      <button type="button" class="ranking-period-tab" id="btn-global-ranking-weekly" data-period="weekly" data-active="false">이번 주 랭킹</button>
+      <button type="button" class="ranking-period-tab" id="btn-global-ranking-weekly" data-period="weekly" data-active="false">주간 랭킹</button>
       <button type="button" class="ranking-period-tab" id="btn-global-ranking-season" data-period="season" data-active="false">시즌 랭킹</button>
     `;
 
