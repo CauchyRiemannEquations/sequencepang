@@ -1,5 +1,21 @@
-const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL || '').replace(/\/+$/, '');
+const STATIC_FRONTEND_HOST_PATTERNS = [/\.vercel\.app$/i, /\.pages\.dev$/i];
+const DEFAULT_SOCKET_URL = 'https://sequencepang.onrender.com';
+const SOCKET_URL = resolveSocketUrl();
 let socketIoLoader = null;
+
+function resolveSocketUrl() {
+  const configuredSocketUrl = (import.meta.env.VITE_SOCKET_URL || '').trim();
+  if (configuredSocketUrl) {
+    return configuredSocketUrl.replace(/\/+$/, '');
+  }
+
+  const currentHostname = window.location.hostname;
+  if (STATIC_FRONTEND_HOST_PATTERNS.some(pattern => pattern.test(currentHostname))) {
+    return DEFAULT_SOCKET_URL;
+  }
+
+  return '';
+}
 
 function getSocketScriptUrl() {
   if (!SOCKET_URL) return '/socket.io/socket.io.js';

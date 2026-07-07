@@ -22,7 +22,15 @@ const allowedOrigins = [...new Set([...frontendOrigins, ...devOrigins])];
 function isAllowedOrigin(origin) {
   if (!origin) return true;
   if (allowedOrigins.length === 0) return true;
-  return allowedOrigins.includes(origin);
+  if (allowedOrigins.includes(origin)) return true;
+
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (protocol !== 'https:') return false;
+    return hostname.endsWith('.vercel.app') || hostname.endsWith('.pages.dev');
+  } catch {
+    return false;
+  }
 }
 
 const server = http.createServer(app);
