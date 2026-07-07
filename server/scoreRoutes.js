@@ -7,7 +7,8 @@ const {
   SCORE_VERSION,
   RANKING_RESET_AT_MS,
   RANKING_SEASON_ID,
-  RANKING_LEGACY_SEASON_ID
+  RANKING_LEGACY_SEASON_ID,
+  getCurrentRankingWeekInfo
 } = require('./constants');
 const {
   issueGameSession,
@@ -42,6 +43,69 @@ function isValidScore(score) {
 
 function getRankingSeason(now = Date.now()) {
   return now >= RANKING_RESET_AT_MS ? RANKING_SEASON_ID : RANKING_LEGACY_SEASON_ID;
+}
+
+function getCreatedAtMs(value) {
+  if (value?.toMillis) return value.toMillis();
+  if (value?.toDate) return value.toDate().getTime();
+  if (value instanceof Date) return value.getTime();
+  const parsedValue = Date.parse(value);
+  return Number.isFinite(parsedValue) ? parsedValue : Number.MAX_SAFE_INTEGER;
+}
+
+function isCurrentWeekFallbackRecord(data, weekInfo) {
+  if (typeof data?.rankingWeek === 'string') {
+    return data.rankingWeek === weekInfo.rankingWeek;
+  }
+
+  const createdAtMs = getCreatedAtMs(data?.createdAt);
+  return createdAtMs >= weekInfo.weekStartUtcMs && createdAtMs < weekInfo.weekEndUtcMs;
+}
+
+function buildLeaders(snapshot, period, rankingSeason, weekInfo) {
+  const sortedScores = snapshot.docs
+    .map(document => document.data())
+    .filter(data => {
+      const nickname = normalizeNickname(data.nickname);
+      if (!nickname || !isValidScore(data.score) || data.mode !== 'timeAttack') {
+        return false;
+      }
+
+      if (period === 'weekly') {
+        if (data.rankingSeason !== rankingSeason) return false;
+        return isCurrentWeekFallbackRecord(data, weekInfo);
+      }
+
+      if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
+        return true;
+      }
+
+      return data.rankingSeason === rankingSeason;
+    })
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+      return getCreatedAtMs(left.createdAt) - getCreatedAtMs(right.createdAt);
+    });
+
+  const bestByNickname = new Map();
+
+  for (const data of sortedScores) {
+    const nickname = normalizeNickname(data.nickname);
+    if (!nickname || bestByNickname.has(nickname)) continue;
+    bestByNickname.set(nickname, data);
+  }
+
+  return Array.from(bestByNickname.values())
+    .slice(0, 30)
+    .map(data => ({
+      nickname: normalizeNickname(data.nickname),
+      score: data.score,
+      maxCombo: Number.isSafeInteger(data.maxCombo) && data.maxCombo >= 0 ? data.maxCombo : 0,
+      mode: data.mode,
+      createdAt: data.createdAt?.toDate?.().toISOString() || null
+    }));
 }
 
 function validateScorePayload(payload) {
@@ -142,9 +206,12 @@ scoreRouter.post('/scores', async (req, res) => {
 
   try {
     const { gameSessionId, sessionToken, ...scoreData } = validation.value;
+    const weekInfo = getCurrentRankingWeekInfo();
     const document = await firestore.collection('scores').add({
       ...scoreData,
       rankingSeason: getRankingSeason(),
+      rankingWeek: weekInfo.rankingWeek,
+      rankingWeekStart: weekInfo.rankingWeekStart,
       createdAt: FieldValue.serverTimestamp(),
       version: SCORE_VERSION
     });
@@ -157,34 +224,28 @@ scoreRouter.post('/scores', async (req, res) => {
   }
 });
 
-scoreRouter.get('/leaderboard', async (_req, res) => {
+scoreRouter.get('/leaderboard', async (req, res) => {
   const firestore = getScoreFirestore();
   if (!firestore) return firestoreUnavailable(res);
 
   try {
+    const period = req.query.period === 'season' ? 'season' : 'weekly';
     const rankingSeason = getRankingSeason();
+    const weekInfo = getCurrentRankingWeekInfo();
     const scoresCollection = firestore.collection('scores');
     const snapshot = rankingSeason === RANKING_LEGACY_SEASON_ID
-      ? await scoresCollection.orderBy('score', 'desc').limit(100).get()
+      ? await scoresCollection.orderBy('score', 'desc').limit(300).get()
       : await scoresCollection.where('rankingSeason', '==', rankingSeason).get();
-
-    const leaders = snapshot.docs
-      .map(document => document.data())
-      .filter(data => normalizeNickname(data.nickname)
-        && isValidScore(data.score)
-        && data.mode === 'timeAttack')
-      .sort((left, right) => right.score - left.score)
-      .slice(0, 30)
-      .map(data => ({
-        nickname: normalizeNickname(data.nickname),
-        score: data.score,
-        maxCombo: Number.isSafeInteger(data.maxCombo) && data.maxCombo >= 0 ? data.maxCombo : 0,
-        mode: data.mode,
-        createdAt: data.createdAt?.toDate?.().toISOString() || null
-      }));
+    const leaders = buildLeaders(snapshot, period, rankingSeason, weekInfo);
 
     res.set('Cache-Control', 'no-store');
-    return res.json({ leaders, rankingSeason });
+    return res.json({
+      leaders,
+      period,
+      rankingSeason,
+      rankingWeek: weekInfo.rankingWeek,
+      rankingWeekStart: weekInfo.rankingWeekStart
+    });
   } catch (error) {
     console.error('랭킹 조회 실패:', error.message);
     return res.status(500).json({ error: '랭킹을 불러오지 못했습니다.' });

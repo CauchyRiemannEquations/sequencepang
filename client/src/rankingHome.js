@@ -1,11 +1,45 @@
 import { fetchLeaderboard } from './scoreClient.js';
 import { renderGlobalLeaderboard } from './ui.js';
 
+let currentRankingPeriod = 'weekly';
+
 function makeEmptyRankItem(message) {
   const item = document.createElement('li');
   item.className = 'global-rank-empty';
   item.textContent = message;
   return item;
+}
+
+function getRankingTitle(period) {
+  return period === 'season' ? '시즌 랭킹 TOP 30' : '이번 주 랭킹 TOP 30';
+}
+
+function getRankingDescription(period) {
+  return period === 'season'
+    ? '현재 시즌 전체 최고 기록을 확인해보세요.'
+    : '이번 주 최고 기록만 모아서 보여줍니다.';
+}
+
+function getRankingMetaText(response) {
+  if (response?.period === 'season') {
+    return response?.rankingSeason ? `시즌 시작 ${response.rankingSeason}` : '';
+  }
+
+  return response?.rankingWeekStart ? `${response.rankingWeekStart} 시작` : '';
+}
+
+function updateRankingHeader(period, response = null) {
+  const title = document.getElementById('ranking-title');
+  const desc = document.getElementById('ranking-desc');
+  const meta = document.getElementById('ranking-period-meta');
+  const weeklyTab = document.getElementById('btn-ranking-weekly');
+  const seasonTab = document.getElementById('btn-ranking-season');
+
+  if (title) title.textContent = getRankingTitle(period);
+  if (desc) desc.textContent = getRankingDescription(period);
+  if (meta) meta.textContent = getRankingMetaText(response);
+  if (weeklyTab) weeklyTab.dataset.active = String(period === 'weekly');
+  if (seasonTab) seasonTab.dataset.active = String(period === 'season');
 }
 
 function createRankingOverlay() {
@@ -22,8 +56,13 @@ function createRankingOverlay() {
   overlay.innerHTML = `
     <div class="ranking-card" role="dialog" aria-modal="true" aria-labelledby="ranking-title">
       <div class="ranking-card-header">
-        <h2 class="ranking-title" id="ranking-title">시즌 랭킹 TOP 30</h2>
-        <p class="ranking-desc">이번 시즌의 최고 기록을 확인해보세요.</p>
+        <h2 class="ranking-title" id="ranking-title">이번 주 랭킹 TOP 30</h2>
+        <p class="ranking-desc" id="ranking-desc">이번 주 최고 기록만 모아서 보여줍니다.</p>
+        <div class="ranking-period-tabs" role="tablist" aria-label="랭킹 기간 선택">
+          <button type="button" class="ranking-period-tab" id="btn-ranking-weekly" data-period="weekly" data-active="true">이번 주 랭킹</button>
+          <button type="button" class="ranking-period-tab" id="btn-ranking-season" data-period="season" data-active="false">시즌 랭킹</button>
+        </div>
+        <p class="ranking-period-meta" id="ranking-period-meta"></p>
       </div>
 
       <ol class="global-ranking-list main-ranking-list" id="main-ranking-list">
@@ -38,16 +77,19 @@ function createRankingOverlay() {
   return overlay;
 }
 
-async function loadMainRanking() {
+async function loadMainRanking(period = currentRankingPeriod) {
   const list = document.getElementById('main-ranking-list');
   if (!list) return;
 
+  currentRankingPeriod = period === 'season' ? 'season' : 'weekly';
+  updateRankingHeader(currentRankingPeriod);
   list.innerHTML = '';
   list.appendChild(makeEmptyRankItem('랭킹을 불러오는 중...'));
 
   try {
-    const { leaders = [] } = await fetchLeaderboard();
-    renderGlobalLeaderboard(list, leaders);
+    const response = await fetchLeaderboard(currentRankingPeriod);
+    updateRankingHeader(currentRankingPeriod, response);
+    renderGlobalLeaderboard(list, response.leaders || []);
   } catch (error) {
     list.innerHTML = '';
     list.appendChild(makeEmptyRankItem(error.message || '랭킹을 불러오지 못했습니다.'));
@@ -101,6 +143,10 @@ function setupRankingOverlayEvents() {
       closeRankingOverlay();
     }
 
+    if (event.target?.dataset?.period) {
+      loadMainRanking(event.target.dataset.period);
+    }
+
     if (event.target?.id === 'ranking-overlay') {
       closeRankingOverlay();
     }
@@ -116,5 +162,6 @@ function setupRankingOverlayEvents() {
 export function initHomeRankingUI() {
   setupMainButtons();
   createRankingOverlay();
+  updateRankingHeader(currentRankingPeriod);
   setupRankingOverlayEvents();
 }

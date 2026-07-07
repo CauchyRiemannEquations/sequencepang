@@ -42,6 +42,38 @@
   margin-bottom: 14px;
 }
 
+.ranking-period-tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0 6px;
+  flex-wrap: wrap;
+}
+
+.ranking-period-tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(132, 204, 22, 0.14);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.ranking-period-tab[data-active='true'] {
+  background: #84cc16;
+  color: #103b27;
+  font-weight: 700;
+}
+
+.ranking-period-meta {
+  min-height: 18px;
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.72;
+}
+
 .main-ranking-list {
   margin: 14px 0 18px;
   max-height: min(55vh, 520px);

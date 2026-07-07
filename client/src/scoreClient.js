@@ -50,6 +50,9 @@ export function createGameSession() {
   });
 }
 
-export function fetchLeaderboard() {
-  return requestJson(buildApiUrl('/api/leaderboard'));
+export function fetchLeaderboard(period = 'weekly') {
+  const params = new URLSearchParams({
+    period: period === 'season' ? 'season' : 'weekly'
+  });
+  return requestJson(buildApiUrl(`/api/leaderboard?${params.toString()}`));
 }
