@@ -12,10 +12,31 @@ const RANKING_RESET_AT_MS = Date.parse('2026-07-05T15:00:00.000Z');
 const RANKING_SEASON_ID = '2026-07-06';
 const RANKING_LEGACY_SEASON_ID = 'legacy';
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function formatDateId(year, month, day) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function getCurrentRankingDayInfo(now = Date.now()) {
+  const shiftedNow = new Date(now + KST_OFFSET_MS);
+  shiftedNow.setUTCHours(0, 0, 0, 0);
+
+  const rankingDay = formatDateId(
+    shiftedNow.getUTCFullYear(),
+    shiftedNow.getUTCMonth() + 1,
+    shiftedNow.getUTCDate()
+  );
+
+  const dayStartUtcMs = shiftedNow.getTime() - KST_OFFSET_MS;
+  const dayEndUtcMs = dayStartUtcMs + DAY_MS;
+
+  return {
+    rankingDay,
+    dayStartUtcMs,
+    dayEndUtcMs
+  };
 }
 
 function getCurrentRankingWeekInfo(now = Date.now()) {
@@ -67,6 +88,8 @@ module.exports = {
   RANKING_SEASON_ID,
   RANKING_LEGACY_SEASON_ID,
   KST_OFFSET_MS,
+  DAY_MS,
   WEEK_MS,
+  getCurrentRankingDayInfo,
   getCurrentRankingWeekInfo
 };

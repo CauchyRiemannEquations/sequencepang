@@ -8,6 +8,7 @@ const {
   RANKING_RESET_AT_MS,
   RANKING_SEASON_ID,
   RANKING_LEGACY_SEASON_ID,
+  getCurrentRankingDayInfo,
   getCurrentRankingWeekInfo
 } = require('./constants');
 const {
@@ -62,13 +63,27 @@ function isCurrentWeekFallbackRecord(data, weekInfo) {
   return createdAtMs >= weekInfo.weekStartUtcMs && createdAtMs < weekInfo.weekEndUtcMs;
 }
 
-function buildLeaders(snapshot, period, rankingSeason, weekInfo) {
+function isCurrentDayFallbackRecord(data, dayInfo) {
+  if (typeof data?.rankingDay === 'string') {
+    return data.rankingDay === dayInfo.rankingDay;
+  }
+
+  const createdAtMs = getCreatedAtMs(data?.createdAt);
+  return createdAtMs >= dayInfo.dayStartUtcMs && createdAtMs < dayInfo.dayEndUtcMs;
+}
+
+function buildLeaders(snapshot, period, rankingSeason, dayInfo, weekInfo) {
   const sortedScores = snapshot.docs
     .map(document => document.data())
     .filter(data => {
       const nickname = normalizeNickname(data.nickname);
       if (!nickname || !isValidScore(data.score) || data.mode !== 'timeAttack') {
         return false;
+      }
+
+      if (period === 'daily') {
+        if (data.rankingSeason !== rankingSeason) return false;
+        return isCurrentDayFallbackRecord(data, dayInfo);
       }
 
       if (period === 'weekly') {
@@ -206,10 +221,12 @@ scoreRouter.post('/scores', async (req, res) => {
 
   try {
     const { gameSessionId, sessionToken, ...scoreData } = validation.value;
+    const dayInfo = getCurrentRankingDayInfo();
     const weekInfo = getCurrentRankingWeekInfo();
     const document = await firestore.collection('scores').add({
       ...scoreData,
       rankingSeason: getRankingSeason(),
+      rankingDay: dayInfo.rankingDay,
       rankingWeek: weekInfo.rankingWeek,
       rankingWeekStart: weekInfo.rankingWeekStart,
       createdAt: FieldValue.serverTimestamp(),
@@ -229,20 +246,23 @@ scoreRouter.get('/leaderboard', async (req, res) => {
   if (!firestore) return firestoreUnavailable(res);
 
   try {
-    const period = req.query.period === 'season' ? 'season' : 'weekly';
+    const requestedPeriod = typeof req.query.period === 'string' ? req.query.period : '';
+    const period = ['daily', 'weekly', 'season'].includes(requestedPeriod) ? requestedPeriod : 'daily';
     const rankingSeason = getRankingSeason();
+    const dayInfo = getCurrentRankingDayInfo();
     const weekInfo = getCurrentRankingWeekInfo();
     const scoresCollection = firestore.collection('scores');
     const snapshot = rankingSeason === RANKING_LEGACY_SEASON_ID
       ? await scoresCollection.orderBy('score', 'desc').limit(300).get()
       : await scoresCollection.where('rankingSeason', '==', rankingSeason).get();
-    const leaders = buildLeaders(snapshot, period, rankingSeason, weekInfo);
+    const leaders = buildLeaders(snapshot, period, rankingSeason, dayInfo, weekInfo);
 
     res.set('Cache-Control', 'no-store');
     return res.json({
       leaders,
       period,
       rankingSeason,
+      rankingDay: dayInfo.rankingDay,
       rankingWeek: weekInfo.rankingWeek,
       rankingWeekStart: weekInfo.rankingWeekStart
     });

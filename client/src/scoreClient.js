@@ -50,9 +50,9 @@ export function createGameSession() {
   });
 }
 
-export function fetchLeaderboard(period = 'weekly') {
+export function fetchLeaderboard(period = 'daily') {
   const params = new URLSearchParams({
-    period: period === 'season' ? 'season' : 'weekly'
+    period: ['daily', 'weekly', 'season'].includes(period) ? period : 'daily'
   });
   return requestJson(buildApiUrl(`/api/leaderboard?${params.toString()}`));
 }

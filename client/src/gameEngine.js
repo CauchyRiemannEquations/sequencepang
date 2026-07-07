@@ -742,7 +742,7 @@ updateFeverUI();
   }
 
   async function loadGlobalLeaderboard(period = currentGameOverRankingPeriod) {
-    currentGameOverRankingPeriod = period === 'season' ? 'season' : 'weekly';
+    currentGameOverRankingPeriod = ['daily', 'weekly', 'season'].includes(period) ? period : 'daily';
     updateGameOverRankingHeader();
 
     try {
@@ -1408,18 +1408,23 @@ updateFeverUI();
   let currentNickname = "";
   let currentIsHost = false;
   let currentGameMode = 'timeAttack';
-  let currentGameOverRankingPeriod = 'weekly';
+  let currentGameOverRankingPeriod = 'daily';
   updateLobbyModeControls();
   setupGameOverRankingControls();
   updateGameOverRankingHeader();
 
   function getGameOverRankingTitle(period = currentGameOverRankingPeriod) {
-    return period === 'season' ? '시즌 랭킹 TOP 30' : '이번 주 랭킹 TOP 30';
+    if (period === 'weekly') return '이번 주 랭킹 TOP 30';
+    if (period === 'season') return '시즌 랭킹 TOP 30';
+    return '오늘 랭킹 TOP 30';
   }
 
   function getGameOverRankingMeta(response = null, period = currentGameOverRankingPeriod) {
+    if (period === 'daily') {
+      return response?.rankingDay ? `${response.rankingDay} 기준` : '';
+    }
     if (period === 'season') {
-      return response?.rankingSeason ? `시즌 시작 ${response.rankingSeason}` : '';
+      return response?.rankingSeason ? `${response.rankingSeason} 시즌` : '';
     }
     return response?.rankingWeekStart ? `${response.rankingWeekStart} 시작` : '';
   }
@@ -1430,11 +1435,15 @@ updateFeverUI();
     }
 
     const metaElement = document.getElementById('global-ranking-meta');
+    const dailyButton = document.getElementById('btn-global-ranking-daily');
     const weeklyButton = document.getElementById('btn-global-ranking-weekly');
     const seasonButton = document.getElementById('btn-global-ranking-season');
 
     if (metaElement) {
       metaElement.textContent = getGameOverRankingMeta(response);
+    }
+    if (dailyButton) {
+      dailyButton.dataset.active = String(currentGameOverRankingPeriod === 'daily');
     }
     if (weeklyButton) {
       weeklyButton.dataset.active = String(currentGameOverRankingPeriod === 'weekly');
@@ -1450,7 +1459,8 @@ updateFeverUI();
     const tabs = document.createElement('div');
     tabs.className = 'ranking-period-tabs';
     tabs.innerHTML = `
-      <button type="button" class="ranking-period-tab" id="btn-global-ranking-weekly" data-period="weekly" data-active="true">이번 주 랭킹</button>
+      <button type="button" class="ranking-period-tab" id="btn-global-ranking-daily" data-period="daily" data-active="true">오늘 랭킹</button>
+      <button type="button" class="ranking-period-tab" id="btn-global-ranking-weekly" data-period="weekly" data-active="false">이번 주 랭킹</button>
       <button type="button" class="ranking-period-tab" id="btn-global-ranking-season" data-period="season" data-active="false">시즌 랭킹</button>
     `;
 
@@ -1807,6 +1817,10 @@ updateFeverUI();
 
   document.addEventListener('click', event => {
     if (!event.target?.id) return;
+
+    if (event.target.id === 'btn-global-ranking-daily') {
+      loadGlobalLeaderboard('daily');
+    }
 
     if (event.target.id === 'btn-global-ranking-weekly') {
       loadGlobalLeaderboard('weekly');
