@@ -22,12 +22,28 @@ function getRankingDescription(period) {
   return '오늘 기록된 최고 점수만 모아 보여줍니다.';
 }
 
+function formatWeekRange(weekStart) {
+  if (!weekStart) return '';
+
+  const startDate = new Date(`${weekStart}T00:00:00+09:00`);
+  if (Number.isNaN(startDate.getTime())) return weekStart;
+
+  const endDate = new Date(startDate.getTime());
+  endDate.setDate(endDate.getDate() + 6);
+
+  const endYear = endDate.getFullYear();
+  const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+  const endDay = String(endDate.getDate()).padStart(2, '0');
+
+  return `${weekStart} ~ ${endYear}-${endMonth}-${endDay}`;
+}
+
 function getRankingMetaText(response) {
   if (response?.period === 'weekly') {
-    return response?.rankingWeekStart ? `${response.rankingWeekStart} 시작` : '';
+    return response?.rankingWeekStart ? formatWeekRange(response.rankingWeekStart) : '';
   }
 
-  return response?.rankingDay ? `${response.rankingDay} 기준` : '';
+  return response?.rankingDay || '';
 }
 
 function updateRankingHeader(period, response = null) {
