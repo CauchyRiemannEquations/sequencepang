@@ -1,4 +1,4 @@
-const { ENABLE_BOSS_RAID, MAX_ROOM_PLAYERS, RAID_HP_PER_PLAYER } = require('./constants');
+﻿const { MAX_ROOM_PLAYERS } = require('./constants');
 const {
   rooms,
   getRoom,
@@ -26,8 +26,8 @@ function registerSocketHandlers(io) {
     });
   }
 
-  io.on('connection', (socket) => {
-    console.log(`🔌 새 접속: ${socket.id}`);
+  io.on('connection', socket => {
+    console.log(`플레이어 접속: ${socket.id}`);
 
     socket.on('joinRoom', ({ roomId, nickname }) => {
       if (!roomId || !nickname) {
@@ -38,7 +38,7 @@ function registerSocketHandlers(io) {
       const cleanNickname = nickname.trim().slice(0, 10);
 
       if (!cleanRoomId || !cleanNickname) {
-        return socket.emit('errorMsg', '방 코드 또는 닉네임 형식이 잘못되었습니다.');
+        return socket.emit('errorMsg', '방 코드 또는 닉네임 형식이 올바르지 않습니다.');
       }
 
       const room = ensureRoom(cleanRoomId, socket.id);
@@ -70,7 +70,7 @@ function registerSocketHandlers(io) {
         joinedAt: Date.now()
       };
 
-      console.log(`✅ [${cleanRoomId}] 방에 [${cleanNickname}](${socket.id}) 입장 완료`);
+      console.log(`[${cleanRoomId}] 방에 [${cleanNickname}](${socket.id}) 입장 완료`);
 
       socket.emit('roomJoined', { roomId: cleanRoomId, nickname: cleanNickname });
       broadcastLobbyUpdate(cleanRoomId);
@@ -91,35 +91,9 @@ function registerSocketHandlers(io) {
       Object.values(room.players).forEach(player => {
         player.score = 0;
       });
-      console.log(`🎮 [${roomId}] 방 게임 시작 신호 수신! 모든 플레이어 동시 기동`);
+      console.log(`[${roomId}] 방 게임 시작 신호 수신! 모든 플레이어 동시 가동`);
       io.to(roomId).emit('leaderboardUpdate', getSortedLeaderboard(roomId));
       io.to(roomId).emit('gameStart');
-    });
-
-    socket.on('startRaid', () => {
-      if (!ENABLE_BOSS_RAID) {
-        return socket.emit('errorMsg', '보스레이드는 현재 준비 중입니다.');
-      }
-
-      const { roomId } = socket;
-      const room = roomId ? getRoom(roomId) : null;
-      if (!room) return;
-
-      if (room.hostId !== socket.id) {
-        return socket.emit('errorMsg', '방장만 보스레이드를 시작할 수 있습니다!');
-      }
-
-      room.isStarted = true;
-      room.mode = 'bossRaid';
-
-      const playerCount = Math.max(1, Math.min(MAX_ROOM_PLAYERS, Object.keys(room.players).length));
-      const maxHp = playerCount * RAID_HP_PER_PLAYER;
-
-      Object.values(room.players).forEach(player => {
-        player.score = 0;
-      });
-
-      io.to(roomId).emit('raidStart', { playerCount, maxHp });
     });
 
     socket.on('updateScore', ({ score }) => {
@@ -127,13 +101,11 @@ function registerSocketHandlers(io) {
       const room = roomId ? getRoom(roomId) : null;
 
       if (!room || !room.isStarted || !room.players[socket.id]) return;
-
       if (!Number.isSafeInteger(score) || score < 0) return;
 
       const player = room.players[socket.id];
       player.score = score;
-
-      if (room.mode !== 'bossRaid' && player.score > (player.highestScore || 0)) {
+      if (player.score > (player.highestScore || 0)) {
         player.highestScore = player.score;
       }
 
@@ -154,7 +126,7 @@ function registerSocketHandlers(io) {
       if (!room || !room.players[socket.id]) return;
 
       delete room.players[socket.id];
-      console.log(`❌ [${roomId}] 방에서 [${nickname}] 접속 종료`);
+      console.log(`[${roomId}] 방에서 [${nickname}] 접속 종료`);
 
       if (Object.keys(room.players).length === 0) {
         deleteRoom(roomId);

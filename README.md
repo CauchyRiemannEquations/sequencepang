@@ -23,7 +23,6 @@ client/
     manifest.webmanifest
     maskable-icon-512.png
     melon.png
-    raid-boss-melon-king.png
     service-worker.js
     update-notes.md
   src/

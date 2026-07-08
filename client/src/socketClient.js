@@ -59,7 +59,6 @@ export async function createSocketClient(handlers = {}) {
   socket.on('lobbyUpdate', payload => handlers.onLobbyUpdate?.(payload));
   socket.on('errorMsg', message => handlers.onError?.(message));
   socket.on('leaderboardUpdate', players => handlers.onLeaderboardUpdate?.(players));
-  socket.on('raidStart', config => handlers.onRaidStart?.(config || {}));
   socket.on('gameStart', () => handlers.onGameStart?.());
   socket.on('disconnect', () => handlers.onDisconnect?.());
 
