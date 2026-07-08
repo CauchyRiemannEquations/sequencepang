@@ -742,7 +742,7 @@ updateFeverUI();
   }
 
   async function loadGlobalLeaderboard(period = currentGameOverRankingPeriod) {
-    currentGameOverRankingPeriod = ['daily', 'weekly', 'season'].includes(period) ? period : 'daily';
+    currentGameOverRankingPeriod = period === 'weekly' ? 'weekly' : 'daily';
     updateGameOverRankingHeader();
 
     try {
@@ -788,6 +788,7 @@ updateFeverUI();
     try {
       await submitScore({
         nickname,
+        playerId,
         score,
         maxCombo,
         mode: 'timeAttack',
@@ -1409,22 +1410,29 @@ updateFeverUI();
   let currentIsHost = false;
   let currentGameMode = 'timeAttack';
   let currentGameOverRankingPeriod = 'daily';
+  const playerId = getOrCreatePlayerId();
   updateLobbyModeControls();
   setupGameOverRankingControls();
   updateGameOverRankingHeader();
 
+  function getOrCreatePlayerId() {
+    const storageKey = 'seq_pang_player_id';
+    const savedPlayerId = localStorage.getItem(storageKey);
+    if (savedPlayerId) return savedPlayerId;
+
+    const nextPlayerId = `player_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(storageKey, nextPlayerId);
+    return nextPlayerId;
+  }
+
   function getGameOverRankingTitle(period = currentGameOverRankingPeriod) {
     if (period === 'weekly') return '주간 랭킹 TOP 30';
-    if (period === 'season') return '시즌 랭킹 TOP 30';
     return '오늘 랭킹 TOP 30';
   }
 
   function getGameOverRankingMeta(response = null, period = currentGameOverRankingPeriod) {
     if (period === 'daily') {
       return response?.rankingDay ? `${response.rankingDay} 기준` : '';
-    }
-    if (period === 'season') {
-      return response?.rankingSeason ? `${response.rankingSeason} 시즌` : '';
     }
     return response?.rankingWeekStart ? `${response.rankingWeekStart} 시작` : '';
   }
@@ -1437,7 +1445,6 @@ updateFeverUI();
     const metaElement = document.getElementById('global-ranking-meta');
     const dailyButton = document.getElementById('btn-global-ranking-daily');
     const weeklyButton = document.getElementById('btn-global-ranking-weekly');
-    const seasonButton = document.getElementById('btn-global-ranking-season');
 
     if (metaElement) {
       metaElement.textContent = getGameOverRankingMeta(response);
@@ -1447,9 +1454,6 @@ updateFeverUI();
     }
     if (weeklyButton) {
       weeklyButton.dataset.active = String(currentGameOverRankingPeriod === 'weekly');
-    }
-    if (seasonButton) {
-      seasonButton.dataset.active = String(currentGameOverRankingPeriod === 'season');
     }
   }
 
@@ -1461,7 +1465,6 @@ updateFeverUI();
     tabs.innerHTML = `
       <button type="button" class="ranking-period-tab" id="btn-global-ranking-daily" data-period="daily" data-active="true">오늘 랭킹</button>
       <button type="button" class="ranking-period-tab" id="btn-global-ranking-weekly" data-period="weekly" data-active="false">주간 랭킹</button>
-      <button type="button" class="ranking-period-tab" id="btn-global-ranking-season" data-period="season" data-active="false">시즌 랭킹</button>
     `;
 
     const meta = document.createElement('p');
@@ -1824,10 +1827,6 @@ updateFeverUI();
 
     if (event.target.id === 'btn-global-ranking-weekly') {
       loadGlobalLeaderboard('weekly');
-    }
-
-    if (event.target.id === 'btn-global-ranking-season') {
-      loadGlobalLeaderboard('season');
     }
   });
     

@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const { FieldValue } = require('firebase-admin/firestore');
 const { getScoreFirestore } = require('./firestore');
 const {
@@ -21,6 +21,9 @@ const {
 const scoreRouter = express.Router();
 const RESERVED_NICKNAMES = new Set(['null', 'undefined', 'nan', 'anonymous', 'guest']);
 const SESSION_ERROR_MESSAGE = '점수 기록을 확인할 수 없습니다.';
+const LEADERBOARD_LIMIT = 300;
+const LEADERBOARD_RESPONSE_LIMIT = 30;
+const LEADERBOARD_CACHE_TTL_MS = 30 * 1000;
 const ANALYTICS_FIELDS = [
   'clearCount',
   'feverClearCount',
@@ -28,6 +31,7 @@ const ANALYTICS_FIELDS = [
   'repeatedValuePatternCount',
   'maxChainLength'
 ];
+const leaderboardCache = new Map();
 
 function normalizeNickname(value) {
   if (typeof value !== 'string') return null;
@@ -54,48 +58,24 @@ function getCreatedAtMs(value) {
   return Number.isFinite(parsedValue) ? parsedValue : Number.MAX_SAFE_INTEGER;
 }
 
-function isCurrentWeekFallbackRecord(data, weekInfo) {
-  if (typeof data?.rankingWeek === 'string') {
-    return data.rankingWeek === weekInfo.rankingWeek;
+function getPlayerIdentity(data) {
+  if (typeof data?.playerId === 'string') {
+    const trimmedPlayerId = data.playerId.trim();
+    if (trimmedPlayerId) {
+      return `player:${trimmedPlayerId}`;
+    }
   }
 
-  const createdAtMs = getCreatedAtMs(data?.createdAt);
-  return createdAtMs >= weekInfo.weekStartUtcMs && createdAtMs < weekInfo.weekEndUtcMs;
+  const nickname = normalizeNickname(data?.nickname);
+  return nickname ? `nickname:${nickname}` : null;
 }
 
-function isCurrentDayFallbackRecord(data, dayInfo) {
-  if (typeof data?.rankingDay === 'string') {
-    return data.rankingDay === dayInfo.rankingDay;
-  }
-
-  const createdAtMs = getCreatedAtMs(data?.createdAt);
-  return createdAtMs >= dayInfo.dayStartUtcMs && createdAtMs < dayInfo.dayEndUtcMs;
-}
-
-function buildLeaders(snapshot, period, rankingSeason, dayInfo, weekInfo) {
+function buildLeaders(snapshot) {
   const sortedScores = snapshot.docs
     .map(document => document.data())
     .filter(data => {
       const nickname = normalizeNickname(data.nickname);
-      if (!nickname || !isValidScore(data.score) || data.mode !== 'timeAttack') {
-        return false;
-      }
-
-      if (period === 'daily') {
-        if (data.rankingSeason !== rankingSeason) return false;
-        return isCurrentDayFallbackRecord(data, dayInfo);
-      }
-
-      if (period === 'weekly') {
-        if (data.rankingSeason !== rankingSeason) return false;
-        return isCurrentWeekFallbackRecord(data, weekInfo);
-      }
-
-      if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
-        return true;
-      }
-
-      return data.rankingSeason === rankingSeason;
+      return Boolean(nickname && isValidScore(data.score) && data.mode === 'timeAttack');
     })
     .sort((left, right) => {
       if (right.score !== left.score) {
@@ -104,23 +84,92 @@ function buildLeaders(snapshot, period, rankingSeason, dayInfo, weekInfo) {
       return getCreatedAtMs(left.createdAt) - getCreatedAtMs(right.createdAt);
     });
 
-  const bestByNickname = new Map();
+  const bestByIdentity = new Map();
 
   for (const data of sortedScores) {
-    const nickname = normalizeNickname(data.nickname);
-    if (!nickname || bestByNickname.has(nickname)) continue;
-    bestByNickname.set(nickname, data);
+    const identity = getPlayerIdentity(data);
+    if (!identity || bestByIdentity.has(identity)) continue;
+    bestByIdentity.set(identity, data);
   }
 
-  return Array.from(bestByNickname.values())
-    .slice(0, 30)
+  return Array.from(bestByIdentity.values())
+    .slice(0, LEADERBOARD_RESPONSE_LIMIT)
     .map(data => ({
+      playerId: typeof data.playerId === 'string' ? data.playerId : null,
       nickname: normalizeNickname(data.nickname),
       score: data.score,
       maxCombo: Number.isSafeInteger(data.maxCombo) && data.maxCombo >= 0 ? data.maxCombo : 0,
       mode: data.mode,
       createdAt: data.createdAt?.toDate?.().toISOString() || null
     }));
+}
+
+function buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo) {
+  return [
+    period,
+    rankingSeason,
+    dayInfo?.rankingDay || '',
+    weekInfo?.rankingWeek || '',
+    weekInfo?.rankingWeekStart || ''
+  ].join(':');
+}
+
+function getCachedLeaderboard(cacheKey) {
+  const cached = leaderboardCache.get(cacheKey);
+  if (!cached) return null;
+  if (Date.now() - cached.cachedAt > LEADERBOARD_CACHE_TTL_MS) {
+    leaderboardCache.delete(cacheKey);
+    return null;
+  }
+  return cached.payload;
+}
+
+function setCachedLeaderboard(cacheKey, payload) {
+  leaderboardCache.set(cacheKey, {
+    cachedAt: Date.now(),
+    payload
+  });
+}
+
+function clearLeaderboardCache() {
+  leaderboardCache.clear();
+}
+
+async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo) {
+  if (period === 'daily') {
+    return scoresCollection
+      .where('rankingSeason', '==', rankingSeason)
+      .where('rankingDay', '==', dayInfo.rankingDay)
+      .where('mode', '==', 'timeAttack')
+      .orderBy('score', 'desc')
+      .limit(LEADERBOARD_LIMIT)
+      .get();
+  }
+
+  if (period === 'weekly') {
+    return scoresCollection
+      .where('rankingSeason', '==', rankingSeason)
+      .where('rankingWeek', '==', weekInfo.rankingWeek)
+      .where('mode', '==', 'timeAttack')
+      .orderBy('score', 'desc')
+      .limit(LEADERBOARD_LIMIT)
+      .get();
+  }
+
+  if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
+    return scoresCollection
+      .where('mode', '==', 'timeAttack')
+      .orderBy('score', 'desc')
+      .limit(LEADERBOARD_LIMIT)
+      .get();
+  }
+
+  return scoresCollection
+    .where('rankingSeason', '==', rankingSeason)
+    .where('mode', '==', 'timeAttack')
+    .orderBy('score', 'desc')
+    .limit(LEADERBOARD_LIMIT)
+    .get();
 }
 
 function validateScorePayload(payload) {
@@ -163,6 +212,9 @@ function validateScorePayload(payload) {
   return {
     value: {
       nickname,
+      playerId: typeof payload.playerId === 'string' && payload.playerId.trim()
+        ? payload.playerId.trim().slice(0, 120)
+        : null,
       score: payload.score,
       maxCombo: payload.maxCombo,
       mode: payload.mode,
@@ -232,6 +284,7 @@ scoreRouter.post('/scores', async (req, res) => {
       createdAt: FieldValue.serverTimestamp(),
       version: SCORE_VERSION
     });
+    clearLeaderboardCache();
     completeGameSession(gameSessionId);
     return res.status(201).json({ ok: true, id: document.id });
   } catch (error) {
@@ -251,21 +304,29 @@ scoreRouter.get('/leaderboard', async (req, res) => {
     const rankingSeason = getRankingSeason();
     const dayInfo = getCurrentRankingDayInfo();
     const weekInfo = getCurrentRankingWeekInfo();
-    const scoresCollection = firestore.collection('scores');
-    const snapshot = rankingSeason === RANKING_LEGACY_SEASON_ID
-      ? await scoresCollection.orderBy('score', 'desc').limit(300).get()
-      : await scoresCollection.where('rankingSeason', '==', rankingSeason).get();
-    const leaders = buildLeaders(snapshot, period, rankingSeason, dayInfo, weekInfo);
+    const cacheKey = buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo);
+    const cachedPayload = getCachedLeaderboard(cacheKey);
 
-    res.set('Cache-Control', 'no-store');
-    return res.json({
+    if (cachedPayload) {
+      res.set('Cache-Control', 'no-store');
+      return res.json(cachedPayload);
+    }
+
+    const scoresCollection = firestore.collection('scores');
+    const snapshot = await fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
+    const leaders = buildLeaders(snapshot);
+    const payload = {
       leaders,
       period,
       rankingSeason,
       rankingDay: dayInfo.rankingDay,
       rankingWeek: weekInfo.rankingWeek,
       rankingWeekStart: weekInfo.rankingWeekStart
-    });
+    };
+
+    setCachedLeaderboard(cacheKey, payload);
+    res.set('Cache-Control', 'no-store');
+    return res.json(payload);
   } catch (error) {
     console.error('랭킹 조회 실패:', error.message);
     return res.status(500).json({ error: '랭킹을 불러오지 못했습니다.' });

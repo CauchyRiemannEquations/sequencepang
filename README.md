@@ -1,12 +1,12 @@
-# 수열팡 (Sequence Pang)
+﻿# 수열팡(Sequence Pang)
 
-수열팡은 6x6 숫자 보드에서 인접한 타일을 드래그해 3개 이상의 등차수열 또는 등비수열을 만들고 점수를 얻는 실시간 수학 퍼즐 게임입니다.
+수열팡은 6x6 숫자 보드에서 인접한 타일을 드래그해 3개 이상의 등차수열 또는 등비수열을 만들며 점수를 얻는 실시간 수학 퍼즐 게임입니다.
 
 - 숫자 범위: `1~9`
 - 기본 제한 시간: `30초`
 - 4개 이상 긴 수열 성공 시 피버 블록 등장
 - 피버 종류: `+2`, `+3`, `×2`
-- 전체 랭킹: 싱글 `timeAttack` 모드만 저장
+- 공개 랭킹: `오늘 랭킹`, `주간 랭킹`
 - 멀티플레이: Socket.IO 기반 실시간 방/순위표 지원
 
 기존 주소:
@@ -81,12 +81,11 @@ npm.cmd start
 ```
 
 기본값에서는 `server/server.js`가 `client/dist`를 정적 서빙합니다.  
-즉, `FRONTEND_REDIRECT_URL`을 넣지 않으면 이전 Render 단일 서버 구조로 그대로 동작합니다.
+즉 `FRONTEND_REDIRECT_URL`이 비어 있으면 이전 Render 단일 서버 구조로 그대로 동작합니다.
 
 ## 배포 구조
 
 ### 1. 정적 프론트
-
 권장: Vercel
 
 - Framework Preset: `Vite`
@@ -95,7 +94,7 @@ npm.cmd start
 - Build Command: `npm run build`
 - Output Directory: `client/dist`
 
-루트의 `vercel.json`은 SPA 새로고침과 직접 경로 진입 시 항상 `index.html`로 진입하도록 설정합니다.
+루트의 `vercel.json`은 SPA 새로고침과 직접 경로 진입 모두 `index.html`로 진입하도록 설정합니다.
 
 ```json
 {
@@ -120,8 +119,8 @@ VITE_SOCKET_URL=https://sequencepang.onrender.com
 
 - `VITE_API_BASE_URL`은 `/api/scores`, `/api/game-session`, `/api/leaderboard` 요청의 기준 주소입니다.
 - `VITE_SOCKET_URL`은 Socket.IO 연결과 `/socket.io/socket.io.js` 로딩 기준 주소입니다.
-- 두 값이 비어 있으면 같은 도메인 기준 상대경로를 사용합니다.
-- 두 값 모두 끝 슬래시를 자동 정리해서 중복 슬래시를 피합니다.
+- 값이 비어 있으면 같은 도메인 기준 상대경로를 사용합니다.
+- 두 값 모두 뒤의 슬래시는 자동 정리되어 중복 슬래시를 피합니다.
 
 ### 2. Render API 서버
 
@@ -143,9 +142,9 @@ FRONTEND_ORIGIN=https://새로운-vercel-주소.vercel.app
 
 - `FRONTEND_REDIRECT_URL`이 있으면 Render는 일반 페이지 요청을 새 프론트 주소로 `302` 리다이렉트합니다.
 - `/api/*`와 Socket.IO 연결은 리다이렉트하지 않습니다.
-- `FRONTEND_ORIGIN`은 새 프론트 도메인의 CORS 허용용입니다.
+- `FRONTEND_ORIGIN`은 새 프론트 도메인의 CORS 허용값입니다.
 - 개발 편의를 위해 `localhost:3000`, `localhost:5173`, `127.0.0.1` 계열은 함께 허용합니다.
-- 나중에 더 엄격하게 운영하고 싶으면 `FRONTEND_ORIGIN`만 필요한 도메인으로 제한하면 됩니다.
+- 운영에서 더 엄격하게 묶고 싶으면 `FRONTEND_ORIGIN`만 필요한 도메인으로 제한하면 됩니다.
 
 여러 프론트 도메인을 허용하고 싶으면 `FRONTEND_ORIGIN`에 쉼표로 나눠 넣으면 됩니다.
 
@@ -155,11 +154,11 @@ FRONTEND_ORIGIN=https://sequencepang.vercel.app,https://preview-sequencepang.ver
 
 ## 서비스워커 캐시
 
-서비스워커는 새 버전 캐시 이름을 사용하며, 내비게이션 요청은 네트워크 우선으로 처리합니다.
+서비스워커는 새 버전 캐시 이름을 사용하고, 네비게이션 요청은 네트워크 우선으로 처리합니다.
 
 - `CACHE_NAME`을 올려 구버전 캐시를 교체합니다.
 - `/` 또는 `index.html`을 코어 캐시에 고정하지 않습니다.
-- 새 프론트 배포 후 구버전 HTML이 오래 남는 현상을 줄입니다.
+- 새 프론트 배포 후 구버전 HTML이 오래 남지 않게 합니다.
 
 ## Firestore 설정
 
@@ -197,35 +196,43 @@ service cloud.firestore {
 - `POST /api/scores`
 - `GET /api/leaderboard`
 
-점수 저장 정책:
+점수 저장/조회 정책:
 
-- 전체 랭킹은 싱글 `timeAttack` 모드만 저장
-- 멀티 점수는 방 안 실시간 순위표에만 반영
-- 서버가 게임 세션을 발급하고 제출 시 세션 유효성을 검증
-- 랭킹은 `daily` / `weekly` / `season` 기간별 `TOP 30`을 반환합니다.
+- 전체 랭킹은 싱글 `timeAttack` 모드만 대상입니다.
+- 멀티 점수는 방 안 실시간 순위표에만 반영됩니다.
+- 서버가 게임 세션을 발급하고 제출 전 세션 유효성을 검증합니다.
+- 공개 UI는 오늘 랭킹과 주간 랭킹만 제공합니다.
+- 시즌 필드는 내부 호환성을 위해 유지하지만 공개 UI에서는 시즌 랭킹을 숨깁니다.
 
-## 운영 메모
+## 공개 랭킹 정책
 
-- `https://sequencepang.onrender.com`은 학생들에게 공유된 기존 링크이므로 유지합니다.
-- 새 정적 프론트를 연결한 뒤에는 Render가 해당 링크 방문자를 새 프론트로 자연스럽게 넘겨줍니다.
-- API 주소는 계속 Render를 사용하므로 기존 Firestore 데이터 구조는 그대로 유지됩니다.
-
-## 일간 · 주간 · 시즌 랭킹
-
-- 기본 랭킹은 오늘 랭킹 TOP 30입니다.
-- 오늘 랭킹은 매일 00:00 KST 기준으로 자동 전환됩니다.
-- 주간 랭킹은 매주 월요일 00:00 KST 기준으로 자동 전환됩니다.
-- 시즌 랭킹은 현재 시즌 시작일 이후 전체 기록을 보여줍니다.
-- 점수 데이터는 삭제하지 않습니다.
-- 새 점수 문서에는 `rankingDay`, `rankingWeek`, `rankingWeekStart`, `rankingSeason` 필드가 함께 저장됩니다.
+- 기본 공개 랭킹은 오늘 랭킹 TOP 30입니다.
+- 오늘 랭킹은 매일 `00:00 KST` 기준으로 자동 전환됩니다.
+- 주간 랭킹은 매주 월요일 `00:00 KST` 기준으로 자동 전환됩니다.
+- 점수 데이터와 `rankingSeason` 필드는 삭제하지 않습니다.
+- 같은 플레이어는 랭킹에 한 번만 표시됩니다.
+- `playerId`가 있으면 `playerId` 기준으로, 없으면 닉네임 기준으로 최고 점수 1개만 남깁니다.
 - 일간/주간 랭킹은 기능 배포 이후 저장된 점수부터 가장 정확하게 반영됩니다.
-- 동일 닉네임은 각 랭킹에 한 번만 표시됩니다.
-- 같은 닉네임으로 여러 번 플레이하면 가장 높은 점수만 랭킹에 반영됩니다.
-- 로그인 시스템이 없으므로 닉네임 기준 중복 제거 방식을 사용합니다.
+
+## Firestore 읽기 최적화
+
+- `daily` 조회는 현재 시즌 + 오늘 날짜 + `timeAttack` 문서만 읽습니다.
+- `weekly` 조회는 현재 시즌 + 현재 주차 + `timeAttack` 문서만 읽습니다.
+- `season` API는 호환성을 위해 남겨두되, 읽기 수를 제한합니다.
+- 랭킹 응답은 `period + 날짜/주차 + 시즌` 조합 기준으로 `30초` 캐시됩니다.
+- 점수 저장이 성공하면 랭킹 캐시는 즉시 비웁니다.
+
+필요할 수 있는 Firestore 복합 인덱스 예시:
+
+```text
+scores: rankingSeason ASC, rankingDay ASC, mode ASC, score DESC
+scores: rankingSeason ASC, rankingWeek ASC, mode ASC, score DESC
+scores: rankingSeason ASC, mode ASC, score DESC
+```
 
 ## 배포 확인
 
 - `https://sequencepang.onrender.com` 접속 시 Vercel 주소로 이동해야 합니다.
 - `https://sequencepang.onrender.com/api/leaderboard`는 redirect되지 않고 JSON을 반환해야 합니다.
 - Vercel 주소에서 게임 실행, 점수 저장, 랭킹 조회가 되어야 합니다.
-- 멀티플레이 버튼을 눌렀을 때 Socket.IO 연결 오류가 없어야 합니다.
+- 멀티플레이 버튼 클릭 시 Socket.IO 연결 오류가 없어야 합니다.

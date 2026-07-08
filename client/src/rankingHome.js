@@ -1,4 +1,4 @@
-import { fetchLeaderboard } from './scoreClient.js';
+﻿import { fetchLeaderboard } from './scoreClient.js';
 import { renderGlobalLeaderboard } from './ui.js';
 
 let currentRankingPeriod = 'daily';
@@ -12,7 +12,6 @@ function makeEmptyRankItem(message) {
 
 function getRankingTitle(period) {
   if (period === 'weekly') return '주간 랭킹 TOP 30';
-  if (period === 'season') return '시즌 랭킹 TOP 30';
   return '오늘 랭킹 TOP 30';
 }
 
@@ -20,19 +19,12 @@ function getRankingDescription(period) {
   if (period === 'weekly') {
     return '이번 주 최고 기록만 모아 보여줍니다.';
   }
-  if (period === 'season') {
-    return '현재 시즌 전체 최고 기록을 확인해보세요.';
-  }
   return '오늘 기록된 최고 점수만 모아 보여줍니다.';
 }
 
 function getRankingMetaText(response) {
   if (response?.period === 'weekly') {
     return response?.rankingWeekStart ? `${response.rankingWeekStart} 시작` : '';
-  }
-
-  if (response?.period === 'season') {
-    return response?.rankingSeason ? `${response.rankingSeason} 시즌` : '';
   }
 
   return response?.rankingDay ? `${response.rankingDay} 기준` : '';
@@ -44,14 +36,12 @@ function updateRankingHeader(period, response = null) {
   const meta = document.getElementById('ranking-period-meta');
   const dailyTab = document.getElementById('btn-ranking-daily');
   const weeklyTab = document.getElementById('btn-ranking-weekly');
-  const seasonTab = document.getElementById('btn-ranking-season');
 
   if (title) title.textContent = getRankingTitle(period);
   if (desc) desc.textContent = getRankingDescription(period);
   if (meta) meta.textContent = getRankingMetaText(response);
   if (dailyTab) dailyTab.dataset.active = String(period === 'daily');
   if (weeklyTab) weeklyTab.dataset.active = String(period === 'weekly');
-  if (seasonTab) seasonTab.dataset.active = String(period === 'season');
 }
 
 function createRankingOverlay() {
@@ -73,7 +63,6 @@ function createRankingOverlay() {
         <div class="ranking-period-tabs" role="tablist" aria-label="랭킹 기간 선택">
           <button type="button" class="ranking-period-tab" id="btn-ranking-daily" data-period="daily" data-active="true">오늘 랭킹</button>
           <button type="button" class="ranking-period-tab" id="btn-ranking-weekly" data-period="weekly" data-active="false">주간 랭킹</button>
-          <button type="button" class="ranking-period-tab" id="btn-ranking-season" data-period="season" data-active="false">시즌 랭킹</button>
         </div>
         <p class="ranking-period-meta" id="ranking-period-meta"></p>
       </div>
@@ -94,7 +83,7 @@ async function loadMainRanking(period = currentRankingPeriod) {
   const list = document.getElementById('main-ranking-list');
   if (!list) return;
 
-  currentRankingPeriod = ['daily', 'weekly', 'season'].includes(period) ? period : 'daily';
+  currentRankingPeriod = period === 'weekly' ? 'weekly' : 'daily';
   updateRankingHeader(currentRankingPeriod);
   list.innerHTML = '';
   list.appendChild(makeEmptyRankItem('랭킹을 불러오는 중...'));
