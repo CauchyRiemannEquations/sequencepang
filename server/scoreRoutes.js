@@ -24,6 +24,7 @@ const SESSION_ERROR_MESSAGE = '점수 기록을 확인할 수 없습니다.';
 const LEADERBOARD_LIMIT = 300;
 const LEADERBOARD_RESPONSE_LIMIT = 30;
 const LEADERBOARD_CACHE_TTL_MS = 30 * 1000;
+const LEADERBOARD_FALLBACK_LIMIT = 1200;
 const ANALYTICS_FIELDS = [
   'clearCount',
   'feverClearCount',
@@ -135,41 +136,90 @@ function clearLeaderboardCache() {
   leaderboardCache.clear();
 }
 
+function isFirestoreIndexError(error) {
+  const errorCode = String(error?.code || '');
+  const errorMessage = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+  return errorCode === '9' || errorMessage.includes('failed-precondition') || errorMessage.includes('index');
+}
+
+function filterLeaderboardDataByPeriod(dataList, period, rankingSeason, dayInfo, weekInfo) {
+  return dataList.filter(data => {
+    const nickname = normalizeNickname(data.nickname);
+    if (!nickname || !isValidScore(data.score) || data.mode !== 'timeAttack') {
+      return false;
+    }
+
+    if (period === 'daily') {
+      return data.rankingSeason === rankingSeason && data.rankingDay === dayInfo.rankingDay;
+    }
+
+    if (period === 'weekly') {
+      return data.rankingSeason === rankingSeason && data.rankingWeek === weekInfo.rankingWeek;
+    }
+
+    if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
+      return true;
+    }
+
+    return data.rankingSeason === rankingSeason;
+  });
+}
+
 async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo) {
-  if (period === 'daily') {
-    return scoresCollection
+  try {
+    if (period === 'daily') {
+      return await scoresCollection
+        .where('rankingSeason', '==', rankingSeason)
+        .where('rankingDay', '==', dayInfo.rankingDay)
+        .where('mode', '==', 'timeAttack')
+        .orderBy('score', 'desc')
+        .limit(LEADERBOARD_LIMIT)
+        .get();
+    }
+
+    if (period === 'weekly') {
+      return await scoresCollection
+        .where('rankingSeason', '==', rankingSeason)
+        .where('rankingWeek', '==', weekInfo.rankingWeek)
+        .where('mode', '==', 'timeAttack')
+        .orderBy('score', 'desc')
+        .limit(LEADERBOARD_LIMIT)
+        .get();
+    }
+
+    if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
+      return await scoresCollection
+        .where('mode', '==', 'timeAttack')
+        .orderBy('score', 'desc')
+        .limit(LEADERBOARD_LIMIT)
+        .get();
+    }
+
+    return await scoresCollection
       .where('rankingSeason', '==', rankingSeason)
-      .where('rankingDay', '==', dayInfo.rankingDay)
       .where('mode', '==', 'timeAttack')
       .orderBy('score', 'desc')
       .limit(LEADERBOARD_LIMIT)
       .get();
-  }
+  } catch (error) {
+    if (!isFirestoreIndexError(error)) {
+      throw error;
+    }
 
-  if (period === 'weekly') {
-    return scoresCollection
-      .where('rankingSeason', '==', rankingSeason)
-      .where('rankingWeek', '==', weekInfo.rankingWeek)
-      .where('mode', '==', 'timeAttack')
+    console.warn('랭킹 인덱스 쿼리 실패, fallback 조회로 전환:', error.message);
+
+    const fallbackSnapshot = await scoresCollection
       .orderBy('score', 'desc')
-      .limit(LEADERBOARD_LIMIT)
+      .limit(LEADERBOARD_FALLBACK_LIMIT)
       .get();
-  }
 
-  if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
-    return scoresCollection
-      .where('mode', '==', 'timeAttack')
-      .orderBy('score', 'desc')
-      .limit(LEADERBOARD_LIMIT)
-      .get();
-  }
+    const filteredDocs = fallbackSnapshot.docs.filter(document => {
+      const data = document.data();
+      return filterLeaderboardDataByPeriod([data], period, rankingSeason, dayInfo, weekInfo).length > 0;
+    });
 
-  return scoresCollection
-    .where('rankingSeason', '==', rankingSeason)
-    .where('mode', '==', 'timeAttack')
-    .orderBy('score', 'desc')
-    .limit(LEADERBOARD_LIMIT)
-    .get();
+    return { docs: filteredDocs };
+  }
 }
 
 function validateScorePayload(payload) {
