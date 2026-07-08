@@ -25,6 +25,7 @@ const LEADERBOARD_LIMIT = 300;
 const LEADERBOARD_RESPONSE_LIMIT = 30;
 const LEADERBOARD_CACHE_TTL_MS = 30 * 1000;
 const LEADERBOARD_FALLBACK_LIMIT = 1200;
+const LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT = 1200;
 const ANALYTICS_FIELDS = [
   'clearCount',
   'feverClearCount',
@@ -71,8 +72,8 @@ function getPlayerIdentity(data) {
   return nickname ? `nickname:${nickname}` : null;
 }
 
-function buildLeaders(snapshot) {
-  const sortedScores = snapshot.docs
+function buildLeadersFromDocs(documents) {
+  const sortedScores = documents
     .map(document => document.data())
     .filter(data => {
       const nickname = normalizeNickname(data.nickname);
@@ -103,6 +104,35 @@ function buildLeaders(snapshot) {
       mode: data.mode,
       createdAt: data.createdAt?.toDate?.().toISOString() || null
     }));
+}
+
+function matchesPeriodRecord(data, period, rankingSeason, dayInfo, weekInfo) {
+  const nickname = normalizeNickname(data.nickname);
+  if (!nickname || !isValidScore(data.score) || data.mode !== 'timeAttack') {
+    return false;
+  }
+
+  if (period === 'daily') {
+    if (data.rankingSeason !== rankingSeason) return false;
+    if (data.rankingDay === dayInfo.rankingDay) return true;
+    if (data.rankingDay) return false;
+    const createdAtMs = getCreatedAtMs(data.createdAt);
+    return createdAtMs >= dayInfo.dayStartUtcMs && createdAtMs < dayInfo.dayEndUtcMs;
+  }
+
+  if (period === 'weekly') {
+    if (data.rankingSeason !== rankingSeason) return false;
+    if (data.rankingWeek === weekInfo.rankingWeek) return true;
+    if (data.rankingWeek) return false;
+    const createdAtMs = getCreatedAtMs(data.createdAt);
+    return createdAtMs >= weekInfo.weekStartUtcMs && createdAtMs < weekInfo.weekEndUtcMs;
+  }
+
+  if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
+    return true;
+  }
+
+  return data.rankingSeason === rankingSeason;
 }
 
 function buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo) {
@@ -142,27 +172,8 @@ function isFirestoreIndexError(error) {
   return errorCode === '9' || errorMessage.includes('failed-precondition') || errorMessage.includes('index');
 }
 
-function filterLeaderboardDataByPeriod(dataList, period, rankingSeason, dayInfo, weekInfo) {
-  return dataList.filter(data => {
-    const nickname = normalizeNickname(data.nickname);
-    if (!nickname || !isValidScore(data.score) || data.mode !== 'timeAttack') {
-      return false;
-    }
-
-    if (period === 'daily') {
-      return data.rankingSeason === rankingSeason && data.rankingDay === dayInfo.rankingDay;
-    }
-
-    if (period === 'weekly') {
-      return data.rankingSeason === rankingSeason && data.rankingWeek === weekInfo.rankingWeek;
-    }
-
-    if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
-      return true;
-    }
-
-    return data.rankingSeason === rankingSeason;
-  });
+function filterLeaderboardDocsByPeriod(documents, period, rankingSeason, dayInfo, weekInfo) {
+  return documents.filter(document => matchesPeriodRecord(document.data(), period, rankingSeason, dayInfo, weekInfo));
 }
 
 async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo) {
@@ -215,7 +226,7 @@ async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason,
 
     const filteredDocs = fallbackSnapshot.docs.filter(document => {
       const data = document.data();
-      return filterLeaderboardDataByPeriod([data], period, rankingSeason, dayInfo, weekInfo).length > 0;
+      return matchesPeriodRecord(data, period, rankingSeason, dayInfo, weekInfo);
     });
 
     return { docs: filteredDocs };
@@ -364,7 +375,27 @@ scoreRouter.get('/leaderboard', async (req, res) => {
 
     const scoresCollection = firestore.collection('scores');
     const snapshot = await fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
-    const leaders = buildLeaders(snapshot);
+    let leaderboardDocs = [...snapshot.docs];
+
+    if ((period === 'daily' || period === 'weekly') && leaderboardDocs.length < LEADERBOARD_RESPONSE_LIMIT) {
+      const supplementSnapshot = await scoresCollection
+        .orderBy('score', 'desc')
+        .limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT)
+        .get();
+
+      const mergedDocs = new Map();
+      for (const document of leaderboardDocs) {
+        mergedDocs.set(document.id, document);
+      }
+      for (const document of filterLeaderboardDocsByPeriod(supplementSnapshot.docs, period, rankingSeason, dayInfo, weekInfo)) {
+        if (!mergedDocs.has(document.id)) {
+          mergedDocs.set(document.id, document);
+        }
+      }
+      leaderboardDocs = Array.from(mergedDocs.values());
+    }
+
+    const leaders = buildLeadersFromDocs(leaderboardDocs);
     const payload = {
       leaders,
       period,
