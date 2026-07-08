@@ -394,7 +394,7 @@ scoreRouter.get('/leaderboard', async (req, res) => {
     const snapshot = await fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
     let leaderboardDocs = [...snapshot.docs];
 
-    if ((period === 'daily' || period === 'weekly') && leaderboardDocs.length < LEADERBOARD_RESPONSE_LIMIT) {
+    if (period === 'daily' || period === 'weekly') {
       const supplementSnapshot = await scoresCollection
         .orderBy('score', 'desc')
         .limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT)
