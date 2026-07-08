@@ -60,6 +60,23 @@ function getCreatedAtMs(value) {
   return Number.isFinite(parsedValue) ? parsedValue : Number.MAX_SAFE_INTEGER;
 }
 
+function isCurrentSeasonFallbackRecord(data, rankingSeason) {
+  if (rankingSeason !== RANKING_SEASON_ID) {
+    return data.rankingSeason === rankingSeason;
+  }
+
+  if (data.rankingSeason === rankingSeason) {
+    return true;
+  }
+
+  if (data.rankingSeason && data.rankingSeason !== RANKING_LEGACY_SEASON_ID) {
+    return false;
+  }
+
+  const createdAtMs = getCreatedAtMs(data.createdAt);
+  return createdAtMs >= RANKING_RESET_AT_MS;
+}
+
 function getPlayerIdentity(data) {
   if (typeof data?.playerId === 'string') {
     const trimmedPlayerId = data.playerId.trim();
@@ -113,7 +130,7 @@ function matchesPeriodRecord(data, period, rankingSeason, dayInfo, weekInfo) {
   }
 
   if (period === 'daily') {
-    if (data.rankingSeason !== rankingSeason) return false;
+    if (!isCurrentSeasonFallbackRecord(data, rankingSeason)) return false;
     if (data.rankingDay === dayInfo.rankingDay) return true;
     if (data.rankingDay) return false;
     const createdAtMs = getCreatedAtMs(data.createdAt);
@@ -121,7 +138,7 @@ function matchesPeriodRecord(data, period, rankingSeason, dayInfo, weekInfo) {
   }
 
   if (period === 'weekly') {
-    if (data.rankingSeason !== rankingSeason) return false;
+    if (!isCurrentSeasonFallbackRecord(data, rankingSeason)) return false;
     if (data.rankingWeek === weekInfo.rankingWeek) return true;
     if (data.rankingWeek) return false;
     const createdAtMs = getCreatedAtMs(data.createdAt);
@@ -132,7 +149,7 @@ function matchesPeriodRecord(data, period, rankingSeason, dayInfo, weekInfo) {
     return true;
   }
 
-  return data.rankingSeason === rankingSeason;
+  return isCurrentSeasonFallbackRecord(data, rankingSeason);
 }
 
 function buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo) {
