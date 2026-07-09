@@ -3,7 +3,9 @@ import {
   MAX_TIME,
   TILE_NUMBER_MIN,
   TILE_NUMBER_MAX,
+  ENABLE_BOSS_RAID,
   MAX_ROOM_PLAYERS,
+  RAID_HP_PER_PLAYER,
   FEVER_TRIGGER_MIN_LENGTH,
   FEVER_DURATION_MS,
   FEVER_ROLLBACK_MS,
@@ -155,11 +157,22 @@ export function initGameApp() {
   const modeSelection = document.getElementById('mode-selection');
   const btnLobbyBack = document.getElementById('btn-lobby-back');
   const btnJoinRoom = document.getElementById('btn-join-room');
+  const btnLobbyRaid = document.createElement('button');
   const lobbyNicknameInput = document.getElementById('lobby-nickname');
   const lobbyRoomIdInput = document.getElementById('lobby-room-id');
   const leaderboardPanel = document.getElementById('leaderboard-panel');
   const leaderboardList = document.getElementById('leaderboard-list');
   const roomBadge = document.getElementById('room-badge');
+  const bossRaidPanel = document.getElementById('boss-raid-panel');
+  const raidBossPortrait = document.getElementById('raid-boss-portrait');
+  const raidBossTitle = document.getElementById('raid-boss-title');
+  const raidBossHpFill = document.getElementById('raid-boss-hp-fill');
+  const raidBossHpText = document.getElementById('raid-boss-hp-text');
+  const raidTotalDamage = document.getElementById('raid-total-damage');
+  const raidContributors = document.getElementById('raid-contributors');
+  const raidDamagePop = document.getElementById('raid-damage-pop');
+  const raidElapsedTime = document.getElementById('raid-elapsed-time');
+  const raidParticipants = document.getElementById('raid-participants');
 
   const lobbyOverlay = document.getElementById('lobby-overlay');
   const lobbyRoomBadge = document.getElementById('lobby-room-badge');
@@ -184,11 +197,70 @@ export function initGameApp() {
   const scoreSubmitStatus = document.getElementById('score-submit-status');
   const scoreSubmitRetry = document.getElementById('score-submit-retry');
   const globalRankingHeading = globalRanking?.querySelector('.global-ranking-heading strong') || null;
+
+  btnLobbyRaid.className = 'btn-start btn-raid btn-full';
+  btnLobbyRaid.id = 'btn-lobby-raid';
+  btnLobbyPlay.insertAdjacentElement('afterend', btnLobbyRaid);
+  btnLobbyRaid.hidden = !ENABLE_BOSS_RAID;
+
   bestScoreVal.textContent = bestScore;
   welcomeBestVal.textContent = bestScore;
   const savedNickname = localStorage.getItem('seq_pang_nickname') || '';
   playerNicknameInput.value = savedNickname;
   lobbyNicknameInput.value = savedNickname;
+
+  let raidPlayers = [];
+  let lastRaidDamage = 0;
+  let raidPlayerCount = 1;
+  let raidBossMaxHp = RAID_HP_PER_PLAYER;
+  let raidStartTime = 0;
+  let raidElapsedMs = 0;
+  let raidClearTime = null;
+  let raidTimer = null;
+
+  function formatRaidNumber(value) {
+    return Math.max(0, Math.floor(value)).toLocaleString('ko-KR');
+  }
+
+  function formatRaidTime(ms) {
+    const safeMs = Math.max(0, Math.floor(ms || 0));
+    const totalTenths = Math.floor(safeMs / 100);
+    const minutes = Math.floor(totalTenths / 600);
+    const seconds = Math.floor((totalTenths % 600) / 10);
+    const tenths = totalTenths % 10;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`;
+  }
+
+  function applyRaidConfig(config = {}) {
+    const nextPlayerCount = Number(config.playerCount);
+      raidPlayerCount = Math.max(1, Math.min(MAX_ROOM_PLAYERS, Number.isFinite(nextPlayerCount) ? nextPlayerCount : raidPlayerCount));
+    const nextMaxHp = Number(config.maxHp);
+    raidBossMaxHp = Math.max(RAID_HP_PER_PLAYER, Number.isFinite(nextMaxHp) ? nextMaxHp : raidPlayerCount * RAID_HP_PER_PLAYER);
+  }
+
+  function updateRaidClockUI(isCleared = false) {
+    const label = isCleared ? '격파' : '경과';
+    raidElapsedTime.textContent = `${label} ${formatRaidTime(raidElapsedMs)}`;
+  }
+
+  function startRaidClock() {
+    stopRaidClock();
+    raidStartTime = performance.now();
+    raidElapsedMs = 0;
+    updateRaidClockUI();
+    raidTimer = setInterval(() => {
+      raidElapsedMs = performance.now() - raidStartTime;
+      updateRaidClockUI();
+      tickComboTimer();
+    }, 100);
+  }
+
+  function stopRaidClock() {
+    if (raidTimer) {
+      clearInterval(raidTimer);
+      raidTimer = null;
+    }
+  }
 
   function updateFeverUI() {
     const isVisible = fever.active || fever.ending;
@@ -326,9 +398,138 @@ updateFeverUI();
     pendingFeverSpawn = false;
   }
 
+  function getLocalRaidPlayers() {
+    const nickname = currentNickname || '나';
+    const others = raidPlayers.filter(player => player.nickname !== nickname);
+    return [...others, { nickname, score }];
+  }
+
+  function resetRaidState() {
+    raidPlayers = [{ nickname: currentNickname || '나', score: 0 }];
+    lastRaidDamage = 0;
+    raidClearTime = null;
+    raidElapsedMs = 0;
+    stopRaidClock();
+    raidBossPortrait.classList.remove('defeated', 'hit');
+    bossRaidPanel.classList.remove('hit');
+    raidBossHpFill.classList.remove('hit');
+    raidBossTitle.textContent = '가시 멜론 군주';
+    updateRaidUI(raidPlayers, true);
+    updateRaidClockUI();
+  }
+
+  function updateRaidUI(players = getLocalRaidPlayers(), skipHit = false) {
+    raidPlayers = players.map(player => ({
+      nickname: player.nickname || '???',
+      score: Math.max(0, Number(player.score) || 0)
+    }));
+
+    const totalDamage = raidPlayers.reduce((sum, player) => sum + player.score, 0);
+    const bossHp = Math.max(0, raidBossMaxHp - totalDamage);
+    const hpPercent = (bossHp / raidBossMaxHp) * 100;
+    const damageDelta = totalDamage - lastRaidDamage;
+    const displayPlayerCount = Math.max(raidPlayerCount, raidPlayers.length);
+
+    raidBossHpFill.style.width = `${hpPercent}%`;
+    raidBossHpText.textContent = `${formatRaidNumber(bossHp)} / ${formatRaidNumber(raidBossMaxHp)}`;
+    raidTotalDamage.textContent = `공동 피해 ${formatRaidNumber(totalDamage)}`;
+      raidParticipants.textContent = `참여 ${displayPlayerCount}/${MAX_ROOM_PLAYERS}`;
+    raidContributors.textContent = raidPlayers.length
+      ? raidPlayers
+          .slice()
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3)
+          .map(player => `${player.nickname} ${formatRaidNumber(player.score)}딜`)
+          .join(' · ')
+      : '참여자 없음';
+
+    if (!skipHit && damageDelta > 0) {
+      triggerRaidBossHit(damageDelta);
+    }
+
+    if (bossHp <= 0) {
+      raidBossPortrait.classList.add('defeated');
+      raidBossTitle.textContent = '가시 멜론 군주 격파!';
+      triggerRaidClear();
+    } else {
+      raidBossPortrait.classList.remove('defeated');
+      raidBossTitle.textContent = '가시 멜론 군주';
+    }
+
+    lastRaidDamage = totalDamage;
+  }
+
+  function triggerRaidBossHit(damage) {
+    raidDamagePop.textContent = `-${formatRaidNumber(damage)}`;
+    raidDamagePop.classList.remove('show');
+    raidBossPortrait.classList.remove('hit');
+    bossRaidPanel.classList.remove('hit');
+    raidBossHpFill.classList.remove('hit');
+    gameContainer.classList.remove('raid-impact');
+    void raidDamagePop.offsetWidth;
+    raidDamagePop.classList.add('show');
+    raidBossPortrait.classList.add('hit');
+    bossRaidPanel.classList.add('hit');
+    raidBossHpFill.classList.add('hit');
+    gameContainer.classList.add('raid-impact');
+    setTimeout(() => {
+      raidBossPortrait.classList.remove('hit');
+      bossRaidPanel.classList.remove('hit');
+      raidBossHpFill.classList.remove('hit');
+      gameContainer.classList.remove('raid-impact');
+    }, 380);
+  }
+
+  function triggerRaidClear() {
+    if (raidClearTime !== null) return;
+    raidClearTime = raidElapsedMs || Math.max(0, performance.now() - raidStartTime);
+    raidElapsedMs = raidClearTime;
+    stopRaidClock();
+    updateRaidClockUI(true);
+
+    isGameOver = true;
+    isGameActive = false;
+    isDragging = false;
+    dragLine.setAttribute('d', '');
+    dragLineGlow.setAttribute('d', '');
+    selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected'));
+
+    gameOverTitle.textContent = '보스 격파!';
+    gameOverDesc.textContent = `참여 ${Math.max(raidPlayerCount, raidPlayers.length)}명 · 공동 피해 ${formatRaidNumber(raidBossMaxHp)}`;
+    resultLabel.textContent = '격파 시간';
+    finalScoreText.textContent = formatRaidTime(raidClearTime);
+    resultUnit.textContent = '';
+    btnRetry.textContent = '🔄 대기실로 돌아가기';
+    gameOverOverlay.classList.add('show');
+  }
+
+  function updateLobbyModeControls() {
+    btnLobbyPlay.disabled = !currentIsHost;
+    btnLobbyPlay.textContent = currentIsHost
+      ? '수열팡 플레이 시작 (방장)'
+      : '방장이 시작할 때까지 기다리는 중';
+    btnLobbyPlay.title = currentIsHost
+      ? '모든 참가자의 게임을 동시에 시작합니다.'
+      : '게임은 방장만 시작할 수 있습니다.';
+
+    if (!ENABLE_BOSS_RAID) {
+      btnLobbyRaid.hidden = true;
+      return;
+    }
+    btnLobbyRaid.disabled = !currentIsHost;
+    btnLobbyRaid.textContent = currentIsHost ? '⚔️ 보스레이드 시작 (방장)' : '⚔️ 보스레이드 대기중';
+    btnLobbyRaid.title = currentIsHost ? '같은 방 모두를 보스레이드로 시작합니다.' : '보스레이드는 방장만 시작할 수 있습니다.';
+  }
+
   // 1. 플레이 시작 (보드 생성 후 카운트다운 진입)
   function startGamePlay(mode = 'timeAttack') {
     currentGameMode = mode;
+    const isRaidMode = currentGameMode === 'bossRaid';
+    gameContainer.classList.toggle('raid-mode', isRaidMode);
+    scoreLabel.textContent = isRaidMode ? '내 피해' : '현재 점수';
+    if (isRaidMode) {
+      leaderboardPanel.style.display = 'none';
+    }
     welcomeOverlay.classList.add('hide');
     lobbyOverlay.classList.add('hide'); // 대기방도 확실하게 가림
     
@@ -361,6 +562,9 @@ updateFeverUI();
     gameOverOverlay.classList.remove('show');
     globalRanking.hidden = true;
     scoreSubmitRetry.hidden = true;
+    if (isRaidMode) {
+      resetRaidState();
+    }
     
     boardData = [];
     boardElement.innerHTML = '';
@@ -383,6 +587,7 @@ updateFeverUI();
     }
 
     if (gameTimer) clearInterval(gameTimer);
+    stopRaidClock();
     updateTimerUI();
     dragLine.setAttribute('d', '');
     dragLineGlow.setAttribute('d', '');
@@ -392,7 +597,11 @@ updateFeverUI();
     pauseMenuBgm();
     startCountdownSequence(() => {
       isGameActive = true;
-      gameTimer = setInterval(tickTimer, 100);
+      if (isRaidMode) {
+        startRaidClock();
+      } else {
+        gameTimer = setInterval(tickTimer, 100);
+      }
     });
   }
 
@@ -488,6 +697,7 @@ updateFeverUI();
       timerBar.classList.remove('warning');
     }
   }
+
 
   function triggerGameOver() {
       isGameOver = true;
@@ -809,7 +1019,7 @@ updateFeverUI();
       const points = Math.round(basePoints * repeatResult.scoreMultiplier * feverMultiplier);
       score += points;
       
-      if (score > bestScore) {
+      if (currentGameMode !== 'bossRaid' && score > bestScore) {
         bestScore = score;
         localStorage.setItem('seq_pang_best', bestScore);
         bestScoreVal.textContent = bestScore;
@@ -850,13 +1060,16 @@ updateFeverUI();
       if (fever.active) {
         fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000));
         updateFeverUI();
-      } else {
+      } else if (currentGameMode !== 'bossRaid') {
         timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
         updateTimerUI();
       }
 
       spawnFloatingScore(points, feverMultiplier, repeatResult.type);
       spawnSequenceHintRich(sequenceKind, sequenceRule);
+      if (currentGameMode === 'bossRaid') {
+        updateRaidUI(getLocalRaidPlayers());
+      }
       maybeQueueFeverSpawn(len, allSame);
 
       selectedTiles.forEach(t => t.element.classList.add('matched'));
@@ -870,8 +1083,10 @@ updateFeverUI();
       comboVal.textContent = combo;
       comboBadge.style.display = 'none';
       comboBadge.textContent = '🔥';
-      timeLeft = Math.max(0, timeLeft - 3.0);
-      updateTimerUI();
+      if (currentGameMode !== 'bossRaid') {
+        timeLeft = Math.max(0, timeLeft - 3.0);
+        updateTimerUI();
+      }
 
       triggerFailureShock();
 
@@ -1407,6 +1622,14 @@ updateFeverUI();
       updateLeaderboardUI(players);
     });
 
+    socket.on('raidStart', (config = {}) => {
+      if (!ENABLE_BOSS_RAID) return;
+      applyRaidConfig(config);
+      lobbyOverlay.classList.add('hide');
+      leaderboardPanel.style.display = 'none';
+      startGamePlay('bossRaid');
+    });
+
     socket.on('gameStart', () => {
       lobbyOverlay.classList.add('hide');
       leaderboardPanel.style.display = 'block';
@@ -1510,6 +1733,19 @@ updateFeverUI();
     socket.emit('startGame');
   });
 
+  btnLobbyRaid.addEventListener('click', () => {
+    if (!ENABLE_BOSS_RAID) return;
+    if (!currentIsHost) {
+      alert('보스레이드는 방장만 시작할 수 있습니다!');
+      return;
+    }
+    if (!socket || !socket.connected) {
+      alert('서버 연결이 끊겼습니다. 방에 다시 입장해주세요!');
+      return;
+    }
+    socket.emit('startRaid');
+  });
+
   // 대기방 코드 클릭 시 클립보드 복사
   lobbyRoomBadge.addEventListener('click', () => {
     if (!currentRoomId) return;
@@ -1543,6 +1779,11 @@ updateFeverUI();
   // 실시간 리더보드 드로잉 렌더링
   function updateLeaderboardUI(players) {
     leaderboardList.innerHTML = '';
+    if (currentGameMode === 'bossRaid') {
+      updateRaidUI(players);
+      return;
+    }
+
     renderLeaderboard(leaderboardList, players, currentNickname);
   }
 

@@ -1,4 +1,6 @@
+const ENABLE_BOSS_RAID = false;
 const MAX_ROOM_PLAYERS = 30;
+const RAID_HP_PER_PLAYER = 120000;
 const LEADERBOARD_THROTTLE_MS = 700;
 const ALLOWED_SCORE_MODES = new Set(['timeAttack']);
 const MAX_ACCEPTED_SCORE = Number.MAX_SAFE_INTEGER;
@@ -72,7 +74,9 @@ function getCurrentRankingWeekInfo(now = Date.now()) {
 }
 
 module.exports = {
+  ENABLE_BOSS_RAID,
   MAX_ROOM_PLAYERS,
+  RAID_HP_PER_PLAYER,
   LEADERBOARD_THROTTLE_MS,
   ALLOWED_SCORE_MODES,
   MAX_ACCEPTED_SCORE,
