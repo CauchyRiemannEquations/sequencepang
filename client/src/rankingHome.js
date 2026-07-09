@@ -128,30 +128,18 @@ function closeRankingOverlay() {
 }
 
 function setupMainButtons() {
-  const modeSelection = document.getElementById('mode-selection');
   const singleButton = document.getElementById('btn-single-start');
   const multiButton = document.getElementById('btn-multi-lobby');
+  const rankingButton = document.getElementById('btn-show-ranking');
 
-  if (!modeSelection || !singleButton || !multiButton) return;
-  if (document.getElementById('btn-show-ranking')) return;
+  if (!singleButton || !multiButton || !rankingButton) return;
 
   singleButton.classList.add('btn-main-play');
   multiButton.classList.add('btn-sub-action');
   multiButton.textContent = '다함께 팡!';
-
-  const subActions = document.createElement('div');
-  subActions.className = 'main-sub-actions';
-
-  modeSelection.insertBefore(subActions, multiButton);
-  subActions.appendChild(multiButton);
-
-  const rankingButton = document.createElement('button');
-  rankingButton.type = 'button';
-  rankingButton.id = 'btn-show-ranking';
   rankingButton.className = 'btn-start btn-sub-action btn-ranking-open';
   rankingButton.textContent = '랭킹 보기';
 
-  subActions.appendChild(rankingButton);
   rankingButton.addEventListener('click', openRankingOverlay);
 }
 

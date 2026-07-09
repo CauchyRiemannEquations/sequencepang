@@ -12,8 +12,8 @@ import { initRankingResetNotice } from './rankingResetNotice.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   initSfx();
-  initGameApp();
   initHomeRankingUI();
+  initGameApp();
   initUpdateNotesUI();
   initMenuBgm();
   initRankingResetNotice();
