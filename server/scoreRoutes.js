@@ -78,15 +78,24 @@ function isCurrentSeasonFallbackRecord(data, rankingSeason) {
 }
 
 function getPlayerIdentity(data) {
-  if (typeof data?.playerId === 'string') {
-    const trimmedPlayerId = data.playerId.trim();
-    if (trimmedPlayerId) {
-      return `player:${trimmedPlayerId}`;
-    }
-  }
+  if (typeof data?.playerId !== 'string') return null;
 
+  const trimmedPlayerId = data.playerId.trim();
+  if (!trimmedPlayerId) return null;
+
+  return `player:${trimmedPlayerId}`;
+}
+
+function getNicknameIdentity(data) {
   const nickname = normalizeNickname(data?.nickname);
-  return nickname ? `nickname:${nickname}` : null;
+  if (!nickname) return null;
+
+  const normalizedNicknameKey = nickname
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+
+  return `nickname:${normalizedNicknameKey}`;
 }
 
 function buildLeadersFromDocs(documents) {
@@ -103,18 +112,37 @@ function buildLeadersFromDocs(documents) {
       return getCreatedAtMs(left.createdAt) - getCreatedAtMs(right.createdAt);
     });
 
-  const bestByIdentity = new Map();
+  // 1차 중복 제거: 같은 브라우저/playerId는 최고점 1개만 남김
+  const bestByPlayer = new Map();
+  const playerDedupedScores = [];
 
   for (const data of sortedScores) {
-    const identity = getPlayerIdentity(data);
-    if (!identity || bestByIdentity.has(identity)) continue;
-    bestByIdentity.set(identity, data);
+    const playerIdentity = getPlayerIdentity(data);
+
+    // playerId가 있는 기록은 playerId 기준으로 먼저 묶는다.
+    if (playerIdentity) {
+      if (bestByPlayer.has(playerIdentity)) continue;
+      bestByPlayer.set(playerIdentity, data);
+      playerDedupedScores.push(data);
+      continue;
+    }
+
+    // playerId가 없는 옛 기록은 일단 통과시키고, 2차 닉네임 중복 제거에서 처리한다.
+    playerDedupedScores.push(data);
   }
 
-  return Array.from(bestByIdentity.values())
+  // 2차 중복 제거: 같은 닉네임은 최고점 1개만 남김
+  const bestByNickname = new Map();
+
+  for (const data of playerDedupedScores) {
+    const nicknameIdentity = getNicknameIdentity(data);
+    if (!nicknameIdentity || bestByNickname.has(nicknameIdentity)) continue;
+    bestByNickname.set(nicknameIdentity, data);
+  }
+
+  return Array.from(bestByNickname.values())
     .slice(0, LEADERBOARD_RESPONSE_LIMIT)
     .map(data => ({
-      playerId: typeof data.playerId === 'string' ? data.playerId : null,
       nickname: normalizeNickname(data.nickname),
       score: data.score,
       maxCombo: Number.isSafeInteger(data.maxCombo) && data.maxCombo >= 0 ? data.maxCombo : 0,
