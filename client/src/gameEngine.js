@@ -495,7 +495,6 @@ updateFeverUI();
       playSound('gameOver');
       isDragging = false;
       clearInterval(gameTimer);
-      stopRaidClock();
       resetFeverState();
 
     dragLine.setAttribute('d', '');
@@ -871,11 +870,8 @@ updateFeverUI();
       comboVal.textContent = combo;
       comboBadge.style.display = 'none';
       comboBadge.textContent = '🔥';
-
-      if (true) {
-        timeLeft = Math.max(0, timeLeft - 3.0); // 패널티 완화 -3초
-        updateTimerUI();
-      }
+      timeLeft = Math.max(0, timeLeft - 3.0);
+      updateTimerUI();
 
       triggerFailureShock();
 
