@@ -8,8 +8,11 @@ import {
   RAID_HP_PER_PLAYER,
   FEVER_TRIGGER_MIN_LENGTH,
   SUPER_FEVER_TRIGGER_MIN_LENGTH,
+  SUPER_FEVER_LAUNCH_AT_MS,
   FEVER_DURATION_MS,
   SUPER_FEVER_DURATION_MS,
+  PRE_LAUNCH_FEVER_DURATION_MS,
+  PRE_LAUNCH_FEVER_TIME_BONUS_RATE,
   FEVER_ROLLBACK_MS,
   FEVER_SCORE_MULTIPLIER,
   SUPER_FEVER_SCORE_MULTIPLIER,
@@ -42,6 +45,18 @@ export function initGameApp() {
       baseValue: getRandomNumber(),
       type: 'normal'
     };
+  }
+
+  function isSuperFeverLive() {
+    return Date.now() >= SUPER_FEVER_LAUNCH_AT_MS;
+  }
+
+  function getNormalFeverDurationMs() {
+    return isSuperFeverLive() ? FEVER_DURATION_MS : PRE_LAUNCH_FEVER_DURATION_MS;
+  }
+
+  function getFeverTimeBonusRate() {
+    return isSuperFeverLive() ? FEVER_TIME_BONUS_RATE : PRE_LAUNCH_FEVER_TIME_BONUS_RATE;
   }
 
   function createFeverTileData(tier = 'normal') {
@@ -340,7 +355,7 @@ export function initGameApp() {
     fever.amount = amount;
     fever.label = label;
     fever.scoreMultiplier = tier === 'super' ? SUPER_FEVER_SCORE_MULTIPLIER : FEVER_SCORE_MULTIPLIER;
-    fever.durationMs = tier === 'super' ? SUPER_FEVER_DURATION_MS : FEVER_DURATION_MS;
+    fever.durationMs = tier === 'super' ? SUPER_FEVER_DURATION_MS : getNormalFeverDurationMs();
     fever.timeLeftMs = fever.durationMs;
     if (tier === 'super') {
       showFeverNotice(`슈퍼피버 ${label}!`);
@@ -399,7 +414,7 @@ updateFeverUI();
     if (len < FEVER_TRIGGER_MIN_LENGTH) return;
     if (allSame || fever.active || fever.ending || hasFeverTile()) return;
 
-    const tier = len >= SUPER_FEVER_TRIGGER_MIN_LENGTH ? 'super' : 'normal';
+    const tier = isSuperFeverLive() && len >= SUPER_FEVER_TRIGGER_MIN_LENGTH ? 'super' : 'normal';
     // 이미 슈퍼피버가 대기 중이면 하향하지 않음
     if (pendingFeverSpawn === 'super') return;
     pendingFeverSpawn = tier;
@@ -1090,7 +1105,7 @@ updateFeverUI();
       bonusTime *= repeatResult.timeMultiplier;
       
       if (fever.active) {
-        fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000 * FEVER_TIME_BONUS_RATE));
+        fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000 * getFeverTimeBonusRate()));
         updateFeverUI();
       } else if (currentGameMode !== 'bossRaid') {
         timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
