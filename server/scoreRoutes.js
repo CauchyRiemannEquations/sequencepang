@@ -3,6 +3,7 @@ const { FieldValue } = require('firebase-admin/firestore');
 const { getScoreFirestore } = require('./firestore');
 const {
   ALLOWED_SCORE_MODES,
+  MAX_ACCEPTED_SCORE,
   MAX_ACCEPTED_COMBO,
   SCORE_VERSION,
   RANKING_RESET_AT_MS,
@@ -17,6 +18,10 @@ const {
   completeGameSession,
   releaseGameSession
 } = require('./gameSessionStore');
+const { createRateLimiter } = require('./rateLimit');
+
+// 한 게임이 최소 30초 이상이므로 분당 20회는 정상 플레이에 넉넉한 값
+const writeRateLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20, keyPrefix: 'score-write' });
 
 const scoreRouter = express.Router();
 const RESERVED_NICKNAMES = new Set(['null', 'undefined', 'nan', 'anonymous', 'guest']);
@@ -45,7 +50,7 @@ function normalizeNickname(value) {
 }
 
 function isValidScore(score) {
-  return Number.isSafeInteger(score) && score >= 0;
+  return Number.isSafeInteger(score) && score >= 0 && score <= MAX_ACCEPTED_SCORE;
 }
 
 function getRankingSeason(now = Date.now()) {
@@ -352,11 +357,11 @@ async function recordSuspiciousScore(firestore, payload, reason) {
   }
 }
 
-scoreRouter.post('/game-session', (_req, res) => {
+scoreRouter.post('/game-session', writeRateLimiter, (_req, res) => {
   return res.status(201).json(issueGameSession());
 });
 
-scoreRouter.post('/scores', async (req, res) => {
+scoreRouter.post('/scores', writeRateLimiter, async (req, res) => {
   const validation = validateScorePayload(req.body);
   if (validation.error) {
     const firestore = getScoreFirestore();
