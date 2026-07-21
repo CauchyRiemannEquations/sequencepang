@@ -9,13 +9,26 @@ export const MAX_ROOM_PLAYERS = 30;
 export const RAID_HP_PER_PLAYER = 120000;
 
 export const FEVER_TRIGGER_MIN_LENGTH = 4;
-export const FEVER_DURATION_MS = 10000;
+export const SUPER_FEVER_TRIGGER_MIN_LENGTH = 5;
+// 슈퍼피버·피버 시간 개편은 2026-07-22 00:00 KST(일간 랭킹 리셋 시각)부터 적용
+export const SUPER_FEVER_LAUNCH_AT_MS = Date.parse('2026-07-21T15:00:00.000Z');
+export const FEVER_DURATION_MS = 8000;
+export const SUPER_FEVER_DURATION_MS = 10000;
+export const PRE_LAUNCH_FEVER_DURATION_MS = 10000;
+export const PRE_LAUNCH_FEVER_TIME_BONUS_RATE = 1;
 export const FEVER_ROLLBACK_MS = 1500;
 export const FEVER_SCORE_MULTIPLIER = 1.5;
+export const SUPER_FEVER_SCORE_MULTIPLIER = 2;
+// 피버 중 수열 성공 시간 보너스는 절반만 피버 시간에 가산
+export const FEVER_TIME_BONUS_RATE = 0.5;
 export const FEVER_TYPES = [
   { type: 'add', amount: 2, label: '+2', weight: 40 },
   { type: 'add', amount: 3, label: '+3', weight: 40 },
   { type: 'multiply', amount: 2, label: '×2', weight: 20 }
+];
+export const SUPER_FEVER_TYPES = [
+  { type: 'multiply', amount: 3, label: '×3', weight: 50 },
+  { type: 'add', amount: 10, label: '+10', weight: 50 }
 ];
 
 export const RECENT_SEQUENCE_LIMIT = 5;

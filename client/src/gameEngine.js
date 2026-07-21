@@ -7,10 +7,18 @@ import {
   MAX_ROOM_PLAYERS,
   RAID_HP_PER_PLAYER,
   FEVER_TRIGGER_MIN_LENGTH,
+  SUPER_FEVER_TRIGGER_MIN_LENGTH,
+  SUPER_FEVER_LAUNCH_AT_MS,
   FEVER_DURATION_MS,
+  SUPER_FEVER_DURATION_MS,
+  PRE_LAUNCH_FEVER_DURATION_MS,
+  PRE_LAUNCH_FEVER_TIME_BONUS_RATE,
   FEVER_ROLLBACK_MS,
   FEVER_SCORE_MULTIPLIER,
+  SUPER_FEVER_SCORE_MULTIPLIER,
+  FEVER_TIME_BONUS_RATE,
   FEVER_TYPES,
+  SUPER_FEVER_TYPES,
   RECENT_SEQUENCE_LIMIT,
   REPEATED_PATH_SCORE_MULTIPLIER,
   REPEATED_PATTERN_SCORE_MULTIPLIER,
@@ -39,25 +47,42 @@ export function initGameApp() {
     };
   }
 
-  function createFeverTileData() {
-    const feverType = pickWeightedFeverType();
+  // 개발 모드에서 ?feverTest=1 을 붙이면 자정 전에도 슈퍼피버를 미리 체험 가능
+  const isFeverTestMode = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).has('feverTest');
+
+  function isSuperFeverLive() {
+    return isFeverTestMode || Date.now() >= SUPER_FEVER_LAUNCH_AT_MS;
+  }
+
+  function getNormalFeverDurationMs() {
+    return isSuperFeverLive() ? FEVER_DURATION_MS : PRE_LAUNCH_FEVER_DURATION_MS;
+  }
+
+  function getFeverTimeBonusRate() {
+    return isSuperFeverLive() ? FEVER_TIME_BONUS_RATE : PRE_LAUNCH_FEVER_TIME_BONUS_RATE;
+  }
+
+  function createFeverTileData(tier = 'normal') {
+    const feverType = pickWeightedFeverType(tier === 'super' ? SUPER_FEVER_TYPES : FEVER_TYPES);
     return {
       baseValue: getRandomNumber(),
       type: 'fever',
+      feverTier: tier,
       feverType: feverType.type,
       feverAmount: feverType.amount,
       feverLabel: feverType.label
     };
   }
 
-  function pickWeightedFeverType() {
-    const totalWeight = FEVER_TYPES.reduce((sum, feverType) => sum + feverType.weight, 0);
+  function pickWeightedFeverType(feverTypes) {
+    const totalWeight = feverTypes.reduce((sum, feverType) => sum + feverType.weight, 0);
     let randomWeight = Math.random() * totalWeight;
-    for (const feverType of FEVER_TYPES) {
+    for (const feverType of feverTypes) {
       randomWeight -= feverType.weight;
       if (randomWeight < 0) return feverType;
     }
-    return FEVER_TYPES[FEVER_TYPES.length - 1];
+    return feverTypes[feverTypes.length - 1];
   }
 
   function getDisplayValue(tileData) {
@@ -78,8 +103,10 @@ export function initGameApp() {
   function updateTileElement(tileElement, tileData) {
     tileElement.textContent = getDisplayValue(tileData);
     tileElement.classList.toggle('fever-tile', tileData?.type === 'fever');
+    tileElement.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
     tileElement.dataset.tileType = tileData?.type || 'normal';
     tileElement.dataset.baseValue = tileData?.baseValue ?? '';
+    tileElement.dataset.feverTier = tileData?.feverTier ?? '';
     tileElement.dataset.feverType = tileData?.feverType ?? '';
     tileElement.dataset.feverAmount = tileData?.feverAmount ?? '';
   }
@@ -111,7 +138,7 @@ export function initGameApp() {
   let scoreSubmitted = false;
   let currentGameSession = null;
   let singleSessionStartedAt = 0;
-  let pendingFeverSpawn = false;
+  let pendingFeverSpawn = null; // null | 'normal' | 'super'
   let recentSuccessfulSequences = [];
   let clearCount = 0;
   let feverClearCount = 0;
@@ -121,9 +148,12 @@ export function initGameApp() {
   const fever = {
     active: false,
     ending: false,
+    tier: 'normal',
     type: null,
     amount: 0,
     label: '',
+    scoreMultiplier: FEVER_SCORE_MULTIPLIER,
+    durationMs: FEVER_DURATION_MS,
     timeLeftMs: 0,
     timer: null,
     rollbackTimer: null
@@ -264,16 +294,21 @@ export function initGameApp() {
 
   function updateFeverUI() {
     const isVisible = fever.active || fever.ending;
+    const isSuperActive = fever.active && fever.tier === 'super';
     feverPanel.classList.toggle('show', isVisible);
+    feverPanel.classList.toggle('super-fever', isSuperActive);
     gameContainer.classList.toggle('fever-active', fever.active);
+    gameContainer.classList.toggle('super-fever-active', isSuperActive);
     boardWrapper.classList.toggle('fever-active', fever.active);
+    boardWrapper.classList.toggle('super-fever-active', isSuperActive);
 
     const percentage = fever.active
-      ? Math.max(0, Math.min(100, (fever.timeLeftMs / FEVER_DURATION_MS) * 100))
+      ? Math.max(0, Math.min(100, (fever.timeLeftMs / fever.durationMs) * 100))
       : 0;
     feverTimerFill.style.width = `${percentage}%`;
+    const feverName = fever.tier === 'super' ? '슈퍼피버' : '피버';
     feverTimerText.textContent = fever.active
-      ? `피버 ${fever.label} · ${(fever.timeLeftMs / 1000).toFixed(1)}s · 점수 ×${FEVER_SCORE_MULTIPLIER}`
+      ? `${feverName} ${fever.label} · ${(fever.timeLeftMs / 1000).toFixed(1)}s · 점수 ×${fever.scoreMultiplier}`
       : '피버 종료!';
   }
 
@@ -288,15 +323,31 @@ export function initGameApp() {
     }
     fever.active = false;
     fever.ending = false;
+    fever.tier = 'normal';
     fever.type = null;
     fever.amount = 0;
     fever.label = '';
+    fever.scoreMultiplier = FEVER_SCORE_MULTIPLIER;
+    fever.durationMs = FEVER_DURATION_MS;
     fever.timeLeftMs = 0;
-    pendingFeverSpawn = false;
-    boardWrapper.classList.remove('fever-active', 'fever-rollback');
-    gameContainer.classList.remove('fever-active');
+    pendingFeverSpawn = null;
+    boardWrapper.classList.remove('fever-active', 'super-fever-active', 'fever-rollback', 'fever-burst');
+    gameContainer.classList.remove('fever-active', 'super-fever-active', 'fever-impact');
+    feverPanel.classList.remove('super-fever');
     feverNotice.classList.remove('show');
     updateFeverUI();
+  }
+
+  function triggerFeverBurst() {
+    boardWrapper.classList.remove('fever-burst');
+    gameContainer.classList.remove('fever-impact');
+    void boardWrapper.offsetWidth;
+    boardWrapper.classList.add('fever-burst');
+    gameContainer.classList.add('fever-impact');
+    setTimeout(() => {
+      boardWrapper.classList.remove('fever-burst');
+      gameContainer.classList.remove('fever-impact');
+    }, 600);
   }
 
   function showFeverNotice(message) {
@@ -306,7 +357,7 @@ export function initGameApp() {
     feverNotice.classList.add('show');
   }
 
-  function startFeverMode(type, amount, label) {
+  function startFeverMode(type, amount, label, tier = 'normal') {
     if (fever.active || fever.ending || isGameOver || !isGameActive) return;
 
     if (fever.rollbackTimer) {
@@ -316,13 +367,20 @@ export function initGameApp() {
     boardWrapper.classList.remove('fever-rollback');
     fever.active = true;
     fever.ending = false;
+    fever.tier = tier;
     fever.type = type;
     fever.amount = amount;
     fever.label = label;
-    fever.timeLeftMs = FEVER_DURATION_MS;
+    fever.scoreMultiplier = tier === 'super' ? SUPER_FEVER_SCORE_MULTIPLIER : FEVER_SCORE_MULTIPLIER;
+    fever.durationMs = tier === 'super' ? SUPER_FEVER_DURATION_MS : getNormalFeverDurationMs();
+    fever.timeLeftMs = fever.durationMs;
+    if (tier === 'super') {
+      showFeverNotice(`슈퍼피버 ${label}!`);
+    }
     playSound('feverStart');
-renderBoard();
-updateFeverUI();
+    renderBoard();
+    updateFeverUI();
+    triggerFeverBurst();
 
     if (fever.timer) clearInterval(fever.timer);
     fever.timer = setInterval(() => {
@@ -345,9 +403,12 @@ updateFeverUI();
 
     fever.active = false;
     fever.ending = false;
+    fever.tier = 'normal';
     fever.type = null;
     fever.amount = 0;
     fever.label = '';
+    fever.scoreMultiplier = FEVER_SCORE_MULTIPLIER;
+    fever.durationMs = FEVER_DURATION_MS;
     fever.timeLeftMs = 0;
     isDragging = false;
     selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected', 'matched'));
@@ -369,16 +430,20 @@ updateFeverUI();
 
   function maybeQueueFeverSpawn(len, allSame) {
     if (len < FEVER_TRIGGER_MIN_LENGTH) return;
-    if (allSame || fever.active || fever.ending || pendingFeverSpawn || hasFeverTile()) return;
+    if (allSame || fever.active || fever.ending || hasFeverTile()) return;
 
-    pendingFeverSpawn = true;
+    const tier = isSuperFeverLive() && len >= SUPER_FEVER_TRIGGER_MIN_LENGTH ? 'super' : 'normal';
+    // 이미 슈퍼피버가 대기 중이면 하향하지 않음
+    if (pendingFeverSpawn === 'super') return;
+    pendingFeverSpawn = tier;
   }
 
   function spawnQueuedFeverBlock() {
     if (!pendingFeverSpawn || fever.active || fever.ending || hasFeverTile()) {
-      pendingFeverSpawn = false;
+      pendingFeverSpawn = null;
       return;
     }
+    const tier = pendingFeverSpawn;
 
     const candidates = [];
     for (let r = 0; r < BOARD_SIZE; r++) {
@@ -391,11 +456,11 @@ updateFeverUI();
 
     if (candidates.length > 0) {
       const target = candidates[Math.floor(Math.random() * candidates.length)];
-      boardData[target.r][target.c] = createFeverTileData();
-      showFeverNotice('피버 블록 등장!');
+      boardData[target.r][target.c] = createFeverTileData(tier);
+      showFeverNotice(tier === 'super' ? '슈퍼피버 블록 등장!' : '피버 블록 등장!');
     }
 
-    pendingFeverSpawn = false;
+    pendingFeverSpawn = null;
   }
 
   function getLocalRaidPlayers() {
@@ -840,7 +905,7 @@ updateFeverUI();
       if (tileData?.type === 'fever') {
         boardData[r][c] = createNormalTileData();
         updateTileElement(tile, boardData[r][c]);
-        startFeverMode(tileData.feverType, tileData.feverAmount, tileData.feverLabel);
+        startFeverMode(tileData.feverType, tileData.feverAmount, tileData.feverLabel, tileData.feverTier || 'normal');
         return;
       }
     }
@@ -1015,7 +1080,7 @@ updateFeverUI();
       // 콤보 점수 보너스 대폭 강화 (비선형 가중치 체감형 점수 부스팅)
       const comboBonus = combo > 1 ? (combo - 1) * 80 * (1 + (combo * 0.15)) : 0;
       const basePoints = Math.floor((len * 100) + comboBonus);
-      const feverMultiplier = fever.active ? FEVER_SCORE_MULTIPLIER : 1;
+      const feverMultiplier = fever.active ? fever.scoreMultiplier : 1;
       const points = Math.round(basePoints * repeatResult.scoreMultiplier * feverMultiplier);
       score += points;
       
@@ -1058,7 +1123,7 @@ updateFeverUI();
       bonusTime *= repeatResult.timeMultiplier;
       
       if (fever.active) {
-        fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000));
+        fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000 * getFeverTimeBonusRate()));
         updateFeverUI();
       } else if (currentGameMode !== 'bossRaid') {
         timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
@@ -1350,6 +1415,7 @@ updateFeverUI();
         }
         tile.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid');
         tile.classList.toggle('fever-tile', tileData?.type === 'fever');
+        tile.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
       }
     }
   }
