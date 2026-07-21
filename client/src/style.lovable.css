@@ -440,6 +440,24 @@ body {
   content: '🔥 FEVER  ';
 }
 
+.fever-panel.super-fever {
+  border-color: #a855f7;
+  background: rgba(243, 232, 255, .96);
+  box-shadow: 0 7px 18px rgba(126, 34, 206, .3);
+}
+
+.fever-panel.super-fever .fever-timer-fill {
+  background: linear-gradient(90deg, #6d28d9, #a855f7, #f0abfc);
+}
+
+.fever-panel.super-fever .fever-timer-text {
+  color: #4c1d95;
+}
+
+.fever-panel.super-fever .fever-timer-text::before {
+  content: '🌟 SUPER  ';
+}
+
 /* Board and tiles */
 .board-wrapper {
   padding: 8px;
@@ -527,9 +545,41 @@ body {
   to { transform: scale(1.06) rotate(2deg); }
 }
 
+/* Super fever (5+ chain) — deep violet theme */
+.tile.super-fever-tile {
+  background: radial-gradient(circle at 35% 28%, #f3e8ff 0%, #a855f7 36%, #6d28d9 78%);
+  border: 2px solid #e9d5ff;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(46, 16, 101, .85);
+  box-shadow: 0 0 26px rgba(147, 51, 234, .92), inset 0 0 12px rgba(255, 255, 255, .5);
+  animation: lv-super-fever-tile .7s ease-in-out infinite alternate;
+}
+
+.tile.super-fever-tile::before {
+  color: #7c3aed;
+  content: '✦';
+}
+
+@keyframes lv-super-fever-tile {
+  from {
+    transform: scale(.95) rotate(-3deg);
+    box-shadow: 0 0 18px rgba(168, 85, 247, .78), inset 0 0 9px rgba(255, 255, 255, .4);
+  }
+  to {
+    transform: scale(1.09) rotate(3deg);
+    box-shadow: 0 0 34px rgba(109, 40, 217, 1), 0 0 12px rgba(233, 213, 255, .9), inset 0 0 16px rgba(255, 255, 255, .68);
+  }
+}
+
 .board-wrapper.fever-active {
   background: radial-gradient(circle, #fff1a8 0%, #ffd76b 34%, #a7f3d0 72%);
   box-shadow: 0 0 36px rgba(250, 204, 21, .6), inset 0 2px 8px rgba(6, 41, 31, .18);
+}
+
+.board-wrapper.super-fever-active {
+  background: radial-gradient(circle, #f3e0ff 0%, #d8b4fe 34%, #a7f3d0 72%);
+  border-color: #a855f7;
+  box-shadow: 0 0 40px rgba(147, 51, 234, .62), inset 0 2px 8px rgba(6, 41, 31, .18);
 }
 
 .game-container.fever-active .tile:not(.fever-tile) {
@@ -546,6 +596,12 @@ body {
   content: '×1.5';
   font-size: 12px;
   box-shadow: 0 0 14px rgba(255, 107, 107, .46);
+}
+
+.game-container.super-fever-active .hud-item:first-child .hud-value::after {
+  background: #7c3aed;
+  content: '×2';
+  box-shadow: 0 0 14px rgba(147, 51, 234, .5);
 }
 
 .fever-notice {

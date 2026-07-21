@@ -298,6 +298,7 @@ export function initGameApp() {
     feverPanel.classList.toggle('show', isVisible);
     feverPanel.classList.toggle('super-fever', isSuperActive);
     gameContainer.classList.toggle('fever-active', fever.active);
+    gameContainer.classList.toggle('super-fever-active', isSuperActive);
     boardWrapper.classList.toggle('fever-active', fever.active);
     boardWrapper.classList.toggle('super-fever-active', isSuperActive);
 
@@ -331,7 +332,7 @@ export function initGameApp() {
     fever.timeLeftMs = 0;
     pendingFeverSpawn = null;
     boardWrapper.classList.remove('fever-active', 'super-fever-active', 'fever-rollback', 'fever-burst');
-    gameContainer.classList.remove('fever-active', 'fever-impact');
+    gameContainer.classList.remove('fever-active', 'super-fever-active', 'fever-impact');
     feverPanel.classList.remove('super-fever');
     feverNotice.classList.remove('show');
     updateFeverUI();
