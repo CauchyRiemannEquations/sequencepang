@@ -4,8 +4,11 @@ const { Server } = require('socket.io');
 const path = require('path');
 const { registerSocketHandlers } = require('./socketHandlers');
 const { scoreRouter } = require('./scoreRoutes');
+const { createRateLimiter } = require('./rateLimit');
 
 const app = express();
+// Render 등 리버스 프록시 뒤에서 실제 클라이언트 IP를 req.ip로 받기 위함
+app.set('trust proxy', 1);
 const frontendRedirectUrl = process.env.FRONTEND_REDIRECT_URL;
 const frontendOrigins = (process.env.FRONTEND_ORIGIN || '')
   .split(',')
@@ -72,6 +75,7 @@ app.use((req, res, next) => {
 
   next();
 });
+app.use('/api', createRateLimiter({ windowMs: 60 * 1000, max: 120, keyPrefix: 'api' }));
 app.use('/api', scoreRouter);
 
 if (frontendRedirectUrl) {
