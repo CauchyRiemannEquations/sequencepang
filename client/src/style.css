@@ -369,6 +369,19 @@
       transition: width 0.1s linear;
     }
 
+    .fever-panel.super-fever {
+      border-color: rgba(192, 38, 211, 0.75);
+      box-shadow: 0 6px 14px rgba(147, 51, 234, 0.3);
+    }
+
+    .fever-panel.super-fever .fever-timer-fill {
+      background: linear-gradient(90deg, #7c3aed, #d946ef, #f0abfc);
+    }
+
+    .fever-panel.super-fever .fever-timer-text {
+      color: #581c87;
+    }
+
     .fever-timer-text {
       position: relative;
       z-index: 2;
@@ -409,6 +422,11 @@
     .board-wrapper.fever-active {
       background: radial-gradient(circle at 50% 42%, #fde68a 0%, #a7f3d0 48%, #8fbf8b 100%);
       box-shadow: 0 0 24px rgba(250, 204, 21, 0.45), inset 0 2px 8px rgba(20, 83, 45, 0.22);
+    }
+
+    .board-wrapper.super-fever-active {
+      background: radial-gradient(circle at 50% 42%, #f5d0fe 0%, #c4b5fd 48%, #8fbf8b 100%);
+      box-shadow: 0 0 28px rgba(192, 38, 211, 0.55), inset 0 2px 8px rgba(20, 83, 45, 0.22);
     }
 
     .board-wrapper.fever-rollback .tile {
@@ -518,6 +536,15 @@
       text-shadow: 0 1px 0 rgba(255,255,255,0.85);
     }
 
+    .tile.super-fever-tile {
+      background: radial-gradient(circle at 35% 28%, #fbe4ff 0%, #d946ef 38%, #7c3aed 78%);
+      color: #fdf4ff;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 22px rgba(217, 70, 239, 0.9), inset 0 0 12px rgba(255,255,255,0.5);
+      animation: superFeverTileSparkle 0.7s ease-in-out infinite alternate;
+      text-shadow: 0 1px 3px rgba(88, 28, 135, 0.8);
+    }
+
     .game-container.fever-active .tile:not(.fever-tile) {
       filter: saturate(1.25) brightness(1.06);
     }
@@ -530,6 +557,17 @@
       to {
         transform: translateY(0);
         opacity: 1;
+      }
+    }
+
+    @keyframes superFeverTileSparkle {
+      from {
+        transform: scale(0.95) rotate(-3deg);
+        box-shadow: 0 0 16px rgba(217, 70, 239, 0.75), inset 0 0 9px rgba(255,255,255,0.4);
+      }
+      to {
+        transform: scale(1.08) rotate(3deg);
+        box-shadow: 0 0 30px rgba(124, 58, 237, 1), inset 0 0 16px rgba(255,255,255,0.65);
       }
     }
 
