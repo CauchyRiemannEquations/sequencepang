@@ -47,8 +47,12 @@ export function initGameApp() {
     };
   }
 
+  // 개발 모드에서 ?feverTest=1 을 붙이면 자정 전에도 슈퍼피버를 미리 체험 가능
+  const isFeverTestMode = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).has('feverTest');
+
   function isSuperFeverLive() {
-    return Date.now() >= SUPER_FEVER_LAUNCH_AT_MS;
+    return isFeverTestMode || Date.now() >= SUPER_FEVER_LAUNCH_AT_MS;
   }
 
   function getNormalFeverDurationMs() {
