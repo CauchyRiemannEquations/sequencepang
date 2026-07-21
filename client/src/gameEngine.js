@@ -330,11 +330,23 @@ export function initGameApp() {
     fever.durationMs = FEVER_DURATION_MS;
     fever.timeLeftMs = 0;
     pendingFeverSpawn = null;
-    boardWrapper.classList.remove('fever-active', 'super-fever-active', 'fever-rollback');
-    gameContainer.classList.remove('fever-active');
+    boardWrapper.classList.remove('fever-active', 'super-fever-active', 'fever-rollback', 'fever-burst');
+    gameContainer.classList.remove('fever-active', 'fever-impact');
     feverPanel.classList.remove('super-fever');
     feverNotice.classList.remove('show');
     updateFeverUI();
+  }
+
+  function triggerFeverBurst() {
+    boardWrapper.classList.remove('fever-burst');
+    gameContainer.classList.remove('fever-impact');
+    void boardWrapper.offsetWidth;
+    boardWrapper.classList.add('fever-burst');
+    gameContainer.classList.add('fever-impact');
+    setTimeout(() => {
+      boardWrapper.classList.remove('fever-burst');
+      gameContainer.classList.remove('fever-impact');
+    }, 600);
   }
 
   function showFeverNotice(message) {
@@ -365,8 +377,9 @@ export function initGameApp() {
       showFeverNotice(`슈퍼피버 ${label}!`);
     }
     playSound('feverStart');
-renderBoard();
-updateFeverUI();
+    renderBoard();
+    updateFeverUI();
+    triggerFeverBurst();
 
     if (fever.timer) clearInterval(fever.timer);
     fever.timer = setInterval(() => {
