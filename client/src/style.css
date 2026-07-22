@@ -324,6 +324,25 @@
       to { filter: brightness(1.2); }
     }
 
+    /* 라스트팡: 남은 5초 점수 2배 */
+    .timer-container.last-spurt {
+      animation: lastSpurtPulse 0.5s ease-in-out infinite alternate;
+    }
+
+    .timer-container.last-spurt .timer-bar {
+      background: linear-gradient(90deg, #dc2626, #f97316);
+    }
+
+    .timer-container.last-spurt .timer-text {
+      color: #fff;
+      font-weight: 800;
+    }
+
+    @keyframes lastSpurtPulse {
+      from { box-shadow: 0 0 6px rgba(220, 38, 38, 0.5); }
+      to { box-shadow: 0 0 22px rgba(239, 68, 68, 0.95), 0 0 8px rgba(249, 115, 22, 0.7); }
+    }
+
     .timer-text {
       position: relative;
       z-index: 2;
@@ -951,6 +970,29 @@
       padding: 7px 18px;
       font-size: 13px;
       color: #a3e635;
+    }
+
+    .yesterday-top-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 6px;
+      background: rgba(250, 204, 21, 0.1);
+      border: 1px solid rgba(250, 204, 21, 0.3);
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-size: 12px;
+      color: #facc15;
+    }
+
+    .yesterday-top-banner[hidden] {
+      display: none;
+    }
+
+    .yesterday-top-label {
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .welcome-best-label {

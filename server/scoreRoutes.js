@@ -9,6 +9,7 @@ const {
   RANKING_RESET_AT_MS,
   RANKING_SEASON_ID,
   RANKING_LEGACY_SEASON_ID,
+  DAY_MS,
   getCurrentRankingDayInfo,
   getCurrentRankingWeekInfo
 } = require('./constants');
@@ -103,7 +104,8 @@ function getNicknameIdentity(data) {
   return `nickname:${normalizedNicknameKey}`;
 }
 
-function buildLeadersFromDocs(documents) {
+// 중복 제거(플레이어당 최고점 1개)까지 끝난 전체 순위 배열을 반환
+function buildRankedEntries(documents) {
   const sortedScores = documents
     .map(document => document.data())
     .filter(data => {
@@ -145,7 +147,11 @@ function buildLeadersFromDocs(documents) {
     bestByNickname.set(nicknameIdentity, data);
   }
 
-  return Array.from(bestByNickname.values())
+  return Array.from(bestByNickname.values());
+}
+
+function buildLeadersFromDocs(documents) {
+  return buildRankedEntries(documents)
     .slice(0, LEADERBOARD_RESPONSE_LIMIT)
     .map(data => ({
       nickname: normalizeNickname(data.nickname),
@@ -283,6 +289,88 @@ async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason,
   }
 }
 
+// 기간별 랭킹 대상 문서 전체 로딩 (기본 쿼리 + 레거시 보충 병합)
+async function loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, weekInfo) {
+  const snapshot = await fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
+  let leaderboardDocs = [...snapshot.docs];
+
+  if (period === 'daily' || period === 'weekly') {
+    const supplementSnapshot = await scoresCollection
+      .orderBy('score', 'desc')
+      .limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT)
+      .get();
+
+    const mergedDocs = new Map();
+    for (const document of leaderboardDocs) {
+      mergedDocs.set(document.id, document);
+    }
+    for (const document of filterLeaderboardDocsByPeriod(supplementSnapshot.docs, period, rankingSeason, dayInfo, weekInfo)) {
+      if (!mergedDocs.has(document.id)) {
+        mergedDocs.set(document.id, document);
+      }
+    }
+    leaderboardDocs = Array.from(mergedDocs.values());
+  }
+
+  return leaderboardDocs;
+}
+
+// 방금 저장한 점수의 오늘 순위 계산 (실패해도 저장 자체에는 영향 없음)
+async function computeDailyRank(firestore, scoreData) {
+  const dayInfo = getCurrentRankingDayInfo();
+  const weekInfo = getCurrentRankingWeekInfo();
+  const rankingSeason = getRankingSeason();
+  const docs = await loadPeriodDocs(firestore.collection('scores'), 'daily', rankingSeason, dayInfo, weekInfo);
+  const entries = buildRankedEntries(docs);
+
+  const submittedPlayerIdentity = scoreData.playerId ? `player:${scoreData.playerId}` : null;
+  const submittedNicknameIdentity = getNicknameIdentity(scoreData);
+  const index = entries.findIndex(data => {
+    const playerIdentity = getPlayerIdentity(data);
+    if (submittedPlayerIdentity && playerIdentity) {
+      return playerIdentity === submittedPlayerIdentity;
+    }
+    return getNicknameIdentity(data) === submittedNicknameIdentity;
+  });
+
+  if (index === -1) return null;
+
+  const cutoffEntry = entries[LEADERBOARD_RESPONSE_LIMIT - 1];
+  return {
+    rank: index + 1,
+    totalPlayers: entries.length,
+    top30Cutoff: cutoffEntry ? cutoffEntry.score : null
+  };
+}
+
+// 어제의 1등 (지나간 날짜의 기록은 불변이므로 날짜 단위로 캐시)
+const yesterdayTopCache = new Map();
+
+async function loadYesterdayTop(firestore) {
+  const yesterdayMs = Date.now() - DAY_MS;
+  const dayInfo = getCurrentRankingDayInfo(yesterdayMs);
+  const weekInfo = getCurrentRankingWeekInfo(yesterdayMs);
+  const rankingSeason = getRankingSeason(yesterdayMs);
+  const cacheKey = `${rankingSeason}:${dayInfo.rankingDay}`;
+
+  if (yesterdayTopCache.has(cacheKey)) {
+    return yesterdayTopCache.get(cacheKey);
+  }
+
+  const docs = await loadPeriodDocs(firestore.collection('scores'), 'daily', rankingSeason, dayInfo, weekInfo);
+  const topEntry = buildRankedEntries(docs)[0] || null;
+  const payload = {
+    rankingDay: dayInfo.rankingDay,
+    top: topEntry
+      ? { nickname: normalizeNickname(topEntry.nickname), score: topEntry.score }
+      : null
+  };
+
+  yesterdayTopCache.clear();
+  yesterdayTopCache.set(cacheKey, payload);
+  return payload;
+}
+
 function validateScorePayload(payload) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return { error: '올바른 점수 데이터가 필요합니다.', reason: 'invalid_payload' };
@@ -397,11 +485,33 @@ scoreRouter.post('/scores', writeRateLimiter, async (req, res) => {
     });
     clearLeaderboardCache();
     completeGameSession(gameSessionId);
-    return res.status(201).json({ ok: true, id: document.id });
+
+    let dailyRank = null;
+    try {
+      dailyRank = await computeDailyRank(firestore, scoreData);
+    } catch (rankError) {
+      console.warn('일간 순위 계산 실패:', rankError.message);
+    }
+
+    return res.status(201).json({ ok: true, id: document.id, dailyRank });
   } catch (error) {
     releaseGameSession(validation.value.gameSessionId);
     console.error('점수 저장 실패:', error.message);
     return res.status(500).json({ error: '점수를 저장하지 못했습니다.' });
+  }
+});
+
+scoreRouter.get('/yesterday-top', async (_req, res) => {
+  const firestore = getScoreFirestore();
+  if (!firestore) return firestoreUnavailable(res);
+
+  try {
+    const payload = await loadYesterdayTop(firestore);
+    res.set('Cache-Control', 'no-store');
+    return res.json(payload);
+  } catch (error) {
+    console.error('어제의 1등 조회 실패:', error.message);
+    return res.status(500).json({ error: '어제의 1등을 불러오지 못했습니다.' });
   }
 });
 
@@ -424,27 +534,7 @@ scoreRouter.get('/leaderboard', async (req, res) => {
     }
 
     const scoresCollection = firestore.collection('scores');
-    const snapshot = await fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
-    let leaderboardDocs = [...snapshot.docs];
-
-    if (period === 'daily' || period === 'weekly') {
-      const supplementSnapshot = await scoresCollection
-        .orderBy('score', 'desc')
-        .limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT)
-        .get();
-
-      const mergedDocs = new Map();
-      for (const document of leaderboardDocs) {
-        mergedDocs.set(document.id, document);
-      }
-      for (const document of filterLeaderboardDocsByPeriod(supplementSnapshot.docs, period, rankingSeason, dayInfo, weekInfo)) {
-        if (!mergedDocs.has(document.id)) {
-          mergedDocs.set(document.id, document);
-        }
-      }
-      leaderboardDocs = Array.from(mergedDocs.values());
-    }
-
+    const leaderboardDocs = await loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
     const leaders = buildLeadersFromDocs(leaderboardDocs);
     const payload = {
       leaders,

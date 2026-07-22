@@ -19,6 +19,9 @@ import {
   FEVER_TIME_BONUS_RATE,
   FEVER_TYPES,
   SUPER_FEVER_TYPES,
+  LAST_SPURT_LAUNCH_AT_MS,
+  LAST_SPURT_THRESHOLD_S,
+  LAST_SPURT_SCORE_MULTIPLIER,
   RECENT_SEQUENCE_LIMIT,
   REPEATED_PATH_SCORE_MULTIPLIER,
   REPEATED_PATTERN_SCORE_MULTIPLIER,
@@ -26,7 +29,7 @@ import {
   REPEATED_PATTERN_TIME_MULTIPLIER
 } from './gameConstants.js';
 import { createSocketClient } from './socketClient.js';
-import { createGameSession, fetchLeaderboard, submitScore } from './scoreClient.js';
+import { createGameSession, fetchLeaderboard, fetchYesterdayTop, submitScore } from './scoreClient.js';
 import { renderGlobalLeaderboard, renderLeaderboard } from './ui.js';
 import { playSound } from './sfxManager.js';
 import { pauseMenuBgm, resumeMenuBgm } from './menuBgm.js';
@@ -47,12 +50,16 @@ export function initGameApp() {
     };
   }
 
-  // 개발 모드에서 ?feverTest=1 을 붙이면 자정 전에도 슈퍼피버를 미리 체험 가능
+  // 개발 모드에서 ?feverTest=1 을 붙이면 적용 시각 전에도 이벤트를 미리 체험 가능
   const isFeverTestMode = import.meta.env.DEV
     && new URLSearchParams(window.location.search).has('feverTest');
 
   function isSuperFeverLive() {
     return isFeverTestMode || Date.now() >= SUPER_FEVER_LAUNCH_AT_MS;
+  }
+
+  function isLastSpurtLive() {
+    return isFeverTestMode || Date.now() >= LAST_SPURT_LAUNCH_AT_MS;
   }
 
   function getNormalFeverDurationMs() {
@@ -145,6 +152,9 @@ export function initGameApp() {
   let repeatedPathCount = 0;
   let repeatedValuePatternCount = 0;
   let maxChainLength = 0;
+  let lastSpurtAnnounced = false;
+  let yesterdayTop = null;
+  let beatYesterdayAnnounced = false;
   const fever = {
     active: false,
     ending: false,
@@ -610,6 +620,8 @@ export function initGameApp() {
     repeatedPathCount = 0;
     repeatedValuePatternCount = 0;
     maxChainLength = 0;
+    lastSpurtAnnounced = false;
+    beatYesterdayAnnounced = false;
     isGameOver = false;
     isGameActive = false; // 카운트다운이 완전히 끝날 때까지 조작 제한
     selectedTiles = [];
@@ -751,6 +763,15 @@ export function initGameApp() {
     } catch (e) {}
   }
 
+  function isLastSpurtActive() {
+    return isLastSpurtLive()
+      && isGameActive
+      && !isGameOver
+      && currentGameMode !== 'bossRaid'
+      && timeLeft > 0
+      && timeLeft <= LAST_SPURT_THRESHOLD_S;
+  }
+
   function updateTimerUI() {
     const percentage = (timeLeft / MAX_TIME) * 100;
     timerBar.style.width = `${percentage}%`;
@@ -761,12 +782,24 @@ export function initGameApp() {
     } else {
       timerBar.classList.remove('warning');
     }
+
+    const lastSpurt = isLastSpurtActive();
+    timerContainer.classList.toggle('last-spurt', lastSpurt);
+    gameContainer.classList.toggle('last-spurt', lastSpurt);
+    if (lastSpurt && !lastSpurtAnnounced) {
+      lastSpurtAnnounced = true;
+      showFeverNotice('⚡ 라스트팡! 점수 ×2');
+    } else if (!lastSpurt && lastSpurtAnnounced && timeLeft > LAST_SPURT_THRESHOLD_S) {
+      // 시간 보너스로 5초 위로 복귀하면 다음 진입 때 다시 알림
+      lastSpurtAnnounced = false;
+    }
   }
 
 
   function triggerGameOver() {
       isGameOver = true;
-      gameContainer.classList.remove('game-active');
+      gameContainer.classList.remove('game-active', 'last-spurt');
+      timerContainer.classList.remove('last-spurt');
       playSound('gameOver');
       isDragging = false;
       clearInterval(gameTimer);
@@ -803,6 +836,41 @@ export function initGameApp() {
   function setScoreSubmitStatus(message, state = '') {
     scoreSubmitStatus.textContent = message;
     scoreSubmitStatus.dataset.state = state;
+  }
+
+  function buildRankResultMessage(dailyRank) {
+    if (!dailyRank?.rank) return '등록 완료!';
+
+    if (dailyRank.rank <= 30) {
+      return `등록 완료! 오늘 ${dailyRank.rank}위 🎉`;
+    }
+
+    const cutoff = dailyRank.top30Cutoff;
+    if (Number.isFinite(cutoff) && cutoff >= score) {
+      const gap = cutoff - score + 1;
+      return `오늘 ${dailyRank.rank}위 · 30위까지 ${gap.toLocaleString('ko-KR')}점!`;
+    }
+
+    return `등록 완료! 오늘 ${dailyRank.rank}위`;
+  }
+
+  async function loadYesterdayTopBanner() {
+    const banner = document.getElementById('yesterday-top-banner');
+    const bannerText = document.getElementById('yesterday-top-text');
+    if (!banner || !bannerText) return;
+
+    try {
+      const response = await fetchYesterdayTop();
+      if (response?.top?.nickname && Number.isFinite(response.top.score)) {
+        yesterdayTop = response.top;
+        bannerText.textContent = `${yesterdayTop.nickname} · ${yesterdayTop.score.toLocaleString('ko-KR')}점 넘어보세요!`;
+        banner.hidden = false;
+      } else {
+        banner.hidden = true;
+      }
+    } catch {
+      banner.hidden = true;
+    }
   }
 
   async function loadGlobalLeaderboard(period = currentGameOverRankingPeriod) {
@@ -850,7 +918,7 @@ export function initGameApp() {
 
     setScoreSubmitStatus('점수 등록 중...', 'loading');
     try {
-      await submitScore({
+      const submitResult = await submitScore({
         nickname,
         playerId,
         score,
@@ -866,7 +934,7 @@ export function initGameApp() {
         maxChainLength
       });
       scoreSubmitted = true;
-      setScoreSubmitStatus('등록 완료!', 'success');
+      setScoreSubmitStatus(buildRankResultMessage(submitResult?.dailyRank), 'success');
     } catch (error) {
       setScoreSubmitStatus(error.message, 'error');
       scoreSubmitRetry.hidden = false;
@@ -1081,8 +1149,17 @@ export function initGameApp() {
       const comboBonus = combo > 1 ? (combo - 1) * 80 * (1 + (combo * 0.15)) : 0;
       const basePoints = Math.floor((len * 100) + comboBonus);
       const feverMultiplier = fever.active ? fever.scoreMultiplier : 1;
-      const points = Math.round(basePoints * repeatResult.scoreMultiplier * feverMultiplier);
+      const lastSpurtMultiplier = isLastSpurtActive() ? LAST_SPURT_SCORE_MULTIPLIER : 1;
+      const totalMultiplier = feverMultiplier * lastSpurtMultiplier;
+      const points = Math.round(basePoints * repeatResult.scoreMultiplier * totalMultiplier);
       score += points;
+
+      // 어제의 1등 기록 돌파 연출 (싱글 타임어택만)
+      if (!isMultiplayMode && currentGameMode === 'timeAttack'
+        && yesterdayTop?.score != null && !beatYesterdayAnnounced && score > yesterdayTop.score) {
+        beatYesterdayAnnounced = true;
+        showFeverNotice('👑 어제의 1등을 넘었어요!');
+      }
       
       if (currentGameMode !== 'bossRaid' && score > bestScore) {
         bestScore = score;
@@ -1130,7 +1207,7 @@ export function initGameApp() {
         updateTimerUI();
       }
 
-      spawnFloatingScore(points, feverMultiplier, repeatResult.type);
+      spawnFloatingScore(points, totalMultiplier, repeatResult.type);
       spawnSequenceHintRich(sequenceKind, sequenceRule);
       if (currentGameMode === 'bossRaid') {
         updateRaidUI(getLocalRaidPlayers());
@@ -1478,6 +1555,7 @@ export function initGameApp() {
   updateLobbyModeControls();
   setupGameOverRankingControls();
   updateGameOverRankingHeader();
+  loadYesterdayTopBanner();
 
   function getOrCreatePlayerId() {
     const storageKey = 'seq_pang_player_id';

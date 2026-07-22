@@ -177,6 +177,16 @@ body {
   color: var(--lv-lime);
 }
 
+.yesterday-top-banner {
+  background: rgba(250, 204, 21, 0.09);
+  border-color: rgba(250, 204, 21, 0.32);
+  color: #fde68a;
+}
+
+.yesterday-top-banner .yesterday-top-label {
+  color: #facc15;
+}
+
 .welcome-best-unit {
   font-size: 11px;
 }
@@ -419,6 +429,25 @@ body {
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
   text-shadow: 0 1px 0 rgba(255, 255, 255, .38);
+}
+
+/* 라스트팡 (남은 5초, 점수 2배) — 붉은 경고 테마 */
+.timer-container.last-spurt {
+  background: rgba(63, 8, 8, .9);
+  border-color: rgba(248, 113, 113, .55);
+}
+
+.timer-container.last-spurt .timer-bar {
+  background: linear-gradient(90deg, #dc2626, #f97316, #facc15);
+}
+
+.timer-container.last-spurt .timer-text {
+  color: #fff1f2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .55);
+}
+
+.timer-container.last-spurt .timer-text::before {
+  content: '⚡ ';
 }
 
 .fever-panel {
