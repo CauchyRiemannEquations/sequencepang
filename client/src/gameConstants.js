@@ -31,6 +31,12 @@ export const SUPER_FEVER_TYPES = [
   { type: 'add', amount: 10, label: '+10', weight: 50 }
 ];
 
+// 라스트팡: 남은 시간 5초 이하일 때 모든 점수 2배 (피버 배율과 중첩)
+// 2026-07-27 00:00 KST(주간 랭킹 리셋 시각)부터 적용
+export const LAST_SPURT_LAUNCH_AT_MS = Date.parse('2026-07-26T15:00:00.000Z');
+export const LAST_SPURT_THRESHOLD_S = 5;
+export const LAST_SPURT_SCORE_MULTIPLIER = 2;
+
 export const RECENT_SEQUENCE_LIMIT = 5;
 export const REPEATED_PATH_SCORE_MULTIPLIER = 0.2;
 export const REPEATED_PATTERN_SCORE_MULTIPLIER = 0.5;

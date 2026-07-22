@@ -324,6 +324,25 @@
       to { filter: brightness(1.2); }
     }
 
+    /* 라스트팡: 남은 5초 점수 2배 */
+    .timer-container.last-spurt {
+      animation: lastSpurtPulse 0.5s ease-in-out infinite alternate;
+    }
+
+    .timer-container.last-spurt .timer-bar {
+      background: linear-gradient(90deg, #dc2626, #f97316);
+    }
+
+    .timer-container.last-spurt .timer-text {
+      color: #fff;
+      font-weight: 800;
+    }
+
+    @keyframes lastSpurtPulse {
+      from { box-shadow: 0 0 6px rgba(220, 38, 38, 0.5); }
+      to { box-shadow: 0 0 22px rgba(239, 68, 68, 0.95), 0 0 8px rgba(249, 115, 22, 0.7); }
+    }
+
     .timer-text {
       position: relative;
       z-index: 2;
