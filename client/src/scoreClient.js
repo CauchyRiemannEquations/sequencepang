@@ -50,6 +50,10 @@ export function createGameSession() {
   });
 }
 
+export function fetchYesterdayTop() {
+  return requestJson(buildApiUrl('/api/yesterday-top'));
+}
+
 export function fetchLeaderboard(period = 'daily') {
   const params = new URLSearchParams({
     period: ['daily', 'weekly', 'season'].includes(period) ? period : 'daily'

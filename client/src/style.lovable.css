@@ -177,6 +177,16 @@ body {
   color: var(--lv-lime);
 }
 
+.yesterday-top-banner {
+  background: rgba(250, 204, 21, 0.09);
+  border-color: rgba(250, 204, 21, 0.32);
+  color: #fde68a;
+}
+
+.yesterday-top-banner .yesterday-top-label {
+  color: #facc15;
+}
+
 .welcome-best-unit {
   font-size: 11px;
 }
