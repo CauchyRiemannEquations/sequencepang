@@ -595,9 +595,6 @@ body {
   box-shadow: 0 0 40px rgba(147, 51, 234, .62), inset 0 2px 8px rgba(6, 41, 31, .18);
 }
 
-.game-container.fever-active .tile:not(.fever-tile) {
-  filter: saturate(1.22) brightness(1.06);
-}
 
 .game-container.fever-active .hud-item:first-child .hud-value::after {
   display: inline-block;

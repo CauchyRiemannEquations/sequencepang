@@ -319,9 +319,15 @@
       animation: flashWarning 0.5s infinite alternate;
     }
 
+    /* opacity는 GPU 합성이 가능해 filter 애니메이션보다 훨씬 가벼움 */
     @keyframes flashWarning {
-      from { filter: brightness(1); }
-      to { filter: brightness(1.2); }
+      from { opacity: 1; }
+      to { opacity: 0.84; }
+    }
+
+    /* 피버 중엔 시간이 멈추므로 경고 깜빡임도 정지 */
+    .game-container.fever-active .timer-bar.warning {
+      animation: none;
     }
 
     /* 라스트팡: 남은 5초 점수 2배 */
@@ -601,14 +607,11 @@
       text-shadow: 0 1px 3px rgba(46, 16, 101, 0.9);
     }
 
-    .game-container.fever-active .tile:not(.fever-tile) {
-      filter: saturate(1.25) brightness(1.06);
-    }
 
     @keyframes tilefall {
       from {
         transform: translateY(var(--fall-from, -60px));
-        opacity: 0.3;
+        opacity: 0.75;
       }
       to {
         transform: translateY(0);
@@ -657,10 +660,9 @@
     }
 
     .drag-line-glow {
-      stroke: rgba(190, 242, 100, 0.28);
-      stroke-width: 17;
-      opacity: 0.85;
-      filter: blur(2px);
+      stroke: rgba(190, 242, 100, 0.24);
+      stroke-width: 20;
+      opacity: 0.8;
     }
 
     .drag-line-core {
@@ -668,7 +670,6 @@
       stroke-width: 7;
       opacity: 0.95;
       stroke-dasharray: 14 8;
-      filter: drop-shadow(0 0 7px rgba(190, 242, 100, 0.75));
       animation: dashMove 0.65s linear infinite, juicePulse 0.9s ease-in-out infinite alternate;
     }
 
