@@ -1,4 +1,4 @@
-const { ENABLE_BOSS_RAID, MAX_ROOM_PLAYERS, RAID_HP_PER_PLAYER } = require('./constants');
+const { MAX_ROOM_PLAYERS } = require('./constants');
 const {
   rooms,
   getRoom,
@@ -96,32 +96,6 @@ function registerSocketHandlers(io) {
       io.to(roomId).emit('gameStart');
     });
 
-    socket.on('startRaid', () => {
-      if (!ENABLE_BOSS_RAID) {
-        return socket.emit('errorMsg', '보스레이드는 현재 준비 중입니다.');
-      }
-
-      const { roomId } = socket;
-      const room = roomId ? getRoom(roomId) : null;
-      if (!room) return;
-
-      if (room.hostId !== socket.id) {
-        return socket.emit('errorMsg', '방장만 보스레이드를 시작할 수 있습니다!');
-      }
-
-      room.isStarted = true;
-      room.mode = 'bossRaid';
-
-      const playerCount = Math.max(1, Math.min(MAX_ROOM_PLAYERS, Object.keys(room.players).length));
-      const maxHp = playerCount * RAID_HP_PER_PLAYER;
-
-      Object.values(room.players).forEach(player => {
-        player.score = 0;
-      });
-
-      io.to(roomId).emit('raidStart', { playerCount, maxHp });
-    });
-
     socket.on('updateScore', ({ score }) => {
       const { roomId } = socket;
       const room = roomId ? getRoom(roomId) : null;
@@ -133,7 +107,7 @@ function registerSocketHandlers(io) {
       const player = room.players[socket.id];
       player.score = score;
 
-      if (room.mode !== 'bossRaid' && player.score > (player.highestScore || 0)) {
+      if (player.score > (player.highestScore || 0)) {
         player.highestScore = player.score;
       }
 

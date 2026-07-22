@@ -1,6 +1,4 @@
-const ENABLE_BOSS_RAID = false;
 const MAX_ROOM_PLAYERS = 30;
-const RAID_HP_PER_PLAYER = 120000;
 const LEADERBOARD_THROTTLE_MS = 700;
 const ALLOWED_SCORE_MODES = new Set(['timeAttack']);
 // 정상 플레이로 도달 불가능한 수준의 여유 상한 (치팅 점수 차단용)
@@ -75,9 +73,7 @@ function getCurrentRankingWeekInfo(now = Date.now()) {
 }
 
 module.exports = {
-  ENABLE_BOSS_RAID,
   MAX_ROOM_PLAYERS,
-  RAID_HP_PER_PLAYER,
   LEADERBOARD_THROTTLE_MS,
   ALLOWED_SCORE_MODES,
   MAX_ACCEPTED_SCORE,
