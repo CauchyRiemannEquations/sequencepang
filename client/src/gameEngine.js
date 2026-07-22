@@ -319,7 +319,10 @@ export function initGameApp() {
     playSound('feverStart');
     renderBoard();
     updateFeverUI();
-    triggerFeverBurst();
+    // 일반 피버의 진입 플래시는 안내 문구 없이 화면만 번쩍여 깜빡임처럼 느껴져 슈퍼피버에서만 사용
+    if (tier === 'super') {
+      triggerFeverBurst();
+    }
 
     if (fever.timer) clearInterval(fever.timer);
     fever.timer = setInterval(() => {
