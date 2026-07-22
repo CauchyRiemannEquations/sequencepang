@@ -580,14 +580,8 @@ body {
 }
 
 @keyframes lv-super-fever-tile {
-  from {
-    transform: scale(.95) rotate(-3deg);
-    box-shadow: 0 0 18px rgba(168, 85, 247, .78), inset 0 0 9px rgba(255, 255, 255, .4);
-  }
-  to {
-    transform: scale(1.09) rotate(3deg);
-    box-shadow: 0 0 34px rgba(109, 40, 217, 1), 0 0 12px rgba(233, 213, 255, .9), inset 0 0 16px rgba(255, 255, 255, .68);
-  }
+  from { transform: scale(.95) rotate(-3deg); }
+  to { transform: scale(1.09) rotate(3deg); }
 }
 
 .board-wrapper.fever-active {
