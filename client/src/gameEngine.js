@@ -270,23 +270,11 @@ export function initGameApp() {
     fever.durationMs = FEVER_DURATION_MS;
     fever.timeLeftMs = 0;
     pendingFeverSpawn = null;
-    boardWrapper.classList.remove('fever-active', 'super-fever-active', 'fever-rollback', 'fever-burst');
-    gameContainer.classList.remove('fever-active', 'super-fever-active', 'fever-impact');
+    boardWrapper.classList.remove('fever-active', 'super-fever-active', 'fever-rollback');
+    gameContainer.classList.remove('fever-active', 'super-fever-active');
     feverPanel.classList.remove('super-fever');
     feverNotice.classList.remove('show');
     updateFeverUI();
-  }
-
-  function triggerFeverBurst() {
-    boardWrapper.classList.remove('fever-burst');
-    gameContainer.classList.remove('fever-impact');
-    void boardWrapper.offsetWidth;
-    boardWrapper.classList.add('fever-burst');
-    gameContainer.classList.add('fever-impact');
-    setTimeout(() => {
-      boardWrapper.classList.remove('fever-burst');
-      gameContainer.classList.remove('fever-impact');
-    }, 600);
   }
 
   function showFeverNotice(message) {
@@ -319,10 +307,6 @@ export function initGameApp() {
     playSound('feverStart');
     renderBoard();
     updateFeverUI();
-    // 일반 피버의 진입 플래시는 안내 문구 없이 화면만 번쩍여 깜빡임처럼 느껴져 슈퍼피버에서만 사용
-    if (tier === 'super') {
-      triggerFeverBurst();
-    }
 
     if (fever.timer) clearInterval(fever.timer);
     fever.timer = setInterval(() => {
