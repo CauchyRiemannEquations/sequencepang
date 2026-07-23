@@ -533,6 +533,12 @@ body {
   color: #7f1d1d;
 }
 
+/* 빅넘버 슈퍼피버로 등장한 10~19 타일 */
+.tile.big-number-tile {
+  color: #7c3aed;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
+}
+
 .tile.fever-tile {
   background: radial-gradient(circle at 35% 28%, var(--fv-cream) 0%, var(--fv-amber) 38%, var(--fv-orange) 78%);
   background-image: none;

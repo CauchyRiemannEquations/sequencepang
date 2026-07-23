@@ -24,10 +24,13 @@ export const FEVER_TYPES = [
   { type: 'add', amount: 3, label: '+3', weight: 40 },
   { type: 'multiply', amount: 2, label: '×2', weight: 20 }
 ];
+// bigNumber: 보드 변환 대신 새로 채워지는 타일이 10~19 원본 숫자로 등장
 export const SUPER_FEVER_TYPES = [
   { type: 'multiply', amount: 3, label: '×3', weight: 50 },
-  { type: 'add', amount: 10, label: '+10', weight: 50 }
+  { type: 'bigNumber', amount: 0, label: '10+', weight: 50 }
 ];
+export const BIG_NUMBER_TILE_MIN = 10;
+export const BIG_NUMBER_TILE_MAX = 19;
 
 // 라스트팡: 남은 시간 5초 이하일 때 모든 점수 2배 (피버 배율과 중첩)
 // 2026-07-27 00:00 KST(주간 랭킹 리셋 시각)부터 적용

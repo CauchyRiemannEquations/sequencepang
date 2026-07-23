@@ -17,6 +17,8 @@ import {
   FEVER_TIME_BONUS_RATE,
   FEVER_TYPES,
   SUPER_FEVER_TYPES,
+  BIG_NUMBER_TILE_MIN,
+  BIG_NUMBER_TILE_MAX,
   LAST_SPURT_LAUNCH_AT_MS,
   LAST_SPURT_THRESHOLD_S,
   LAST_SPURT_SCORE_MULTIPLIER,
@@ -41,9 +43,15 @@ export function initGameApp() {
     return Math.floor(Math.random() * (TILE_NUMBER_MAX - TILE_NUMBER_MIN + 1)) + TILE_NUMBER_MIN;
   }
 
+  function getRandomBigNumber() {
+    return Math.floor(Math.random() * (BIG_NUMBER_TILE_MAX - BIG_NUMBER_TILE_MIN + 1)) + BIG_NUMBER_TILE_MIN;
+  }
+
   function createNormalTileData() {
+    // 빅넘버 슈퍼피버 중에는 새 타일이 10~19 원본 숫자로 등장
+    const useBigNumber = fever.active && fever.type === 'bigNumber';
     return {
-      baseValue: getRandomNumber(),
+      baseValue: useBigNumber ? getRandomBigNumber() : getRandomNumber(),
       type: 'normal'
     };
   }
@@ -109,6 +117,7 @@ export function initGameApp() {
     tileElement.textContent = getDisplayValue(tileData);
     tileElement.classList.toggle('fever-tile', tileData?.type === 'fever');
     tileElement.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
+    tileElement.classList.toggle('big-number-tile', tileData?.type === 'normal' && tileData?.baseValue > TILE_NUMBER_MAX);
     tileElement.dataset.tileType = tileData?.type || 'normal';
     tileElement.dataset.baseValue = tileData?.baseValue ?? '';
     tileElement.dataset.feverTier = tileData?.feverTier ?? '';
@@ -321,6 +330,7 @@ export function initGameApp() {
 
   function finishFeverMode() {
     if (!fever.active) return;
+    const wasBigNumber = fever.type === 'bigNumber';
 
     if (fever.timer) {
       clearInterval(fever.timer);
@@ -341,6 +351,18 @@ export function initGameApp() {
     selectedTiles = [];
     dragLine.setAttribute('d', '');
     dragLineGlow.setAttribute('d', '');
+
+    // 빅넘버 피버가 남긴 10 이상 타일은 롤백 연출과 함께 1~9로 원상복구
+    if (wasBigNumber) {
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          const tileData = boardData[r][c];
+          if (tileData?.type === 'normal' && tileData.baseValue > TILE_NUMBER_MAX) {
+            boardData[r][c] = { baseValue: getRandomNumber(), type: 'normal' };
+          }
+        }
+      }
+    }
 
     showFeverNotice('피버 종료!');
     boardWrapper.classList.add('fever-rollback');
