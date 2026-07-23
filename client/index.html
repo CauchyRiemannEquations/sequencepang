@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SEQUENCEPANG</title>
+  <title>시퀀스팡 - SEQUENCEPANG</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Bagel+Fat+One&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script type="module" src="/src/main.js"></script>
   <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#84cc16">
 
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="수열팡">
+<meta name="application-name" content="시퀀스팡">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="수열팡">
+<meta name="apple-mobile-web-app-title" content="시퀀스팡">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 </head>
@@ -51,7 +51,40 @@
               <img class="welcome-icon" src="melon.png" alt="melon">
             </div>
             <div class="welcome-title-row">
-              <h1 class="welcome-title">수열팡</h1>
+              <h1 class="welcome-logo" aria-label="시퀀스팡">
+                <svg viewBox="0 0 560 170" role="img" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="logo-lime" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#b8ff4d"/>
+                      <stop offset="100%" stop-color="#72cf0a"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M100 92 L212 84 L322 92 L446 82" stroke="rgba(148,242,13,0.5)" stroke-width="16" fill="none" stroke-linecap="round"/>
+                  <g font-family="'Bagel Fat One', 'Jua', sans-serif" font-size="56" text-anchor="middle">
+                    <g transform="translate(100,88) rotate(-6)">
+                      <rect x="-46" y="-46" width="92" height="92" rx="18" fill="#fffbea" stroke="#0b3a2b" stroke-width="5"/>
+                      <text y="20" fill="#14532d">시</text>
+                      <text x="32" y="-24" font-family="Outfit, sans-serif" font-weight="800" font-size="17" fill="#72cf0a">1</text>
+                    </g>
+                    <g transform="translate(212,82) rotate(4)">
+                      <rect x="-46" y="-46" width="92" height="92" rx="18" fill="#fffbea" stroke="#0b3a2b" stroke-width="5"/>
+                      <text y="20" fill="#14532d">퀀</text>
+                      <text x="32" y="-24" font-family="Outfit, sans-serif" font-weight="800" font-size="17" fill="#72cf0a">2</text>
+                    </g>
+                    <g transform="translate(322,90) rotate(-4)">
+                      <rect x="-46" y="-46" width="92" height="92" rx="18" fill="#fffbea" stroke="#0b3a2b" stroke-width="5"/>
+                      <text y="20" fill="#14532d">스</text>
+                      <text x="32" y="-24" font-family="Outfit, sans-serif" font-weight="800" font-size="17" fill="#72cf0a">4</text>
+                    </g>
+                    <g transform="translate(446,80) rotate(7)">
+                      <path fill="#ffd84d" opacity="0.9" transform="scale(1.35)" d="M0-58 L11-25 L41-41 L24-12 L58-6 L25 5 L41 36 L11 20 L3 57 L-9 24 L-39 38 L-24 9 L-57 1 L-25-9 L-38-39 L-11-22 Z"/>
+                      <rect x="-50" y="-50" width="100" height="100" rx="20" fill="url(#logo-lime)" stroke="#0b3a2b" stroke-width="6"/>
+                      <text y="22" font-size="60" fill="#06291f">팡</text>
+                      <text x="36" y="-26" font-family="Outfit, sans-serif" font-weight="800" font-size="18" fill="#14532d">8</text>
+                    </g>
+                  </g>
+                </svg>
+              </h1>
               <span class="welcome-beta-badge" aria-label="베타 버전">BETA</span>
             </div>
             <p class="welcome-tagline">🍈 Sequence Pang 🍈</p>
@@ -140,7 +173,7 @@
           </div>
 
           <div class="lobby-btn-row lobby-btn-stack">
-            <button class="btn-start btn-accent btn-full" id="btn-lobby-play">수열팡 플레이 시작!</button>
+            <button class="btn-start btn-accent btn-full" id="btn-lobby-play">시퀀스팡 플레이 시작!</button>
             <button class="lobby-btn btn-cancel btn-full" id="btn-lobby-exit">대기방 나가기</button>
           </div>
         </div>

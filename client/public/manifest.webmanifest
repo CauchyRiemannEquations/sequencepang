@@ -1,6 +1,6 @@
 {
-  "name": "수열팡",
-  "short_name": "수열팡",
+  "name": "시퀀스팡",
+  "short_name": "시퀀스팡",
   "description": "수열을 찾아 팡팡 터뜨리는 수학 퍼즐 게임",
   "start_url": "/",
   "scope": "/",

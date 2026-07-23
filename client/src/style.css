@@ -869,6 +869,20 @@
       align-items: flex-start;
       justify-content: center;
       gap: 7px;
+      width: 100%;
+    }
+
+    .welcome-logo {
+      margin: 0;
+      flex: 1;
+      min-width: 0;
+      max-width: 300px;
+    }
+
+    .welcome-logo svg {
+      display: block;
+      width: 100%;
+      height: auto;
     }
 
     .welcome-beta-badge {
