@@ -414,7 +414,7 @@ export function initGameApp() {
   function updateLobbyModeControls() {
     btnLobbyPlay.disabled = !currentIsHost;
     btnLobbyPlay.textContent = currentIsHost
-      ? '수열팡 플레이 시작 (방장)'
+      ? '시퀀스팡 플레이 시작 (방장)'
       : '방장이 시작할 때까지 기다리는 중';
     btnLobbyPlay.title = currentIsHost
       ? '모든 참가자의 게임을 동시에 시작합니다.'

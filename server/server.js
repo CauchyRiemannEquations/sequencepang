@@ -97,5 +97,5 @@ if (frontendRedirectUrl) {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 수열팡 서버 실행 중: http://localhost:${PORT}`);
+  console.log(`🚀 시퀀스팡 서버 실행 중: http://localhost:${PORT}`);
 });

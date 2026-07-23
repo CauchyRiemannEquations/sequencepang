@@ -10,7 +10,7 @@ export function initSuperFeverNotice() {
 
   const isLive = Date.now() >= SUPER_FEVER_LAUNCH_AT_MS;
   const title = isLive ? '슈퍼피버 등장!' : '슈퍼피버 업데이트 예고';
-  const datePill = isLive ? '×3 · +10 · 점수 ×2' : '7월 22일 00:00 적용';
+  const datePill = isLive ? '×3 · 빅넘버 · 점수 ×2' : '7월 22일 00:00 적용';
 
   const overlay = document.createElement('div');
   overlay.className = 'super-fever-notice-overlay';
@@ -23,7 +23,7 @@ export function initSuperFeverNotice() {
       <p class="super-fever-notice-copy">
         숫자 <strong>5개 이상</strong> 수열을 성공하면<br>
         보라색 <strong>슈퍼피버 블록</strong>이 나타납니다!<br>
-        보드가 <strong>×3</strong> 또는 <strong>+10</strong>으로 변신, 점수는 <strong>2배</strong>!
+        보드가 <strong>×3</strong> 변신 또는 <strong>10~19 빅넘버</strong> 등장, 점수는 <strong>2배</strong>!
       </p>
       <div class="super-fever-notice-actions">
         <button type="button" class="super-fever-notice-close">닫기</button>
