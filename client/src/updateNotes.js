@@ -6,7 +6,7 @@ export function initUpdateNotesUI() {
   triggerButton.type = 'button';
   triggerButton.id = 'update-notes-button';
   triggerButton.className = 'update-notes-trigger';
-  triggerButton.textContent = '📋 업데이트 내역';
+  triggerButton.textContent = '업데이트 내역';
 
   const overlay = document.createElement('div');
   overlay.id = 'update-notes-overlay';
@@ -15,7 +15,7 @@ export function initUpdateNotesUI() {
   overlay.innerHTML = `
     <section class="update-notes-modal" role="dialog" aria-modal="true" aria-labelledby="update-notes-title">
       <header class="update-notes-header">
-        <h2 id="update-notes-title">📋 업데이트 내역</h2>
+        <h2 id="update-notes-title">업데이트 내역</h2>
         <button type="button" class="update-notes-close" aria-label="업데이트 내역 닫기">✕</button>
       </header>
       <pre class="update-notes-content" id="update-notes-content">불러오는 중...</pre>
@@ -23,7 +23,7 @@ export function initUpdateNotesUI() {
     </section>
   `;
 
-  welcomeCard.appendChild(triggerButton);
+  (document.getElementById('welcome-links-row') || welcomeCard).appendChild(triggerButton);
   document.body.appendChild(overlay);
 
   const closeButton = overlay.querySelector('.update-notes-close');
