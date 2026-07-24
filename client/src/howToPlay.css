@@ -20,6 +20,10 @@
   opacity: 1;
 }
 
+.how-to-play-overlay[hidden] {
+  display: none;
+}
+
 .how-to-play-overlay {
   position: fixed;
   inset: 0;
