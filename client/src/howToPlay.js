@@ -16,13 +16,15 @@ export function initHowToPlayUI() {
     <section class="htp-section">
       <div class="htp-stage htp-demo-basic">
         <div class="htp-tile b1"><span>2</span></div>
-        <div class="htp-tile b2"><span>4</span></div>
+        <div class="htp-tile x1"><span>7</span></div>
         <div class="htp-tile b3"><span>6</span></div>
-        <div class="htp-tile b4"><span>9</span></div>
+        <div class="htp-tile x2"><span>5</span></div>
+        <div class="htp-tile b2"><span>4</span></div>
+        <div class="htp-tile x3"><span>9</span></div>
         <div class="htp-pop">팡! +300</div>
         <div class="htp-finger">👆</div>
       </div>
-      <p class="htp-caption">🍈 인접한 타일을 드래그해 <strong>등차·등비수열</strong>(3개 이상)을 만드세요 — 점수와 <strong>시간 보너스</strong>! 5초 안에 연속 성공하면 <strong>콤보</strong>가 커져요</p>
+      <p class="htp-caption">🍈 인접한 타일을 드래그해 <strong>등차·등비수열</strong>(3개 이상)을 만드세요 — 가로·세로·<strong>대각선</strong> 어느 방향이든 OK! 5초 안에 연속 성공하면 <strong>콤보</strong>가 커져요</p>
     </section>`;
 
   const demoFever = `

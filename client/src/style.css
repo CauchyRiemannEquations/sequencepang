@@ -949,6 +949,24 @@
       height: auto;
     }
 
+    .contact-link {
+      align-self: center;
+      padding: 4px 10px;
+      font-size: 10.5px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      text-decoration: none;
+      opacity: 0.65;
+      transition: opacity 0.2s ease;
+    }
+
+    .contact-link:hover,
+    .contact-link:focus-visible {
+      opacity: 1;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
     .welcome-beta-badge {
       margin-top: -2px;
       padding: 3px 7px 2px;

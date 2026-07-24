@@ -14,12 +14,26 @@ import { initRankingResetNotice } from './rankingResetNotice.js';
 import { initSuperFeverNotice } from './superFeverNotice.js';
 import { initHowToPlayUI } from './howToPlay.js';
 
+function initContactLink() {
+  const welcomeCard = document.querySelector('.welcome-card');
+  if (!welcomeCard || document.getElementById('contact-link')) return;
+
+  const contactLink = document.createElement('a');
+  contactLink.id = 'contact-link';
+  contactLink.className = 'contact-link';
+  contactLink.href = 'mailto:crequationsmath@gmail.com';
+  contactLink.textContent = '📧 Contact';
+  contactLink.title = '문의사항은 이메일로 보내주세요';
+  welcomeCard.appendChild(contactLink);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initSfx();
   initHomeRankingUI();
   initGameApp();
   initHowToPlayUI();
   initUpdateNotesUI();
+  initContactLink();
   initMenuBgm();
   initRankingResetNotice();
   initSuperFeverNotice();

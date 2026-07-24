@@ -187,6 +187,15 @@ body {
   color: #facc15;
 }
 
+.contact-link {
+  color: var(--lv-muted);
+}
+
+.contact-link:hover,
+.contact-link:focus-visible {
+  color: var(--lv-melon);
+}
+
 .welcome-best-unit {
   font-size: 11px;
 }

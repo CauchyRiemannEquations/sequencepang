@@ -206,22 +206,34 @@
   z-index: 2;
 }
 
-/* ── 데모 1: 기본 드래그 (4.5s 루프) ────────────────── */
-.htp-demo-basic .b1 { left: 20px; animation: htpSelA1 4.5s infinite; }
-.htp-demo-basic .b2 { left: 84px; animation: htpSelA2 4.5s infinite; }
-.htp-demo-basic .b3 { left: 148px; animation: htpSelA3 4.5s infinite; }
-.htp-demo-basic .b4 { left: 212px; }
-.htp-demo-basic .htp-finger { animation: htpFingerA 4.5s infinite; }
-.htp-demo-basic .htp-pop { animation: htpPopA 4.5s infinite; }
+/* ── 데모 1: 기본 드래그, 대각선 지그재그 (4.5s 루프) ── */
+.htp-demo-basic {
+  height: 116px;
+}
+
+.htp-demo-basic .htp-tile {
+  width: 44px;
+  height: 44px;
+  font-size: 19px;
+}
+
+.htp-demo-basic .b1 { left: 64px; top: 10px; animation: htpSelA1 4.5s infinite; }
+.htp-demo-basic .x1 { left: 140px; top: 10px; }
+.htp-demo-basic .b3 { left: 216px; top: 10px; animation: htpSelA3 4.5s infinite; }
+.htp-demo-basic .x2 { left: 64px; top: 62px; }
+.htp-demo-basic .b2 { left: 140px; top: 62px; animation: htpSelA2 4.5s infinite; }
+.htp-demo-basic .x3 { left: 216px; top: 62px; }
+.htp-demo-basic .htp-finger { left: 78px; top: 28px; animation: htpFingerA 4.5s infinite; }
+.htp-demo-basic .htp-pop { top: 44px; animation: htpPopA 4.5s infinite; }
 
 @keyframes htpFingerA {
   0% { transform: translate(0, 0); opacity: 0; }
   8% { transform: translate(0, 0); opacity: 1; }
   12% { transform: translate(0, 0); }
-  26% { transform: translate(64px, 0); }
-  40% { transform: translate(128px, 0); opacity: 1; }
-  50% { transform: translate(128px, 0); opacity: 1; }
-  58%, 100% { transform: translate(128px, 0); opacity: 0; }
+  26% { transform: translate(76px, 52px); }
+  40% { transform: translate(152px, 0); opacity: 1; }
+  50% { transform: translate(152px, 0); opacity: 1; }
+  58%, 100% { transform: translate(152px, 0); opacity: 0; }
 }
 
 @keyframes htpSelA1 {
