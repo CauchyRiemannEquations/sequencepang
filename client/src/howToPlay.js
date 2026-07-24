@@ -21,6 +21,7 @@ export function initHowToPlayUI() {
         <div class="htp-tile x2"><span>5</span></div>
         <div class="htp-tile b2"><span>4</span></div>
         <div class="htp-tile x3"><span>9</span></div>
+        <svg class="htp-line-svg" aria-hidden="true"><path class="htp-line" d="M86 32 L162 84 L238 32"/></svg>
         <div class="htp-pop">팡! +300</div>
         <div class="htp-finger">👆</div>
       </div>
@@ -34,6 +35,7 @@ export function initHowToPlayUI() {
         <div class="htp-tile f2"><span class="nb">3</span><span class="ns">+2</span><span class="nf">5</span></div>
         <div class="htp-tile f3"><span class="nb">5</span><span class="nf">7</span></div>
         <div class="htp-tile f4"><span class="nb">7</span><span class="nf">9</span></div>
+        <svg class="htp-line-svg" aria-hidden="true"><path class="htp-line" d="M46 48 L238 48"/></svg>
         <div class="htp-pop">피버 블록 등장!</div>
         <div class="htp-finger">👆</div>
       </div>
@@ -48,6 +50,7 @@ export function initHowToPlayUI() {
         <div class="htp-tile s3"><span class="nb">5</span><span class="ns">×3</span><span class="nf">15</span></div>
         <div class="htp-tile s4"><span class="nb">7</span><span class="nf">21</span></div>
         <div class="htp-tile s5"><span class="nb">9</span><span class="nf">27</span></div>
+        <svg class="htp-line-svg" aria-hidden="true"><path class="htp-line" d="M36 48 L276 48"/></svg>
         <div class="htp-pop">슈퍼피버!</div>
         <div class="htp-finger">👆</div>
       </div>
