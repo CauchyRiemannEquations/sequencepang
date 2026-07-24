@@ -183,6 +183,23 @@
   grid-area: 1 / 1;
 }
 
+.htp-line-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.htp-line {
+  fill: none;
+  stroke: rgba(148, 242, 13, 0.72);
+  stroke-width: 11;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
 .htp-finger {
   position: absolute;
   top: 44px;
@@ -231,13 +248,27 @@
 .htp-demo-basic .htp-pop { top: 44px; animation: htpPopA 4.5s infinite; }
 
 @keyframes htpFingerA {
-  0% { transform: translate(0, 0); opacity: 0; }
-  8% { transform: translate(0, 0); opacity: 1; }
-  12% { transform: translate(0, 0); }
+  0% { transform: translate(0, 0) scale(1.3); opacity: 0; }
+  8% { transform: translate(0, 0) scale(1.3); opacity: 1; }
+  12% { transform: translate(0, 0) scale(1); }
   26% { transform: translate(76px, 52px); }
   40% { transform: translate(152px, 0); opacity: 1; }
   50% { transform: translate(152px, 0); opacity: 1; }
   58%, 100% { transform: translate(152px, 0); opacity: 0; }
+}
+
+.htp-demo-basic .htp-line {
+  stroke-dasharray: 185;
+  animation: htpLineA 4.5s linear infinite;
+}
+
+@keyframes htpLineA {
+  0%, 11% { stroke-dashoffset: 185; opacity: 0; }
+  12% { stroke-dashoffset: 185; opacity: 1; }
+  26% { stroke-dashoffset: 92; }
+  40% { stroke-dashoffset: 0; }
+  51% { stroke-dashoffset: 0; opacity: 1; }
+  58%, 100% { stroke-dashoffset: 0; opacity: 0; }
 }
 
 @keyframes htpSelA1 {
@@ -280,13 +311,40 @@
 .htp-demo-fever .ns { opacity: 0; color: #78350f; font-size: 17px; animation: htpNsF 6.5s infinite; }
 
 @keyframes htpFingerF {
-  0% { transform: translate(0, 0); opacity: 0; }
-  6% { transform: translate(0, 0); opacity: 1; }
-  9% { transform: translate(0, 0); }
+  0% { transform: translate(0, 0) scale(1.3); opacity: 0; }
+  6% { transform: translate(0, 0) scale(1.3); opacity: 1; }
+  9% { transform: translate(0, 0) scale(1); }
   18% { transform: translate(64px, 0); }
   27% { transform: translate(128px, 0); }
   36% { transform: translate(192px, 0); opacity: 1; }
-  42%, 100% { opacity: 0; }
+  42%, 100% { transform: translate(192px, 0); opacity: 0; }
+}
+
+.htp-demo-fever .htp-line {
+  stroke-dasharray: 192;
+  animation: htpLineF 6.5s linear infinite;
+}
+
+@keyframes htpLineF {
+  0%, 8% { stroke-dashoffset: 192; opacity: 0; }
+  9% { stroke-dashoffset: 192; opacity: 1; }
+  18% { stroke-dashoffset: 128; }
+  27% { stroke-dashoffset: 64; }
+  36% { stroke-dashoffset: 0; }
+  41% { stroke-dashoffset: 0; opacity: 1; }
+  47%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* 피버/슈퍼피버 블록으로 바뀌는 타일은 기존 숫자를 먼저 숨겨 겹침 방지 */
+@keyframes htpNbSpec {
+  0%, 46% { opacity: 1; }
+  49%, 93% { opacity: 0; }
+  97%, 100% { opacity: 1; }
+}
+
+.htp-demo-fever .f2 .nb,
+.htp-demo-super .s3 .nb {
+  animation: htpNbSpec 6.5s infinite;
 }
 
 @keyframes htpNbF {
@@ -366,14 +424,30 @@
 .htp-demo-super .ns { opacity: 0; color: #ffffff; font-size: 15px; animation: htpNsF 6.5s infinite; }
 
 @keyframes htpFingerS {
-  0% { transform: translate(0, 0); opacity: 0; }
-  5% { transform: translate(0, 0); opacity: 1; }
-  8% { transform: translate(0, 0); }
+  0% { transform: translate(0, 0) scale(1.3); opacity: 0; }
+  5% { transform: translate(0, 0) scale(1.3); opacity: 1; }
+  8% { transform: translate(0, 0) scale(1); }
   15% { transform: translate(60px, 0); }
   22% { transform: translate(120px, 0); }
   29% { transform: translate(180px, 0); }
   36% { transform: translate(240px, 0); opacity: 1; }
-  42%, 100% { opacity: 0; }
+  42%, 100% { transform: translate(240px, 0); opacity: 0; }
+}
+
+.htp-demo-super .htp-line {
+  stroke-dasharray: 240;
+  animation: htpLineS 6.5s linear infinite;
+}
+
+@keyframes htpLineS {
+  0%, 7% { stroke-dashoffset: 240; opacity: 0; }
+  8% { stroke-dashoffset: 240; opacity: 1; }
+  15% { stroke-dashoffset: 180; }
+  22% { stroke-dashoffset: 120; }
+  29% { stroke-dashoffset: 60; }
+  36% { stroke-dashoffset: 0; }
+  41% { stroke-dashoffset: 0; opacity: 1; }
+  47%, 100% { stroke-dashoffset: 0; opacity: 0; }
 }
 
 @keyframes htpSupT1 {
@@ -485,5 +559,6 @@
     animation: none !important;
   }
   .htp-finger { opacity: 0.9; }
+  .htp-line { opacity: 0.8; }
   .htp-last-badge { opacity: 1; transform: translateX(-50%); }
 }
