@@ -1459,13 +1459,15 @@ export function initGameApp() {
     leaderboardPanel.style.display = 'none';
     btnSingleStart.disabled = true;
     try {
-      currentGameSession = await createGameSession();
+      currentGameSession = await createGameSession(nickname);
       singleSessionStartedAt = performance.now();
       startGamePlay('timeAttack');
     } catch (error) {
       currentGameSession = null;
       singleSessionStartedAt = 0;
-      alert('게임 세션을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      alert(error?.message?.includes('닉네임')
+        ? error.message
+        : '게임 세션을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       btnSingleStart.disabled = false;
     }

@@ -1,4 +1,5 @@
 const { MAX_ROOM_PLAYERS } = require('./constants');
+const { isProfaneNickname } = require('./profanityFilter');
 const {
   rooms,
   getRoom,
@@ -39,6 +40,10 @@ function registerSocketHandlers(io) {
 
       if (!cleanRoomId || !cleanNickname) {
         return socket.emit('errorMsg', '방 코드 또는 닉네임 형식이 잘못되었습니다.');
+      }
+
+      if (isProfaneNickname(cleanNickname)) {
+        return socket.emit('errorMsg', '사용할 수 없는 닉네임입니다.');
       }
 
       const room = ensureRoom(cleanRoomId, socket.id);
