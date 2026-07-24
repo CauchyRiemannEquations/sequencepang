@@ -460,6 +460,70 @@
       animation: feverRollback 1.5s ease both;
     }
 
+    /* 하이퍼팡 (100만점 돌파 후 1~12 확장) — 황금 테마 */
+    .board-wrapper.hyper-pang {
+      background: radial-gradient(circle at 50% 42%, #ffe9a3 0%, #f5cf62 55%, #c99a2e 100%);
+      box-shadow: 0 0 34px rgba(255, 200, 60, 0.55), inset 0 2px 8px rgba(120, 76, 8, 0.25);
+    }
+
+    .hyper-pang-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2400;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(35, 22, 2, 0.78);
+      opacity: 0;
+      backdrop-filter: blur(8px);
+      transition: opacity 0.18s ease;
+    }
+
+    .hyper-pang-overlay.is-open {
+      opacity: 1;
+    }
+
+    .hyper-pang-modal {
+      width: min(100%, 340px);
+      padding: 26px 24px 22px;
+      border-radius: 24px;
+      text-align: center;
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.18s ease;
+    }
+
+    .hyper-pang-overlay.is-open .hyper-pang-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .hyper-pang-icon {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 38px;
+    }
+
+    .hyper-pang-modal h2 {
+      margin: 0 0 10px;
+      font-size: 27px;
+    }
+
+    .hyper-pang-copy {
+      margin: 0 0 20px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .hyper-pang-confirm {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 14px;
+      font: inherit;
+      font-size: 17px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
     .fever-notice {
       position: absolute;
       left: 50%;
@@ -873,7 +937,7 @@
     }
 
     .welcome-logo {
-      margin: 0;
+      margin: 0 auto;
       flex: 1;
       min-width: 0;
       max-width: 300px;
@@ -883,6 +947,24 @@
       display: block;
       width: 100%;
       height: auto;
+    }
+
+    .contact-link {
+      align-self: center;
+      padding: 4px 10px;
+      font-size: 10.5px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      text-decoration: none;
+      opacity: 0.65;
+      transition: opacity 0.2s ease;
+    }
+
+    .contact-link:hover,
+    .contact-link:focus-visible {
+      opacity: 1;
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
 
     .welcome-beta-badge {

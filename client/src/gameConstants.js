@@ -38,6 +38,11 @@ export const LAST_SPURT_LAUNCH_AT_MS = Date.parse('2026-07-26T15:00:00.000Z');
 export const LAST_SPURT_THRESHOLD_S = 5;
 export const LAST_SPURT_SCORE_MULTIPLIER = 2;
 
+// 하이퍼팡: 한 판 점수가 기준을 넘으면 보드가 새로 생성되고 숫자 범위가 1~12로 확장
+export const HYPER_PANG_SCORE_THRESHOLD = 1000000;
+export const HYPER_PANG_TILE_MAX = 12;
+export const HYPER_PANG_TIME_BONUS_S = 5;
+
 export const RECENT_SEQUENCE_LIMIT = 5;
 export const REPEATED_PATH_SCORE_MULTIPLIER = 0.2;
 export const REPEATED_PATTERN_SCORE_MULTIPLIER = 0.5;

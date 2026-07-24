@@ -1,0 +1,485 @@
+.how-to-play-trigger {
+  align-self: center;
+  padding: 5px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--lv-muted, #7ca28f);
+  font: 600 11px 'Outfit', sans-serif;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  opacity: 0.76;
+  transition: color 0.2s ease, opacity 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.how-to-play-trigger:hover,
+.how-to-play-trigger:focus-visible {
+  color: var(--lv-melon, #d8ff6a);
+  text-decoration-color: currentColor;
+  opacity: 1;
+}
+
+.how-to-play-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 24, 17, 0.78);
+  opacity: 0;
+  backdrop-filter: blur(8px);
+  transition: opacity 0.18s ease;
+}
+
+.how-to-play-overlay.is-open {
+  opacity: 1;
+}
+
+.how-to-play-modal {
+  width: min(100%, 360px);
+  max-height: min(84dvh, 620px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px 16px;
+  border: 1px solid rgba(148, 242, 13, 0.32);
+  border-radius: 22px;
+  background: linear-gradient(160deg, #0f3f31, #082d23);
+  color: #f7ffe8;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45), 0 0 30px rgba(148, 242, 13, 0.12);
+}
+
+.how-to-play-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.how-to-play-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #d8ff6a;
+}
+
+.how-to-play-close {
+  border: 0;
+  background: transparent;
+  color: rgba(247, 255, 232, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.how-to-play-list {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.how-to-play-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(6, 41, 31, 0.66);
+  border: 1px solid rgba(216, 255, 106, 0.12);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.how-to-play-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.how-to-play-text strong {
+  color: #d8ff6a;
+}
+
+.how-to-play-confirm {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: #94f20d;
+  color: #082d23;
+  font: 900 15px 'Jua', 'Outfit', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(148, 242, 13, 0.2);
+}
+
+.how-to-play-confirm:active {
+  transform: translateY(1px);
+}
+
+/* ── 스크롤 영역 & 데모 공통 ─────────────────────────── */
+.how-to-play-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.how-to-play-list {
+  overflow: visible;
+  margin: 0;
+}
+
+.htp-section {
+  display: grid;
+  gap: 7px;
+}
+
+.htp-stage {
+  position: relative;
+  height: 96px;
+  border-radius: 14px;
+  background: #cbeeb0;
+  border: 2px solid rgba(148, 242, 13, 0.35);
+  overflow: hidden;
+}
+
+.htp-caption {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(247, 255, 232, 0.85);
+}
+
+.htp-caption strong {
+  color: #d8ff6a;
+}
+
+.htp-tile {
+  position: absolute;
+  top: 22px;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: #fffbea;
+  border: 1px solid rgba(6, 41, 31, 0.15);
+  display: grid;
+  place-items: center;
+  font-family: 'Jua', sans-serif;
+  font-size: 22px;
+  color: #14532d;
+  box-shadow: 0 2px 0 rgba(6, 41, 31, 0.12);
+}
+
+.htp-tile span {
+  grid-area: 1 / 1;
+}
+
+.htp-finger {
+  position: absolute;
+  top: 44px;
+  left: 32px;
+  font-size: 26px;
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+  z-index: 3;
+}
+
+.htp-pop {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(20, 83, 45, 0.92);
+  color: #d8ff6a;
+  font-family: 'Jua', sans-serif;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  z-index: 2;
+}
+
+/* ── 데모 1: 기본 드래그, 대각선 지그재그 (4.5s 루프) ── */
+.htp-demo-basic {
+  height: 116px;
+}
+
+.htp-demo-basic .htp-tile {
+  width: 44px;
+  height: 44px;
+  font-size: 19px;
+}
+
+.htp-demo-basic .b1 { left: 64px; top: 10px; animation: htpSelA1 4.5s infinite; }
+.htp-demo-basic .x1 { left: 140px; top: 10px; }
+.htp-demo-basic .b3 { left: 216px; top: 10px; animation: htpSelA3 4.5s infinite; }
+.htp-demo-basic .x2 { left: 64px; top: 62px; }
+.htp-demo-basic .b2 { left: 140px; top: 62px; animation: htpSelA2 4.5s infinite; }
+.htp-demo-basic .x3 { left: 216px; top: 62px; }
+.htp-demo-basic .htp-finger { left: 78px; top: 28px; animation: htpFingerA 4.5s infinite; }
+.htp-demo-basic .htp-pop { top: 44px; animation: htpPopA 4.5s infinite; }
+
+@keyframes htpFingerA {
+  0% { transform: translate(0, 0); opacity: 0; }
+  8% { transform: translate(0, 0); opacity: 1; }
+  12% { transform: translate(0, 0); }
+  26% { transform: translate(76px, 52px); }
+  40% { transform: translate(152px, 0); opacity: 1; }
+  50% { transform: translate(152px, 0); opacity: 1; }
+  58%, 100% { transform: translate(152px, 0); opacity: 0; }
+}
+
+@keyframes htpSelA1 {
+  0%, 11% { background: #fffbea; transform: scale(1); }
+  12%, 51% { background: #a3e635; transform: scale(1.06); }
+  55% { background: #d8ff6a; transform: scale(1.2); }
+  64%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpSelA2 {
+  0%, 25% { background: #fffbea; transform: scale(1); }
+  26%, 51% { background: #a3e635; transform: scale(1.06); }
+  55% { background: #d8ff6a; transform: scale(1.2); }
+  64%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpSelA3 {
+  0%, 39% { background: #fffbea; transform: scale(1); }
+  40%, 51% { background: #a3e635; transform: scale(1.06); }
+  55% { background: #d8ff6a; transform: scale(1.2); }
+  64%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpPopA {
+  0%, 51% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  55% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  66% { opacity: 1; }
+  74%, 100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+}
+
+/* ── 데모 2: 피버 (6.5s 루프) ───────────────────────── */
+.htp-demo-fever .f1 { left: 20px; animation: htpFevT1 6.5s infinite; }
+.htp-demo-fever .f2 { left: 84px; animation: htpFevT2 6.5s infinite; }
+.htp-demo-fever .f3 { left: 148px; animation: htpFevT1a 6.5s infinite; }
+.htp-demo-fever .f4 { left: 212px; animation: htpFevT1b 6.5s infinite; }
+.htp-demo-fever .htp-finger { animation: htpFingerF 6.5s infinite; }
+.htp-demo-fever .htp-pop { animation: htpPopF 6.5s infinite; }
+.htp-demo-fever .nb { animation: htpNbF 6.5s infinite; }
+.htp-demo-fever .nf { opacity: 0; color: #b45309; animation: htpNfF 6.5s infinite; }
+.htp-demo-fever .ns { opacity: 0; color: #78350f; font-size: 17px; animation: htpNsF 6.5s infinite; }
+
+@keyframes htpFingerF {
+  0% { transform: translate(0, 0); opacity: 0; }
+  6% { transform: translate(0, 0); opacity: 1; }
+  9% { transform: translate(0, 0); }
+  18% { transform: translate(64px, 0); }
+  27% { transform: translate(128px, 0); }
+  36% { transform: translate(192px, 0); opacity: 1; }
+  42%, 100% { opacity: 0; }
+}
+
+@keyframes htpNbF {
+  0%, 64% { opacity: 1; }
+  68%, 92% { opacity: 0; }
+  97%, 100% { opacity: 1; }
+}
+
+@keyframes htpNfF {
+  0%, 64% { opacity: 0; }
+  68%, 90% { opacity: 1; }
+  94%, 100% { opacity: 0; }
+}
+
+@keyframes htpNsF {
+  0%, 48% { opacity: 0; transform: scale(0.4); }
+  52%, 60% { opacity: 1; transform: scale(1); }
+  64%, 100% { opacity: 0; }
+}
+
+@keyframes htpFevT1 {
+  0%, 8% { background: #fffbea; transform: scale(1); }
+  9%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 63% { background: #fffbea; transform: scale(1); }
+  67%, 90% { background: #fde68a; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpFevT1a {
+  0%, 26% { background: #fffbea; transform: scale(1); }
+  27%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 63% { background: #fffbea; transform: scale(1); }
+  67%, 90% { background: #fde68a; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpFevT1b {
+  0%, 35% { background: #fffbea; transform: scale(1); }
+  36%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 63% { background: #fffbea; transform: scale(1); }
+  67%, 90% { background: #fde68a; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpFevT2 {
+  0%, 17% { background: #fffbea; transform: scale(1); }
+  18%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 48% { background: #fffbea; transform: scale(1); }
+  52%, 60% { background: #facc15; transform: scale(1.1) rotate(-3deg); box-shadow: 0 0 14px rgba(250, 204, 21, 0.9); }
+  64% { background: #fde68a; transform: scale(1.04); }
+  67%, 90% { background: #fde68a; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpPopF {
+  0%, 40% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  44% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  56% { opacity: 1; }
+  62%, 100% { opacity: 0; }
+}
+
+/* ── 데모 3: 슈퍼피버 (6.5s 루프, 타일 5개) ─────────── */
+.htp-demo-super .htp-tile { width: 48px; height: 48px; top: 24px; font-size: 19px; }
+.htp-demo-super .s1 { left: 12px; animation: htpSupT1 6.5s infinite; }
+.htp-demo-super .s2 { left: 72px; animation: htpSupT2 6.5s infinite; }
+.htp-demo-super .s3 { left: 132px; animation: htpSupT3 6.5s infinite; }
+.htp-demo-super .s4 { left: 192px; animation: htpSupT4 6.5s infinite; }
+.htp-demo-super .s5 { left: 252px; animation: htpSupT5 6.5s infinite; }
+.htp-demo-super .htp-finger { left: 22px; animation: htpFingerS 6.5s infinite; }
+.htp-demo-super .htp-pop { animation: htpPopF 6.5s infinite; }
+.htp-demo-super .nb { animation: htpNbF 6.5s infinite; }
+.htp-demo-super .nf { opacity: 0; color: #7c3aed; animation: htpNfF 6.5s infinite; }
+.htp-demo-super .ns { opacity: 0; color: #ffffff; font-size: 15px; animation: htpNsF 6.5s infinite; }
+
+@keyframes htpFingerS {
+  0% { transform: translate(0, 0); opacity: 0; }
+  5% { transform: translate(0, 0); opacity: 1; }
+  8% { transform: translate(0, 0); }
+  15% { transform: translate(60px, 0); }
+  22% { transform: translate(120px, 0); }
+  29% { transform: translate(180px, 0); }
+  36% { transform: translate(240px, 0); opacity: 1; }
+  42%, 100% { opacity: 0; }
+}
+
+@keyframes htpSupT1 {
+  0%, 7% { background: #fffbea; transform: scale(1); }
+  8%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 63% { background: #fffbea; transform: scale(1); }
+  67%, 90% { background: #e9d5ff; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpSupT2 {
+  0%, 14% { background: #fffbea; transform: scale(1); }
+  15%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 63% { background: #fffbea; transform: scale(1); }
+  67%, 90% { background: #e9d5ff; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpSupT3 {
+  0%, 21% { background: #fffbea; transform: scale(1); }
+  22%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 48% { background: #fffbea; transform: scale(1); }
+  52%, 60% { background: #a855f7; transform: scale(1.12) rotate(-3deg); box-shadow: 0 0 16px rgba(168, 85, 247, 0.9); }
+  64%, 90% { background: #e9d5ff; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpSupT4 {
+  0%, 28% { background: #fffbea; transform: scale(1); }
+  29%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 63% { background: #fffbea; transform: scale(1); }
+  67%, 90% { background: #e9d5ff; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+@keyframes htpSupT5 {
+  0%, 35% { background: #fffbea; transform: scale(1); }
+  36%, 37% { background: #a3e635; transform: scale(1.06); }
+  41% { background: #d8ff6a; transform: scale(1.18); }
+  46%, 63% { background: #fffbea; transform: scale(1); }
+  67%, 90% { background: #e9d5ff; transform: scale(1.04); }
+  96%, 100% { background: #fffbea; transform: scale(1); }
+}
+
+/* ── 데모 4: 라스트팡 (5s 루프) ─────────────────────── */
+.htp-demo-last {
+  background: #123528;
+}
+
+.htp-timer-track {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 250px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.htp-timer-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  transform-origin: left center;
+  animation: htpTimerDrain 5s linear infinite;
+}
+
+@keyframes htpTimerDrain {
+  0% { transform: scaleX(0.55); background: #f59e0b; }
+  54% { background: #f59e0b; }
+  56% { background: #ef4444; }
+  100% { transform: scaleX(0.02); background: #ef4444; }
+}
+
+.htp-last-badge {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(127, 29, 29, 0.95);
+  color: #fecaca;
+  font-family: 'Jua', sans-serif;
+  font-size: 15px;
+  white-space: nowrap;
+  opacity: 0;
+  animation: htpLastBadge 5s infinite;
+}
+
+@keyframes htpLastBadge {
+  0%, 55% { opacity: 0; transform: translateX(-50%) scale(0.7); }
+  60% { opacity: 1; transform: translateX(-50%) scale(1.08); }
+  64% { transform: translateX(-50%) scale(1); }
+  94% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 모션 최소화 설정 존중 */
+@media (prefers-reduced-motion: reduce) {
+  .htp-stage *,
+  .htp-timer-fill,
+  .htp-last-badge {
+    animation: none !important;
+  }
+  .htp-finger { opacity: 0.9; }
+  .htp-last-badge { opacity: 1; transform: translateX(-50%); }
+}

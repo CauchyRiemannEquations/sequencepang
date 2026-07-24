@@ -187,6 +187,15 @@ body {
   color: #facc15;
 }
 
+.contact-link {
+  color: var(--lv-muted);
+}
+
+.contact-link:hover,
+.contact-link:focus-visible {
+  color: var(--lv-melon);
+}
+
 .welcome-best-unit {
   font-size: 11px;
 }
@@ -599,6 +608,52 @@ body {
   background: radial-gradient(circle, #f3e0ff 0%, #d8b4fe 34%, #a7f3d0 72%);
   border-color: #a855f7;
   box-shadow: 0 0 40px rgba(147, 51, 234, .62), inset 0 2px 8px rgba(6, 41, 31, .18);
+}
+
+/* 하이퍼팡 황금 테마 */
+.board-wrapper.hyper-pang {
+  background: radial-gradient(circle, #ffefb3 0%, #ffd84d 46%, #d19a17 100%);
+  border-color: #ffd84d;
+  box-shadow: 0 0 38px rgba(255, 216, 77, .55), inset 0 2px 8px rgba(90, 55, 0, .22);
+}
+
+.game-container.hyper-pang {
+  border-color: rgba(255, 216, 77, .45);
+  box-shadow: var(--lv-shadow), 0 0 30px rgba(255, 216, 77, .22), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.game-container.hyper-pang .hud-item:first-child .hud-value {
+  color: var(--lv-gold);
+}
+
+.hyper-pang-modal {
+  border: 2px solid rgba(255, 216, 77, .65);
+  background: linear-gradient(160deg, #5b3d05, #2c1c02);
+  color: #fff7dd;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .5), 0 0 44px rgba(255, 216, 77, .3);
+}
+
+.hyper-pang-modal h2 {
+  color: #ffd84d;
+  text-shadow: 0 0 18px rgba(255, 216, 77, .45);
+}
+
+.hyper-pang-copy {
+  color: rgba(255, 247, 221, .85);
+}
+
+.hyper-pang-copy strong {
+  color: #ffe58a;
+}
+
+.hyper-pang-confirm {
+  background: linear-gradient(135deg, #ffd84d, #f59e0b);
+  color: #3b2302;
+  box-shadow: 0 8px 22px rgba(245, 158, 11, .4);
+}
+
+.hyper-pang-confirm:active {
+  transform: translateY(1px);
 }
 
 
