@@ -19,6 +19,9 @@ import {
   SUPER_FEVER_TYPES,
   BIG_NUMBER_TILE_MIN,
   BIG_NUMBER_TILE_MAX,
+  HYPER_PANG_SCORE_THRESHOLD,
+  HYPER_PANG_TILE_MAX,
+  HYPER_PANG_TIME_BONUS_S,
   LAST_SPURT_LAUNCH_AT_MS,
   LAST_SPURT_THRESHOLD_S,
   LAST_SPURT_SCORE_MULTIPLIER,
@@ -39,8 +42,13 @@ export function initGameApp() {
   // 게임 엔진 상태 데이터
   // ----------------------------------------------------
 
+  function getCurrentTileMax() {
+    return hyperPangActive ? HYPER_PANG_TILE_MAX : TILE_NUMBER_MAX;
+  }
+
   function getRandomNumber() {
-    return Math.floor(Math.random() * (TILE_NUMBER_MAX - TILE_NUMBER_MIN + 1)) + TILE_NUMBER_MIN;
+    const max = getCurrentTileMax();
+    return Math.floor(Math.random() * (max - TILE_NUMBER_MIN + 1)) + TILE_NUMBER_MIN;
   }
 
   function getRandomBigNumber() {
@@ -138,7 +146,7 @@ export function initGameApp() {
     tileElement.textContent = getDisplayValue(tileData);
     tileElement.classList.toggle('fever-tile', tileData?.type === 'fever');
     tileElement.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
-    tileElement.classList.toggle('big-number-tile', tileData?.type === 'normal' && tileData?.baseValue > TILE_NUMBER_MAX);
+    tileElement.classList.toggle('big-number-tile', tileData?.type === 'normal' && tileData?.baseValue > getCurrentTileMax());
     tileElement.dataset.tileType = tileData?.type || 'normal';
     tileElement.dataset.baseValue = tileData?.baseValue ?? '';
     tileElement.dataset.feverTier = tileData?.feverTier ?? '';
@@ -183,6 +191,9 @@ export function initGameApp() {
   let lastSpurtAnnounced = false;
   let yesterdayTop = null;
   let beatYesterdayAnnounced = false;
+  let hyperPangTriggered = false;
+  let hyperPangActive = false;
+  let hyperPangPaused = false;
   const fever = {
     active: false,
     ending: false,
@@ -307,6 +318,80 @@ export function initGameApp() {
     updateFeverUI();
   }
 
+  // ── 하이퍼팡: 한 판 100만점 돌파 시 숫자 범위 1~12 확장 ──
+  function maybeTriggerHyperPang() {
+    if (hyperPangTriggered || isGameOver || !isGameActive) return;
+    if (score < HYPER_PANG_SCORE_THRESHOLD) return;
+
+    hyperPangTriggered = true;
+    hyperPangPaused = true;
+    isGameActive = false; // 타이머·조작 정지 (모달 + 카운트다운 동안)
+    isDragging = false;
+    clearSelection();
+    showHyperPangModal();
+  }
+
+  function showHyperPangModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'hyper-pang-overlay';
+
+    const modal = document.createElement('section');
+    modal.className = 'hyper-pang-modal';
+
+    const icon = document.createElement('span');
+    icon.className = 'hyper-pang-icon';
+    icon.textContent = '🌟';
+
+    const title = document.createElement('h2');
+    title.textContent = '하이퍼팡 돌입!';
+
+    const copy = document.createElement('p');
+    copy.className = 'hyper-pang-copy';
+    copy.innerHTML = '<strong>1,000,000점</strong> 돌파!<br>이제부터 숫자 범위가 <strong>1~12</strong>로 확장됩니다.<br>보너스 <strong>+5초</strong>!';
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.className = 'hyper-pang-confirm';
+    confirmButton.textContent = '알겠어요!';
+    confirmButton.addEventListener('click', () => {
+      overlay.classList.remove('is-open');
+      setTimeout(() => overlay.remove(), 180);
+      beginHyperPang();
+    });
+
+    modal.append(icon, title, copy, confirmButton);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => {
+      overlay.classList.add('is-open');
+      confirmButton.focus();
+    });
+    playSound('feverStart');
+  }
+
+  function beginHyperPang() {
+    hyperPangActive = true;
+    gameContainer.classList.add('hyper-pang');
+    boardWrapper.classList.add('hyper-pang');
+
+    // 보드 전체를 1~12 범위로 새로 생성 (제2막)
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        boardData[r][c] = createNormalTileData();
+      }
+    }
+    renderBoard();
+    clearSelection();
+
+    timeLeft = Math.min(MAX_TIME, timeLeft + HYPER_PANG_TIME_BONUS_S);
+    updateTimerUI();
+
+    startCountdownSequence(() => {
+      hyperPangPaused = false;
+      isGameActive = true;
+    });
+  }
+
   function showFeverNotice(message) {
     feverNotice.textContent = message;
     feverNotice.classList.remove('show');
@@ -344,6 +429,7 @@ export function initGameApp() {
 
     if (fever.timer) clearInterval(fever.timer);
     fever.timer = setInterval(() => {
+      if (hyperPangPaused) return; // 하이퍼팡 안내 중에는 피버 시간도 정지
       fever.timeLeftMs -= 100;
       if (fever.timeLeftMs <= 0) {
         finishFeverMode();
@@ -382,7 +468,7 @@ export function initGameApp() {
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
           const tileData = boardData[r][c];
-          if (tileData?.type === 'normal' && tileData.baseValue > TILE_NUMBER_MAX) {
+          if (tileData?.type === 'normal' && tileData.baseValue > getCurrentTileMax()) {
             boardData[r][c] = { baseValue: getRandomNumber(), type: 'normal' };
           }
         }
@@ -467,6 +553,11 @@ export function initGameApp() {
     maxChainLength = 0;
     lastSpurtAnnounced = false;
     beatYesterdayAnnounced = false;
+    hyperPangTriggered = false;
+    hyperPangActive = false;
+    hyperPangPaused = false;
+    gameContainer.classList.remove('hyper-pang');
+    boardWrapper.classList.remove('hyper-pang');
     isGameOver = false;
     isGameActive = false; // 카운트다운이 완전히 끝날 때까지 조작 제한
     selectedTiles = [];
@@ -996,6 +1087,8 @@ export function initGameApp() {
         beatYesterdayAnnounced = true;
         showFeverNotice('👑 어제의 1등을 넘었어요!');
       }
+
+      maybeTriggerHyperPang();
       
       if (score > bestScore) {
         bestScore = score;
