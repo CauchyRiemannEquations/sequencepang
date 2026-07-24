@@ -47,6 +47,27 @@ export function initGameApp() {
     return Math.floor(Math.random() * (BIG_NUMBER_TILE_MAX - BIG_NUMBER_TILE_MIN + 1)) + BIG_NUMBER_TILE_MIN;
   }
 
+  // 빅넘버 피버 발동 즉시 보드의 일반 타일 일부를 10~19로 교체
+  function seedBigNumberTiles(count = 12) {
+    const candidates = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (boardData[r][c]?.type === 'normal') {
+          candidates.push({ r, c });
+        }
+      }
+    }
+
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
+    candidates.slice(0, count).forEach(({ r, c }) => {
+      boardData[r][c] = { baseValue: getRandomBigNumber(), type: 'normal' };
+    });
+  }
+
   function createNormalTileData() {
     // 빅넘버 슈퍼피버 중에는 새 타일이 10~19 원본 숫자로 등장
     const useBigNumber = fever.active && fever.type === 'bigNumber';
@@ -312,6 +333,10 @@ export function initGameApp() {
     fever.timeLeftMs = fever.durationMs;
     if (tier === 'super') {
       showFeverNotice(`슈퍼피버 ${label}!`);
+    }
+    // 빅넘버는 리필만 기다리면 조합할 재료가 늦게 모이므로 발동 즉시 일부 타일을 교체
+    if (type === 'bigNumber') {
+      seedBigNumberTiles();
     }
     playSound('feverStart');
     renderBoard();
