@@ -1,0 +1,121 @@
+.how-to-play-trigger {
+  align-self: center;
+  padding: 5px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--lv-muted, #7ca28f);
+  font: 600 11px 'Outfit', sans-serif;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  opacity: 0.76;
+  transition: color 0.2s ease, opacity 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.how-to-play-trigger:hover,
+.how-to-play-trigger:focus-visible {
+  color: var(--lv-melon, #d8ff6a);
+  text-decoration-color: currentColor;
+  opacity: 1;
+}
+
+.how-to-play-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 24, 17, 0.78);
+  opacity: 0;
+  backdrop-filter: blur(8px);
+  transition: opacity 0.18s ease;
+}
+
+.how-to-play-overlay.is-open {
+  opacity: 1;
+}
+
+.how-to-play-modal {
+  width: min(100%, 360px);
+  max-height: min(84dvh, 620px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px 16px;
+  border: 1px solid rgba(148, 242, 13, 0.32);
+  border-radius: 22px;
+  background: linear-gradient(160deg, #0f3f31, #082d23);
+  color: #f7ffe8;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45), 0 0 30px rgba(148, 242, 13, 0.12);
+}
+
+.how-to-play-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.how-to-play-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #d8ff6a;
+}
+
+.how-to-play-close {
+  border: 0;
+  background: transparent;
+  color: rgba(247, 255, 232, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.how-to-play-list {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.how-to-play-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(6, 41, 31, 0.66);
+  border: 1px solid rgba(216, 255, 106, 0.12);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.how-to-play-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.how-to-play-text strong {
+  color: #d8ff6a;
+}
+
+.how-to-play-confirm {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: #94f20d;
+  color: #082d23;
+  font: 900 15px 'Jua', 'Outfit', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(148, 242, 13, 0.2);
+}
+
+.how-to-play-confirm:active {
+  transform: translateY(1px);
+}
