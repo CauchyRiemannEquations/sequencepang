@@ -20,6 +20,9 @@ const {
   releaseGameSession
 } = require('./gameSessionStore');
 const { createRateLimiter } = require('./rateLimit');
+const { isProfaneNickname } = require('./profanityFilter');
+
+const PROFANE_NICKNAME_MESSAGE = '사용할 수 없는 닉네임입니다.';
 
 // 한 게임이 최소 30초 이상이므로 분당 20회는 정상 플레이에 넉넉한 값
 const writeRateLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20, keyPrefix: 'score-write' });
@@ -381,6 +384,10 @@ function validateScorePayload(payload) {
     return { error: '닉네임을 확인해주세요.', reason: 'invalid_nickname' };
   }
 
+  if (isProfaneNickname(nickname)) {
+    return { error: PROFANE_NICKNAME_MESSAGE, reason: 'profane_nickname' };
+  }
+
   if (!isValidScore(payload.score)) {
     return { error: '점수 값이 올바르지 않습니다.', reason: 'invalid_score' };
   }
@@ -445,7 +452,11 @@ async function recordSuspiciousScore(firestore, payload, reason) {
   }
 }
 
-scoreRouter.post('/game-session', writeRateLimiter, (_req, res) => {
+scoreRouter.post('/game-session', writeRateLimiter, (req, res) => {
+  const requestedNickname = typeof req.body?.nickname === 'string' ? req.body.nickname : '';
+  if (requestedNickname && isProfaneNickname(requestedNickname)) {
+    return res.status(400).json({ error: PROFANE_NICKNAME_MESSAGE });
+  }
   return res.status(201).json(issueGameSession());
 });
 

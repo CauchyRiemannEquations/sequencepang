@@ -40,13 +40,13 @@ export function submitScore(scoreData) {
   });
 }
 
-export function createGameSession() {
+export function createGameSession(nickname = '') {
   return requestJson(buildApiUrl('/api/game-session'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: '{}'
+    body: JSON.stringify({ nickname })
   });
 }
 
