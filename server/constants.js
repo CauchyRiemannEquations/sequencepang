@@ -1,9 +1,9 @@
 const MAX_ROOM_PLAYERS = 30;
 const LEADERBOARD_THROTTLE_MS = 700;
 const ALLOWED_SCORE_MODES = new Set(['timeAttack']);
-// 정상 플레이로 도달 불가능한 수준의 여유 상한 (치팅 점수 차단용)
-// 하이퍼팡(100만점 돌파 후 연장전)을 감안해 여유 있게 설정
-const MAX_ACCEPTED_SCORE = 20000000;
+// 점수 상한 없음 (운영 방침). 필요해지면 이 값만 낮추면
+// 제출 거부와 랭킹 노출 필터가 함께 다시 활성화된다.
+const MAX_ACCEPTED_SCORE = Number.MAX_SAFE_INTEGER;
 const MAX_ACCEPTED_COMBO = 10000;
 const SCORE_VERSION = '1.2.0';
 const GAME_SESSION_TTL_MS = 10 * 60 * 1000;
