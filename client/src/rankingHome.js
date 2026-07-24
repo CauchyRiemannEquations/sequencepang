@@ -61,9 +61,6 @@ function updateRankingHeader(period, response = null) {
 }
 
 function createRankingOverlay() {
-  const gameContainer = document.getElementById('game-container');
-  if (!gameContainer) return null;
-
   const existing = document.getElementById('ranking-overlay');
   if (existing) return existing;
 
@@ -91,7 +88,10 @@ function createRankingOverlay() {
     </div>
   `;
 
-  gameContainer.appendChild(overlay);
+  // 주의: game-layout은 좁은 화면에서 transform: scale이 걸리는데, transform이 있는
+  // 조상 안에서는 position: fixed가 뷰포트 대신 조상 기준이 되어 화면 고정이 깨진다.
+  // 다른 모달들처럼 body에 직접 붙여 항상 뷰포트에 고정되게 한다.
+  document.body.appendChild(overlay);
   return overlay;
 }
 

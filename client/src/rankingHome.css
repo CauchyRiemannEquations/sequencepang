@@ -22,8 +22,13 @@
 
 .ranking-overlay {
   z-index: 500;
-  position: absolute;
+  position: fixed;
   inset: 0;
+}
+
+/* 랭킹이 열려 있는 동안 뒤 화면 스크롤 잠금 */
+body:has(.ranking-overlay.show) {
+  overflow: hidden !important;
 }
 
 .ranking-card {

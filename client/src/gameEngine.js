@@ -338,10 +338,6 @@ export function initGameApp() {
     const modal = document.createElement('section');
     modal.className = 'hyper-pang-modal';
 
-    const icon = document.createElement('span');
-    icon.className = 'hyper-pang-icon';
-    icon.textContent = '🌟';
-
     const title = document.createElement('h2');
     title.textContent = '하이퍼팡 돌입!';
 
@@ -359,7 +355,7 @@ export function initGameApp() {
       beginHyperPang();
     });
 
-    modal.append(icon, title, copy, confirmButton);
+    modal.append(title, copy, confirmButton);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     requestAnimationFrame(() => {
@@ -715,7 +711,7 @@ export function initGameApp() {
     gameContainer.classList.toggle('last-spurt', lastSpurt);
     if (lastSpurt && !lastSpurtAnnounced) {
       lastSpurtAnnounced = true;
-      showFeverNotice('⚡ 라스트팡! 점수 ×2');
+      showFeverNotice('라스트팡! 점수 ×2');
     } else if (!lastSpurt && lastSpurtAnnounced && timeLeft > LAST_SPURT_THRESHOLD_S) {
       // 시간 보너스로 5초 위로 복귀하면 다음 진입 때 다시 알림
       lastSpurtAnnounced = false;
@@ -769,7 +765,7 @@ export function initGameApp() {
     if (!dailyRank?.rank) return '등록 완료!';
 
     if (dailyRank.rank <= 30) {
-      return `등록 완료! 오늘 ${dailyRank.rank}위 🎉`;
+      return `등록 완료! 오늘 ${dailyRank.rank}위`;
     }
 
     const cutoff = dailyRank.top30Cutoff;
@@ -1085,7 +1081,7 @@ export function initGameApp() {
       if (!isMultiplayMode && currentGameMode === 'timeAttack'
         && yesterdayTop?.score != null && !beatYesterdayAnnounced && score > yesterdayTop.score) {
         beatYesterdayAnnounced = true;
-        showFeverNotice('👑 어제의 1등을 넘었어요!');
+        showFeverNotice('어제의 1등을 넘었어요!');
       }
 
       maybeTriggerHyperPang();

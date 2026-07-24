@@ -187,13 +187,23 @@ body {
   color: #facc15;
 }
 
-.contact-link {
+.welcome-links-row > button,
+.welcome-links-row > a {
+  background: rgba(6, 41, 31, 0.6);
+  border: 1px solid rgba(216, 255, 106, 0.2);
   color: var(--lv-muted);
+  text-decoration: none;
+  opacity: 1;
 }
 
-.contact-link:hover,
-.contact-link:focus-visible {
+.welcome-links-row > button:hover,
+.welcome-links-row > a:hover,
+.welcome-links-row > button:focus-visible,
+.welcome-links-row > a:focus-visible {
+  background: rgba(148, 242, 13, 0.14);
+  border-color: rgba(148, 242, 13, 0.45);
   color: var(--lv-melon);
+  text-decoration: none;
 }
 
 .welcome-best-unit {
@@ -446,7 +456,7 @@ body {
 }
 
 .timer-container.last-spurt .timer-text::before {
-  content: '⚡ ';
+  content: '';
 }
 
 .fever-panel {
@@ -465,7 +475,7 @@ body {
 
 .fever-timer-text::before {
   margin-right: 4px;
-  content: '🔥 FEVER  ';
+  content: 'FEVER  ';
 }
 
 .fever-panel.super-fever {
@@ -483,7 +493,7 @@ body {
 }
 
 .fever-panel.super-fever .fever-timer-text::before {
-  content: '🌟 SUPER  ';
+  content: 'SUPER  ';
 }
 
 /* Board and tiles */
