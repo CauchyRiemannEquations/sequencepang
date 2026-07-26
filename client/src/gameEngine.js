@@ -188,7 +188,7 @@ export function initGameApp() {
   let repeatedPathCount = 0;
   let repeatedValuePatternCount = 0;
   let maxChainLength = 0;
-  let lastSpurtAnnounced = false;
+  let lastSpurtEngaged = false; // 라스트팡은 한 번 발동하면 그 판이 끝날 때까지 유지
   let yesterdayTop = null;
   let beatYesterdayAnnounced = false;
   let hyperPangTriggered = false;
@@ -388,6 +388,25 @@ export function initGameApp() {
     });
   }
 
+  // 플레이를 가리지 않는 정보성 알림: 보드 상단의 얇은 토스트
+  // (중앙 대형 공지는 보드를 가려 유저 불만이 있었음 — 피버 상태 변화 전용으로만 사용)
+  const infoToast = document.createElement('div');
+  infoToast.className = 'game-toast';
+  boardWrapper.appendChild(infoToast);
+  let infoToastTimer = null;
+
+  function showInfoToast(message, variant = '', durationMs = 1500) {
+    infoToast.textContent = message;
+    infoToast.className = `game-toast${variant ? ` game-toast--${variant}` : ''}`;
+    void infoToast.offsetWidth;
+    infoToast.classList.add('show');
+    if (infoToastTimer) clearTimeout(infoToastTimer);
+    infoToastTimer = setTimeout(() => {
+      infoToast.classList.remove('show');
+      infoToastTimer = null;
+    }, durationMs);
+  }
+
   function showFeverNotice(message) {
     feverNotice.textContent = message;
     feverNotice.classList.remove('show');
@@ -547,7 +566,7 @@ export function initGameApp() {
     repeatedPathCount = 0;
     repeatedValuePatternCount = 0;
     maxChainLength = 0;
-    lastSpurtAnnounced = false;
+    lastSpurtEngaged = false;
     beatYesterdayAnnounced = false;
     hyperPangTriggered = false;
     hyperPangActive = false;
@@ -688,11 +707,7 @@ export function initGameApp() {
   }
 
   function isLastSpurtActive() {
-    return isLastSpurtLive()
-      && isGameActive
-      && !isGameOver
-      && timeLeft > 0
-      && timeLeft <= LAST_SPURT_THRESHOLD_S;
+    return lastSpurtEngaged && isGameActive && !isGameOver;
   }
 
   function updateTimerUI() {
@@ -706,16 +721,20 @@ export function initGameApp() {
       timerBar.classList.remove('warning');
     }
 
+    // 라스트팡: 5초 아래로 처음 내려가는 순간 발동, 이후 시간이 연장돼도 판이 끝날 때까지 유지
+    if (!lastSpurtEngaged
+      && isLastSpurtLive()
+      && isGameActive
+      && !isGameOver
+      && timeLeft > 0
+      && timeLeft <= LAST_SPURT_THRESHOLD_S) {
+      lastSpurtEngaged = true;
+      showInfoToast('라스트팡! 점수 ×2', 'last', 2000);
+    }
+
     const lastSpurt = isLastSpurtActive();
     timerContainer.classList.toggle('last-spurt', lastSpurt);
     gameContainer.classList.toggle('last-spurt', lastSpurt);
-    if (lastSpurt && !lastSpurtAnnounced) {
-      lastSpurtAnnounced = true;
-      showFeverNotice('라스트팡! 점수 ×2');
-    } else if (!lastSpurt && lastSpurtAnnounced && timeLeft > LAST_SPURT_THRESHOLD_S) {
-      // 시간 보너스로 5초 위로 복귀하면 다음 진입 때 다시 알림
-      lastSpurtAnnounced = false;
-    }
   }
 
 
@@ -1081,7 +1100,7 @@ export function initGameApp() {
       if (!isMultiplayMode && currentGameMode === 'timeAttack'
         && yesterdayTop?.score != null && !beatYesterdayAnnounced && score > yesterdayTop.score) {
         beatYesterdayAnnounced = true;
-        showFeverNotice('어제의 1등을 넘었어요!');
+        showInfoToast('어제의 1등을 넘었어요!');
       }
 
       maybeTriggerHyperPang();

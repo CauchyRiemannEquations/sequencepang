@@ -63,7 +63,7 @@ export function initHowToPlayUI() {
         <div class="htp-timer-track"><div class="htp-timer-fill"></div></div>
         <div class="htp-last-badge">라스트팡! ×2</div>
       </div>
-      <p class="htp-caption">남은 시간 <strong>5초</strong>부터 모든 점수 <strong>×2</strong> — 피버 배율과 중첩!</p>
+      <p class="htp-caption">남은 시간이 처음 <strong>5초</strong> 아래로 내려가면 발동 — 이후 게임이 끝날 때까지 모든 점수 <strong>×2</strong>! 피버 배율과 중첩</p>
     </section>`;
 
   const textRules = `
