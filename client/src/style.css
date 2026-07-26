@@ -524,6 +524,28 @@
       cursor: pointer;
     }
 
+    /* 보드 상단 얇은 정보 토스트 (플레이 시야를 가리지 않음) */
+    .game-toast {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translate(-50%, -8px);
+      z-index: 40;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-family: 'Jua', sans-serif;
+      font-size: 14px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .game-toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
     .fever-notice {
       position: absolute;
       left: 50%;
