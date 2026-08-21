@@ -650,6 +650,18 @@
       animation: tilefall 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
+    /* 크로스팡/풀보드팡 추가 제거 버스트 (120ms, 체비쇼프 거리 스태거) */
+    .tile.pang-burst {
+      animation: pangBurst 0.12s ease-out both;
+      z-index: 9;
+    }
+
+    @keyframes pangBurst {
+      0% { transform: scale(1); filter: brightness(1); }
+      55% { transform: scale(1.18); filter: brightness(1.7); }
+      100% { transform: scale(0.88); filter: brightness(1.35); opacity: 0.85; }
+    }
+
     .tile.fever-tile {
       background-image: none;
       background: radial-gradient(circle at 35% 28%, #fff7ad 0%, #facc15 36%, #f97316 74%);

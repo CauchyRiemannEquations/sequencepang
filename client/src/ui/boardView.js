@@ -84,9 +84,41 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
           }, 380 + newIdx * 30);
           newIdx++;
         }
-        tile.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid');
+        tile.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid', 'pang-burst');
         tile.classList.toggle('fever-tile', tileData?.type === 'fever');
         tile.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
+      }
+    }
+  }
+
+  // 크로스팡/풀보드팡: 기준 칸에서 체비쇼프 거리 × staggerMs 딜레이로
+  // 바깥으로 퍼지는 버스트. 전체 소요 시간(ms)을 반환한다.
+  function triggerPangBurst(cells, originCell, { durationMs, staggerMs }) {
+    let maxDelay = 0;
+    cells.forEach(cell => {
+      const tile = getTileEl(cell.row, cell.col);
+      if (!tile) return;
+      const dist = Math.max(Math.abs(cell.row - originCell.row), Math.abs(cell.col - originCell.col));
+      const delay = dist * staggerMs;
+      maxDelay = Math.max(maxDelay, delay);
+      tile.style.animationDelay = `${delay}ms`;
+      tile.classList.remove('pang-burst');
+      void tile.offsetWidth;
+      tile.classList.add('pang-burst');
+    });
+    return durationMs + maxDelay;
+  }
+
+  // 버스트 잔여 상태 정리 (collapse 직전 호출 — 낙하 애니메이션 딜레이와 충돌 방지)
+  function clearPangBurst() {
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const tile = tileEls[r]?.[c];
+        if (!tile) continue;
+        if (tile.classList.contains('pang-burst')) {
+          tile.classList.remove('pang-burst');
+          tile.style.animationDelay = '';
+        }
       }
     }
   }
@@ -179,6 +211,8 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
     updateTile,
     renderAll,
     renderGravityRefill,
+    triggerPangBurst,
+    clearPangBurst,
     spawnFloatingScore,
     spawnSequenceHint,
     createRuleValueElement

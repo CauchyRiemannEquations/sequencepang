@@ -40,6 +40,8 @@ const ANALYTICS_FIELDS = [
   'feverClearCount',
   'repeatedPathCount',
   'repeatedValuePatternCount',
+  'crossPangCount',
+  'fullPangCount',
   'maxChainLength'
 ];
 const leaderboardCache = new Map();

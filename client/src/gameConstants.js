@@ -43,6 +43,18 @@ export const HYPER_PANG_SCORE_THRESHOLD = 1000000;
 export const HYPER_PANG_TILE_MAX = 12;
 export const HYPER_PANG_TIME_BONUS_S = 5;
 
+// 연쇄 티어 확장: 6연쇄 크로스팡 / 7+연쇄 풀보드팡 (튜닝 예정 — 이름은 임시라 문자열도 상수)
+// allSame 연쇄는 피버 규칙과 동일하게 제외. 기존 피버 블록 대기와 함께 동작한다.
+export const CROSS_PANG_MIN_LENGTH = 6;
+export const FULL_PANG_MIN_LENGTH = 7;
+export const CROSS_PANG_POINTS_PER_TILE = 40;
+export const CROSS_PANG_TIME_BONUS_S = 1.0;
+export const FULL_PANG_TIME_BONUS_S = 3.0;
+export const CROSS_PANG_LABEL = '크로스팡!';
+export const FULL_PANG_LABEL = '풀보드팡!';
+export const PANG_BURST_MS = 120;
+export const PANG_BURST_STAGGER_MS = 25;
+
 export const RECENT_SEQUENCE_LIMIT = 5;
 export const REPEATED_PATH_SCORE_MULTIPLIER = 0.2;
 export const REPEATED_PATTERN_SCORE_MULTIPLIER = 0.5;

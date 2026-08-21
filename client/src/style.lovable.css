@@ -700,6 +700,23 @@ body {
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.45), 0 0 10px rgba(249, 115, 22, 0.4);
 }
 
+/* 크로스팡/풀보드팡 전용 토스트 색 */
+.game-toast--cross {
+  background: linear-gradient(135deg, #0284c7, #22d3ee);
+  border: 1px solid rgba(186, 230, 253, 0.6);
+  color: #f0f9ff;
+  text-shadow: 0 1px 2px rgba(7, 89, 133, 0.55);
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45), 0 0 10px rgba(34, 211, 238, 0.4);
+}
+
+.game-toast--full {
+  background: linear-gradient(135deg, #7c3aed, #d946ef);
+  border: 1px solid rgba(233, 213, 255, 0.6);
+  color: #faf5ff;
+  text-shadow: 0 1px 2px rgba(76, 29, 149, 0.55);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.45), 0 0 10px rgba(217, 70, 239, 0.4);
+}
+
 .fever-notice {
   border: 2px solid rgba(255, 255, 255, .42);
   background: linear-gradient(135deg, rgba(120, 53, 15, .95), rgba(249, 115, 22, .95));

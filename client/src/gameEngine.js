@@ -25,6 +25,13 @@ import {
   LAST_SPURT_LAUNCH_AT_MS,
   LAST_SPURT_THRESHOLD_S,
   LAST_SPURT_SCORE_MULTIPLIER,
+  CROSS_PANG_POINTS_PER_TILE,
+  CROSS_PANG_TIME_BONUS_S,
+  FULL_PANG_TIME_BONUS_S,
+  CROSS_PANG_LABEL,
+  FULL_PANG_LABEL,
+  PANG_BURST_MS,
+  PANG_BURST_STAGGER_MS,
   RECENT_SEQUENCE_LIMIT,
   REPEATED_PATH_SCORE_MULTIPLIER,
   REPEATED_PATTERN_SCORE_MULTIPLIER,
@@ -44,6 +51,7 @@ import {
 } from './engine/tiles.js';
 import { createBoard, collapseAndRefill } from './engine/board.js';
 import { classifyChain, getTimeBonus } from './engine/sequence.js';
+import { getChainTier, getCrossCells } from './engine/chainTier.js';
 import {
   computePoints,
   getPathSignature,
@@ -162,6 +170,8 @@ export function initGameApp() {
   let feverClearCount = 0;
   let repeatedPathCount = 0;
   let repeatedValuePatternCount = 0;
+  let crossPangCount = 0;
+  let fullPangCount = 0;
   let maxChainLength = 0;
   let lastSpurtEngaged = false; // 라스트팡은 한 번 발동하면 그 판이 끝날 때까지 유지
   let yesterdayTop = null;
@@ -680,6 +690,8 @@ export function initGameApp() {
     feverClearCount = 0;
     repeatedPathCount = 0;
     repeatedValuePatternCount = 0;
+    crossPangCount = 0;
+    fullPangCount = 0;
     maxChainLength = 0;
     lastSpurtEngaged = false;
     beatYesterdayAnnounced = false;
@@ -944,6 +956,8 @@ export function initGameApp() {
         feverClearCount,
         repeatedPathCount,
         repeatedValuePatternCount,
+        crossPangCount,
+        fullPangCount,
         maxChainLength
       });
       scoreSubmitted = true;
@@ -1094,7 +1108,43 @@ export function initGameApp() {
         feverMultiplier,
         lastSpurtMultiplier
       });
-      score += points;
+
+      // ── 6·7연쇄 티어: 크로스팡(십자 추가 제거) / 풀보드팡(전판 재생성) ──
+      // 추가 제거 타일은 콤보·반복 기록·maxChainLength에 영향 없음(수열 1개로만 카운트).
+      const chainTier = getChainTier(len, chain.allSame);
+      const lastCell = selectedTiles[selectedTiles.length - 1];
+      let pangExtraCells = [];
+      let pangExtraPoints = 0;
+      if (chainTier === 'cross' || chainTier === 'full') {
+        const selectedKeys = new Set(selectedTiles.map(t => `${t.row}:${t.col}`));
+        const candidateCells = [];
+        if (chainTier === 'cross') {
+          candidateCells.push(...getCrossCells(lastCell, BOARD_SIZE));
+        } else {
+          for (let r = 0; r < BOARD_SIZE; r++) {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+              candidateCells.push({ row: r, col: c });
+            }
+          }
+        }
+        // 연쇄 타일·피버 블록은 추가 제거에서 제외 (피버 블록 보존)
+        pangExtraCells = candidateCells.filter(cell =>
+          !selectedKeys.has(`${cell.row}:${cell.col}`)
+          && boardData[cell.row][cell.col]?.type !== 'fever');
+        pangExtraPoints = Math.round(pangExtraCells.length * CROSS_PANG_POINTS_PER_TILE * totalMultiplier);
+
+        if (chainTier === 'cross') {
+          crossPangCount++;
+          showInfoToast(CROSS_PANG_LABEL, 'cross');
+          playSound('crossPang');
+        } else {
+          fullPangCount++;
+          showInfoToast(FULL_PANG_LABEL, 'full');
+          playSound('fullPang');
+        }
+      }
+
+      score += points + pangExtraPoints;
 
       // 어제의 1등 기록 돌파 연출 (싱글 타임어택만)
       if (!isMultiplayMode && currentGameMode === 'timeAttack'
@@ -1129,22 +1179,56 @@ export function initGameApp() {
         repeatTimeMultiplier: repeatResult.timeMultiplier
       });
 
+      // 티어 시간 보너스도 피버 중에는 기존 50% 규칙으로 피버 시간에 가산
+      const tierTimeBonus = chainTier === 'cross' ? CROSS_PANG_TIME_BONUS_S
+        : chainTier === 'full' ? FULL_PANG_TIME_BONUS_S : 0;
+      const totalTimeBonus = bonusTime + tierTimeBonus;
+
       if (fever.active) {
-        fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000 * getFeverTimeBonusRate()));
+        fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (totalTimeBonus * 1000 * getFeverTimeBonusRate()));
         updateFeverUI();
       } else {
-        timeLeft = Math.min(MAX_TIME, timeLeft + bonusTime);
+        timeLeft = Math.min(MAX_TIME, timeLeft + totalTimeBonus);
         updateTimerUI();
       }
 
       spawnFloatingScore(points, totalMultiplier, repeatResult.type);
-      boardView.spawnSequenceHint(selectedTiles[selectedTiles.length - 1].element, chain.kind, chain.ruleLabel);
+      boardView.spawnSequenceHint(lastCell.element, chain.kind, chain.ruleLabel);
       maybeQueueFeverSpawn(len, chain.allSame);
 
+      if (pangExtraCells.length > 0) {
+        const pangLabel = chainTier === 'cross' ? '크로스' : '풀보드';
+        setTimeout(() => {
+          boardView.spawnFloatingScore(
+            lastCell.element,
+            `+${pangExtraPoints.toLocaleString('ko-KR')} · ${pangLabel}`,
+            { fever: true }
+          );
+        }, 150);
+      }
+
       selectedTiles.forEach(t => t.element.classList.add('matched'));
-      setTimeout(() => {
-        eliminateAndRefill();
-      }, 350);
+      if (pangExtraCells.length > 0) {
+        // 연쇄 matched(350ms) → 십자/전판 pang-burst(바깥으로 퍼짐) → collapse + 낙하
+        const removedCells = [
+          ...selectedTiles.map(t => ({ row: t.row, col: t.col })),
+          ...pangExtraCells
+        ];
+        const origin = { row: lastCell.row, col: lastCell.col };
+        setTimeout(() => {
+          const burstMs = boardView.triggerPangBurst(pangExtraCells, origin, {
+            durationMs: PANG_BURST_MS,
+            staggerMs: PANG_BURST_STAGGER_MS
+          });
+          setTimeout(() => {
+            eliminateAndRefill(removedCells);
+          }, burstMs);
+        }, 350);
+      } else {
+        setTimeout(() => {
+          eliminateAndRefill();
+        }, 350);
+      }
 
     } else {
       playSound('sequenceFail');
@@ -1179,11 +1263,12 @@ export function initGameApp() {
     }, 400);
   }
 
-  function eliminateAndRefill() {
-    const { board: nextBoard } = collapseAndRefill(boardData, selectedTiles, createNormalTileData);
+  function eliminateAndRefill(removedCells = selectedTiles) {
+    const { board: nextBoard } = collapseAndRefill(boardData, removedCells, createNormalTileData);
     boardData = nextBoard;
 
     spawnQueuedFeverBlock();
+    boardView.clearPangBurst();
     boardView.renderGravityRefill(boardData);
     clearSelection();
   }
