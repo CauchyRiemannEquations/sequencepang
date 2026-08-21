@@ -50,7 +50,7 @@ import {
   createFeverTile,
   getDisplayValue as getTileDisplayValue
 } from './engine/tiles.js';
-import { createBoard, collapseAndRefill } from './engine/board.js';
+import { createBoard, collapseAndRefill, isNeighbor } from './engine/board.js';
 import { classifyChain, getTimeBonus } from './engine/sequence.js';
 import { getChainTier, getCrossCells } from './engine/chainTier.js';
 import {
@@ -285,10 +285,11 @@ export function initGameApp() {
     feverTimerText
   });
 
-  // 보드 지오메트리는 레이아웃이 바뀔 때만 다시 잰다 (매 move마다 rect 계산 금지)
-  window.addEventListener('resize', () => dragController.measure());
-  window.addEventListener('orientationchange', () => dragController.measure());
-  window.addEventListener('scroll', () => dragController.measure(), { passive: true });
+  // 보드 지오메트리는 레이아웃이 바뀌면 무효화하고, 다음 히트테스트에서 지연 측정
+  // (스크롤/리사이즈 이벤트마다 동기 레이아웃을 강제하지 않는다)
+  window.addEventListener('resize', () => dragController.invalidate());
+  window.addEventListener('orientationchange', () => dragController.invalidate());
+  window.addEventListener('scroll', () => dragController.invalidate(), { passive: true });
 
   hud.setBestScore(bestScore);
   const savedNickname = localStorage.getItem('seq_pang_nickname') || '';
@@ -802,7 +803,8 @@ export function initGameApp() {
       if (!timeoutGraceActive || isGameOver) return;
       isDragging = false;
       dragController.clearPointer();
-      clearTimeoutGrace();
+      // 유예 플래그는 판정이 끝날 때까지 유지 (하이퍼팡 모달 진입 차단용)
+      // — triggerGameOver가 clearTimeoutGrace를 호출한다
       if (selectedTiles.length >= 3) {
         evaluateSequence();
       } else {
@@ -1064,11 +1066,7 @@ export function initGameApp() {
 
     if (selectedTiles.length > 0) {
       const last = selectedTiles[selectedTiles.length - 1];
-      const rowDiff = Math.abs(last.row - r);
-      const colDiff = Math.abs(last.col - c);
-
-      const isNeighbor = rowDiff <= 1 && colDiff <= 1 && !(rowDiff === 0 && colDiff === 0);
-      if (!isNeighbor) return;
+      if (!isNeighbor(last, cell)) return;
     }
 
     selectTile(r, c);
@@ -1079,8 +1077,8 @@ export function initGameApp() {
     isDragging = false;
     dragController.clearPointer();
 
+    // 유예 플래그는 판정이 끝날 때까지 유지해야 유예 중 하이퍼팡 진입이 막힌다
     const endedInGrace = timeoutGraceActive;
-    if (endedInGrace) clearTimeoutGrace();
 
     if (selectedTiles.length >= 3) {
       evaluateSequence();
@@ -1250,7 +1248,7 @@ export function initGameApp() {
         updateTimerUI();
       }
 
-      spawnFloatingScore(points, totalMultiplier, repeatResult.type);
+      spawnFloatingScore(lastCell.element, points, totalMultiplier, repeatResult.type);
       boardView.spawnSequenceHint(lastCell.element, chain.kind, chain.ruleLabel);
       maybeQueueFeverSpawn(len, chain.allSame);
 
@@ -1284,8 +1282,11 @@ export function initGameApp() {
           }, burstMs);
         }, 350);
       } else {
+        // 제거 대상을 판정 시점에 스냅샷 — 350ms 안에 새 드래그가 시작돼도
+        // 그 타일이 함께 제거되지 않는다
+        const removedCells = selectedTiles.map(t => ({ row: t.row, col: t.col }));
         setTimeout(() => {
-          eliminateAndRefill();
+          eliminateAndRefill(removedCells);
         }, 350);
       }
 
@@ -1305,11 +1306,12 @@ export function initGameApp() {
     }
   }
 
-  function spawnFloatingScore(points, multiplier = 1, repeatType = 'new') {
-    const lastTile = selectedTiles[selectedTiles.length - 1].element;
+  // anchorEl을 인자로 받는다 — maybeTriggerHyperPang이 clearSelection으로
+  // selectedTiles를 비운 뒤에도 안전해야 한다 (100만 점 돌파 시점)
+  function spawnFloatingScore(anchorEl, points, multiplier = 1, repeatType = 'new') {
     const multiplierLabel = multiplier > 1 ? ` ×${multiplier}` : '';
     const repeatLabel = repeatType === 'path' ? ' · 반복 경로' : repeatType === 'pattern' ? ' · 반복 수열' : '';
-    boardView.spawnFloatingScore(lastTile, `+${points}${multiplierLabel}${repeatLabel}`, { fever: multiplier > 1 });
+    boardView.spawnFloatingScore(anchorEl, `+${points}${multiplierLabel}${repeatLabel}`, { fever: multiplier > 1 });
   }
 
   function triggerFailureShock() {
@@ -1322,7 +1324,7 @@ export function initGameApp() {
     }, 400);
   }
 
-  function eliminateAndRefill(removedCells = selectedTiles) {
+  function eliminateAndRefill(removedCells) {
     // 유예 종료 등 게임오버 이후 예약된 타임아웃은 실행하지 않는다
     if (isGameOver) return;
     const { board: nextBoard } = collapseAndRefill(boardData, removedCells, createNormalTileData);

@@ -7,7 +7,7 @@
     "dev:server": "node server/server.js",
     "dev:client": "vite --host 0.0.0.0",
     "build": "vite build",
-    "test": "node --test \"tests/**/*.test.js\"",
+    "test": "node --test tests/engine/*.test.js",
     "start": "node server/server.js"
   },
   "keywords": [

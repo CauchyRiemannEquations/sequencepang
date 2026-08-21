@@ -97,6 +97,23 @@ test('드래그 중 상태와 손 뗄 때 판정이 100% 일치 (같은 classify
     [7, 5, 3, 1],
     [1, 3, 9, 12]
   ];
+  // 리팩터 전 evaluateSequence의 성공 조건(isAP || isGP)을 독립 구현한 참조 판정
+  function isValidByLegacyRule(values) {
+    const len = values.length;
+    if (len < 3) return false;
+    let isAP = true;
+    const diff = values[1] - values[0];
+    for (let i = 1; i < len - 1; i++) {
+      if (values[i + 1] - values[i] !== diff) { isAP = false; break; }
+    }
+    let isGP = true;
+    const ratio = values[1] / values[0];
+    for (let i = 1; i < len - 1; i++) {
+      if (Math.abs((values[i + 1] / values[i]) - ratio) > 1e-9) { isGP = false; break; }
+    }
+    return isAP || isGP;
+  }
+
   for (const values of chains) {
     let liveState = null;
     for (let len = 1; len <= values.length; len++) {
@@ -104,8 +121,8 @@ test('드래그 중 상태와 손 뗄 때 판정이 100% 일치 (같은 classify
     }
     const releaseState = classifyChain(values).state;
     assert.equal(liveState, releaseState, values.join(','));
-    // 손 뗄 때 성공 조건(isAP||isGP)과 실시간 valid 상태도 동치
-    assert.equal(releaseState === 'valid', classifyChain(values).state === 'valid');
+    // 손 뗄 때 성공 조건(리팩터 전 isAP||isGP)과 실시간 valid 상태의 동치
+    assert.equal(releaseState === 'valid', isValidByLegacyRule(values), values.join(','));
   }
 });
 

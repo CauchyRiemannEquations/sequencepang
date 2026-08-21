@@ -50,7 +50,7 @@ tests/engine/      node --test. parityVectors.json = 점수·판정 기대값 �
 - 시간: `engine/sequence.js` `getTimeBonus` (GP 공비≥2 → 1.2 / 그 외 0.9,
   AP |d|≥4 → 1.2 / ≥2 → 1.0 / 그 외 0.7, +0.5 가산, 반복 배수 곱)
 
-실행: `npm test` (= `node --test "tests/**/*.test.js"`)
+실행: `npm test` (= `node --test tests/engine/*.test.js` — 셸 glob이라 Node 18에서도 동작)
 
 ## 배포 체크리스트
 

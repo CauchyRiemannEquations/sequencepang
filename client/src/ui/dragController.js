@@ -54,6 +54,11 @@ export function createDragController({ boardWrapper, dragLine, dragLineGlow, siz
     return measured;
   }
 
+  // 레이아웃이 바뀐 뒤(스크롤/리사이즈 등) 다음 히트테스트에서 지연 재측정
+  function invalidate() {
+    measured = false;
+  }
+
   function getCellAtPoint(clientX, clientY) {
     if (!measured && !measure()) return null;
 
@@ -144,6 +149,7 @@ export function createDragController({ boardWrapper, dragLine, dragLineGlow, siz
 
   return {
     measure,
+    invalidate,
     getCellAtPoint,
     getCellCenterLocal,
     getLastCellCenterLocal,
