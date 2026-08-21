@@ -831,6 +831,16 @@
       color: #fecaca;
     }
 
+    /* 0초 드래그 유예: 타이머 숫자 0.0 고정 + 깜빡임 */
+    .timer-text.grace {
+      animation: graceBlink 0.3s steps(2, jump-none) infinite;
+    }
+
+    @keyframes graceBlink {
+      from { opacity: 1; }
+      to { opacity: 0.3; }
+    }
+
     /* 플로팅 점수 */
     .floating-score {
       position: absolute;

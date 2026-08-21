@@ -32,6 +32,7 @@ import {
   FULL_PANG_LABEL,
   PANG_BURST_MS,
   PANG_BURST_STAGGER_MS,
+  TIMEOUT_GRACE_MS,
   RECENT_SEQUENCE_LIMIT,
   REPEATED_PATH_SCORE_MULTIPLIER,
   REPEATED_PATTERN_SCORE_MULTIPLIER,
@@ -179,6 +180,8 @@ export function initGameApp() {
   let hyperPangTriggered = false;
   let hyperPangActive = false;
   let hyperPangPaused = false;
+  let timeoutGraceActive = false; // 0초 도달 시 드래그 유예 상태
+  let timeoutGraceTimer = null;
   const fever = {
     active: false,
     ending: false,
@@ -342,7 +345,8 @@ export function initGameApp() {
 
   // ── 하이퍼팡: 한 판 100만점 돌파 시 숫자 범위 1~12 확장 ──
   function maybeTriggerHyperPang() {
-    if (hyperPangTriggered || isGameOver || !isGameActive) return;
+    // 유예 중에는 곧 게임오버 — 하이퍼팡 모달을 띄우지 않는다
+    if (hyperPangTriggered || isGameOver || !isGameActive || timeoutGraceActive) return;
     if (score < HYPER_PANG_SCORE_THRESHOLD) return;
 
     hyperPangTriggered = true;
@@ -703,6 +707,7 @@ export function initGameApp() {
     isGameOver = false;
     isGameActive = false; // 카운트다운이 완전히 끝날 때까지 조작 제한
     selectedTiles = [];
+    clearTimeoutGrace();
     resetChainFeedback();
     resetFeverState();
 
@@ -769,15 +774,54 @@ export function initGameApp() {
   function tickTimer() {
     if (isGameOver || !isGameActive) return;
     if (fever.active || fever.ending) return;
+    if (timeoutGraceActive) return; // 유예 중 메인·콤보 타이머 모두 정지 (표시 0.0 고정)
 
     timeLeft -= 0.1;
     if (timeLeft <= 0) {
       timeLeft = 0;
+      // 3타일 이상 드래그 중이면 즉시 종료 대신 최대 1초 유예
+      if (isDragging && selectedTiles.length >= 3) {
+        enterTimeoutGrace();
+        updateTimerUI();
+        return;
+      }
       triggerGameOver();
     }
     updateTimerUI();
 
     tickComboTimer();
+  }
+
+  // ── 0초 드래그 유예 ──────────────────────────────────────
+  function enterTimeoutGrace() {
+    timeoutGraceActive = true;
+    timerContainer.classList.add('grace');
+    timerText.classList.add('grace');
+    timeoutGraceTimer = setTimeout(() => {
+      // 유예 안에 손을 떼지 않으면 현재 선택으로 강제 판정 후 종료
+      if (!timeoutGraceActive || isGameOver) return;
+      isDragging = false;
+      dragController.clearPointer();
+      clearTimeoutGrace();
+      if (selectedTiles.length >= 3) {
+        evaluateSequence();
+      } else {
+        clearSelection();
+      }
+      timeLeft = 0;
+      updateTimerUI();
+      triggerGameOver();
+    }, TIMEOUT_GRACE_MS);
+  }
+
+  function clearTimeoutGrace() {
+    timeoutGraceActive = false;
+    if (timeoutGraceTimer) {
+      clearTimeout(timeoutGraceTimer);
+      timeoutGraceTimer = null;
+    }
+    timerContainer.classList.remove('grace');
+    timerText.classList.remove('grace');
   }
 
   function tickComboTimer() {
@@ -822,6 +866,7 @@ export function initGameApp() {
 
 
   function triggerGameOver() {
+      clearTimeoutGrace();
       isGameOver = true;
       gameContainer.classList.remove('game-active', 'last-spurt');
       timerContainer.classList.remove('last-spurt');
@@ -971,6 +1016,7 @@ export function initGameApp() {
 
   function handleStart(clientX, clientY) {
     if (isGameOver || !isGameActive || fever.ending) return;
+    if (timeoutGraceActive) return; // 유예 중 새 드래그 금지 (진행 중 드래그만 허용)
     const cell = dragController.getCellAtPoint(clientX, clientY);
     if (cell) {
       const { row: r, col: c } = cell;
@@ -1033,10 +1079,20 @@ export function initGameApp() {
     isDragging = false;
     dragController.clearPointer();
 
+    const endedInGrace = timeoutGraceActive;
+    if (endedInGrace) clearTimeoutGrace();
+
     if (selectedTiles.length >= 3) {
       evaluateSequence();
     } else {
       clearSelection();
+    }
+
+    // 유예 중 손을 뗐으면 판정 반영(라스트팡 ×2 포함) 직후 바로 종료
+    if (endedInGrace && !isGameOver) {
+      timeLeft = 0;
+      updateTimerUI();
+      triggerGameOver();
     }
   }
 
@@ -1266,6 +1322,8 @@ export function initGameApp() {
   }
 
   function eliminateAndRefill(removedCells = selectedTiles) {
+    // 유예 종료 등 게임오버 이후 예약된 타임아웃은 실행하지 않는다
+    if (isGameOver) return;
     const { board: nextBoard } = collapseAndRefill(boardData, removedCells, createNormalTileData);
     boardData = nextBoard;
 

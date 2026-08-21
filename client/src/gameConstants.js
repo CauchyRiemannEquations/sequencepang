@@ -55,6 +55,9 @@ export const FULL_PANG_LABEL = '풀보드팡!';
 export const PANG_BURST_MS = 120;
 export const PANG_BURST_STAGGER_MS = 25;
 
+// 0초 도달 시 드래그 유예: 3타일 이상 드래그 중이면 최대 1초 안에 마무리 허용
+export const TIMEOUT_GRACE_MS = 1000;
+
 export const RECENT_SEQUENCE_LIMIT = 5;
 export const REPEATED_PATH_SCORE_MULTIPLIER = 0.2;
 export const REPEATED_PATTERN_SCORE_MULTIPLIER = 0.5;
