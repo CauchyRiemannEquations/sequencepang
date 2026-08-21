@@ -104,6 +104,10 @@ function playGameOver() {
   playTone(261.63, 0.78, 0.45, { type: 'sine', gain: 0.045 });
 }
 
+function playComboExpire() {
+  playTone(220, 0, 0.16, { type: 'triangle', gain: 0.04, endFrequency: 110 });
+}
+
 function playCountdownTick() {
   playTone(440, 0, 0.13, { type: 'triangle', gain: 0.11, endFrequency: 500 });
 }
@@ -119,6 +123,7 @@ const soundPlayers = {
   tileSelect: playTileSelect,
   sequenceSuccess: playSequenceSuccess,
   sequenceFail: playSequenceFail,
+  comboExpire: playComboExpire,
   feverStart: playFeverStart,
   gameOver: playGameOver,
   countdownTick: playCountdownTick,

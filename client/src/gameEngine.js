@@ -36,23 +36,41 @@ import { createGameSession, fetchLeaderboard, fetchYesterdayTop, submitScore } f
 import { renderGlobalLeaderboard, renderLeaderboard } from './ui.js';
 import { playSound } from './sfxManager.js';
 import { pauseMenuBgm, resumeMenuBgm } from './menuBgm.js';
+import {
+  createTilePool,
+  createNormalTile,
+  createFeverTile,
+  getDisplayValue as getTileDisplayValue
+} from './engine/tiles.js';
+import { createBoard, collapseAndRefill } from './engine/board.js';
+import { classifyChain, getTimeBonus } from './engine/sequence.js';
+import {
+  computePoints,
+  getPathSignature,
+  getValueSignature,
+  classifyRepeat,
+  pushHistory
+} from './engine/scoring.js';
+import { createBoardView } from './ui/boardView.js';
+import { createDragController } from './ui/dragController.js';
+import { createHud } from './ui/hud.js';
 
 export function initGameApp() {
   // ----------------------------------------------------
   // 게임 엔진 상태 데이터
   // ----------------------------------------------------
 
+  // 타일 숫자 풀 — 향후 음수 피버는 여기 풀 하나 추가로 대응한다
+  const normalTilePool = createTilePool({ min: TILE_NUMBER_MIN, max: TILE_NUMBER_MAX });
+  const hyperTilePool = createTilePool({ min: TILE_NUMBER_MIN, max: HYPER_PANG_TILE_MAX });
+  const bigNumberTilePool = createTilePool({ min: BIG_NUMBER_TILE_MIN, max: BIG_NUMBER_TILE_MAX });
+
+  function getCurrentTilePool() {
+    return hyperPangActive ? hyperTilePool : normalTilePool;
+  }
+
   function getCurrentTileMax() {
-    return hyperPangActive ? HYPER_PANG_TILE_MAX : TILE_NUMBER_MAX;
-  }
-
-  function getRandomNumber() {
-    const max = getCurrentTileMax();
-    return Math.floor(Math.random() * (max - TILE_NUMBER_MIN + 1)) + TILE_NUMBER_MIN;
-  }
-
-  function getRandomBigNumber() {
-    return Math.floor(Math.random() * (BIG_NUMBER_TILE_MAX - BIG_NUMBER_TILE_MIN + 1)) + BIG_NUMBER_TILE_MIN;
+    return getCurrentTilePool().max;
   }
 
   // 빅넘버 피버 발동 즉시 보드의 일반 타일 일부를 10~19로 교체
@@ -72,17 +90,14 @@ export function initGameApp() {
     }
 
     candidates.slice(0, count).forEach(({ r, c }) => {
-      boardData[r][c] = { baseValue: getRandomBigNumber(), type: 'normal' };
+      boardData[r][c] = createNormalTile(bigNumberTilePool);
     });
   }
 
   function createNormalTileData() {
     // 빅넘버 슈퍼피버 중에는 새 타일이 10~19 원본 숫자로 등장
     const useBigNumber = fever.active && fever.type === 'bigNumber';
-    return {
-      baseValue: useBigNumber ? getRandomBigNumber() : getRandomNumber(),
-      type: 'normal'
-    };
+    return createNormalTile(useBigNumber ? bigNumberTilePool : getCurrentTilePool());
   }
 
   // 개발 모드에서 ?feverTest=1 을 붙이면 적용 시각 전에도 이벤트를 미리 체험 가능
@@ -106,63 +121,23 @@ export function initGameApp() {
   }
 
   function createFeverTileData(tier = 'normal') {
-    const feverType = pickWeightedFeverType(tier === 'super' ? SUPER_FEVER_TYPES : FEVER_TYPES);
-    return {
-      baseValue: getRandomNumber(),
-      type: 'fever',
-      feverTier: tier,
-      feverType: feverType.type,
-      feverAmount: feverType.amount,
-      feverLabel: feverType.label
-    };
-  }
-
-  function pickWeightedFeverType(feverTypes) {
-    const totalWeight = feverTypes.reduce((sum, feverType) => sum + feverType.weight, 0);
-    let randomWeight = Math.random() * totalWeight;
-    for (const feverType of feverTypes) {
-      randomWeight -= feverType.weight;
-      if (randomWeight < 0) return feverType;
-    }
-    return feverTypes[feverTypes.length - 1];
+    return createFeverTile({
+      tier,
+      feverTypes: tier === 'super' ? SUPER_FEVER_TYPES : FEVER_TYPES,
+      pool: getCurrentTilePool()
+    });
   }
 
   function getDisplayValue(tileData) {
-    if (!tileData) return '';
-    if (tileData.type === 'fever') {
-      return tileData.feverLabel;
-    }
-    if (!fever.active) return tileData.baseValue;
-    if (fever.type === 'add') return tileData.baseValue + fever.amount;
-    if (fever.type === 'multiply') return tileData.baseValue * fever.amount;
-    return tileData.baseValue;
+    return getTileDisplayValue(tileData, fever);
   }
 
   function hasFeverTile() {
     return boardData.some(row => row.some(tileData => tileData?.type === 'fever'));
   }
 
-  function updateTileElement(tileElement, tileData) {
-    tileElement.textContent = getDisplayValue(tileData);
-    tileElement.classList.toggle('fever-tile', tileData?.type === 'fever');
-    tileElement.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
-    tileElement.classList.toggle('big-number-tile', tileData?.type === 'normal' && tileData?.baseValue > getCurrentTileMax());
-    tileElement.dataset.tileType = tileData?.type || 'normal';
-    tileElement.dataset.baseValue = tileData?.baseValue ?? '';
-    tileElement.dataset.feverTier = tileData?.feverTier ?? '';
-    tileElement.dataset.feverType = tileData?.feverType ?? '';
-    tileElement.dataset.feverAmount = tileData?.feverAmount ?? '';
-  }
-
   function renderBoard() {
-    for (let r = 0; r < BOARD_SIZE; r++) {
-      for (let c = 0; c < BOARD_SIZE; c++) {
-        const tileElement = document.getElementById(`tile-${r}-${c}`);
-        if (tileElement) {
-          updateTileElement(tileElement, boardData[r][c]);
-        }
-      }
-    }
+    boardView.renderAll(boardData);
   }
 
   let boardData = [];
@@ -266,8 +241,43 @@ export function initGameApp() {
   const scoreSubmitRetry = document.getElementById('score-submit-retry');
   const globalRankingHeading = globalRanking?.querySelector('.global-ranking-heading strong') || null;
 
-  bestScoreVal.textContent = bestScore;
-  welcomeBestVal.textContent = bestScore;
+  // 보드 뷰(타일 DOM 캐시) · 드래그 컨트롤러(히트테스트/드래그 선) · HUD
+  const boardView = createBoardView({
+    boardElement,
+    boardWrapper,
+    size: BOARD_SIZE,
+    getDisplayValue,
+    isBigNumberTile: tileData => tileData?.baseValue > getCurrentTileMax()
+  });
+
+  const dragController = createDragController({
+    boardWrapper,
+    dragLine,
+    dragLineGlow,
+    size: BOARD_SIZE,
+    getTileEl: (row, col) => boardView.getTileEl(row, col)
+  });
+
+  const hud = createHud({
+    scoreVal,
+    bestScoreVal,
+    welcomeBestVal,
+    comboVal,
+    comboBadge,
+    timerContainer,
+    timerBar,
+    timerText,
+    feverPanel,
+    feverTimerFill,
+    feverTimerText
+  });
+
+  // 보드 지오메트리는 레이아웃이 바뀔 때만 다시 잰다 (매 move마다 rect 계산 금지)
+  window.addEventListener('resize', () => dragController.measure());
+  window.addEventListener('orientationchange', () => dragController.measure());
+  window.addEventListener('scroll', () => dragController.measure(), { passive: true });
+
+  hud.setBestScore(bestScore);
   const savedNickname = localStorage.getItem('seq_pang_nickname') || '';
   playerNicknameInput.value = savedNickname;
   lobbyNicknameInput.value = savedNickname;
@@ -275,8 +285,6 @@ export function initGameApp() {
   function updateFeverUI() {
     const isVisible = fever.active || fever.ending;
     const isSuperActive = fever.active && fever.tier === 'super';
-    feverPanel.classList.toggle('show', isVisible);
-    feverPanel.classList.toggle('super-fever', isSuperActive);
     gameContainer.classList.toggle('fever-active', fever.active);
     gameContainer.classList.toggle('super-fever-active', isSuperActive);
     boardWrapper.classList.toggle('fever-active', fever.active);
@@ -285,11 +293,15 @@ export function initGameApp() {
     const percentage = fever.active
       ? Math.max(0, Math.min(100, (fever.timeLeftMs / fever.durationMs) * 100))
       : 0;
-    feverTimerFill.style.width = `${percentage}%`;
     const feverName = fever.tier === 'super' ? '슈퍼피버' : '피버';
-    feverTimerText.textContent = fever.active
-      ? `${feverName} ${fever.label} · ${(fever.timeLeftMs / 1000).toFixed(1)}s · 점수 ×${fever.scoreMultiplier}`
-      : '피버 종료!';
+    hud.setFeverPanel({
+      visible: isVisible,
+      superActive: isSuperActive,
+      percentage,
+      text: fever.active
+        ? `${feverName} ${fever.label} · ${(fever.timeLeftMs / 1000).toFixed(1)}s · 점수 ×${fever.scoreMultiplier}`
+        : '피버 종료!'
+    });
   }
 
   function resetFeverState() {
@@ -371,11 +383,7 @@ export function initGameApp() {
     boardWrapper.classList.add('hyper-pang');
 
     // 보드 전체를 1~12 범위로 새로 생성 (제2막)
-    for (let r = 0; r < BOARD_SIZE; r++) {
-      for (let c = 0; c < BOARD_SIZE; c++) {
-        boardData[r][c] = createNormalTileData();
-      }
-    }
+    boardData = createBoard(BOARD_SIZE, createNormalTileData);
     renderBoard();
     clearSelection();
 
@@ -475,8 +483,7 @@ export function initGameApp() {
     isDragging = false;
     selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected', 'matched'));
     selectedTiles = [];
-    dragLine.setAttribute('d', '');
-    dragLineGlow.setAttribute('d', '');
+    dragController.clear();
 
     // 빅넘버 피버가 남긴 10 이상 타일은 롤백 연출과 함께 1~9로 원상복구
     if (wasBigNumber) {
@@ -484,7 +491,7 @@ export function initGameApp() {
         for (let c = 0; c < BOARD_SIZE; c++) {
           const tileData = boardData[r][c];
           if (tileData?.type === 'normal' && tileData.baseValue > getCurrentTileMax()) {
-            boardData[r][c] = { baseValue: getRandomNumber(), type: 'normal' };
+            boardData[r][c] = createNormalTile(getCurrentTilePool());
           }
         }
       }
@@ -583,38 +590,19 @@ export function initGameApp() {
       socket.emit('updateScore', { score: 0 });
     }
     
-    scoreVal.textContent = '0';
-    comboVal.textContent = '0';
-    comboBadge.textContent = '🔥';
-    comboBadge.style.display = 'none';
+    hud.setScore('0');
+    hud.clearCombo();
     gameOverOverlay.classList.remove('show');
     globalRanking.hidden = true;
     scoreSubmitRetry.hidden = true;
 
-    boardData = [];
-    boardElement.innerHTML = '';
-    
-    for (let r = 0; r < BOARD_SIZE; r++) {
-      boardData[r] = [];
-      for (let c = 0; c < BOARD_SIZE; c++) {
-        const tileData = createNormalTileData();
-        boardData[r][c] = tileData;
-        
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        tile.dataset.row = r;
-        tile.dataset.col = c;
-        tile.id = `tile-${r}-${c}`;
-        updateTileElement(tile, tileData);
-        
-        boardElement.appendChild(tile);
-      }
-    }
+    boardData = createBoard(BOARD_SIZE, createNormalTileData);
+    boardView.build(boardData);
+    dragController.measure();
 
     if (gameTimer) clearInterval(gameTimer);
     updateTimerUI();
-    dragLine.setAttribute('d', '');
-    dragLineGlow.setAttribute('d', '');
+    dragController.clear();
 
     // 중앙 카운트다운 시퀀스 작동 후 타이머 및 드래그 가동
     gameContainer.classList.add('game-active');
@@ -678,32 +666,14 @@ export function initGameApp() {
       comboTimeLeft -= 0.1;
       if (comboTimeLeft <= 0) {
         combo = 0;
-        comboVal.textContent = '0';
-        comboBadge.style.display = 'none';
-        comboBadge.textContent = '🔥';
-        playComboExpireSound();
+        hud.clearCombo();
+        // sfxManager 공용 AudioContext 사용 — 호출마다 새 컨텍스트를 만들지 않는다
+        playSound('comboExpire');
       } else {
         // 콤보 배지에 남은 시간 앙증맞게 시각화
-        comboBadge.textContent = `🔥 ${comboTimeLeft.toFixed(1)}s`;
+        hud.setComboSeconds(comboTimeLeft);
       }
     }
-  }
-
-  function playComboExpireSound() {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.type = 'triangle';
-      oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.16);
-      gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.16);
-    } catch (e) {}
   }
 
   function isLastSpurtActive() {
@@ -711,15 +681,7 @@ export function initGameApp() {
   }
 
   function updateTimerUI() {
-    const percentage = (timeLeft / MAX_TIME) * 100;
-    timerBar.style.width = `${percentage}%`;
-    timerText.textContent = `${timeLeft.toFixed(1)}s`;
-
-    if (timeLeft < 15) {
-      timerBar.classList.add('warning');
-    } else {
-      timerBar.classList.remove('warning');
-    }
+    hud.setTimer(timeLeft, MAX_TIME);
 
     // 라스트팡: 5초 아래로 처음 내려가는 순간 발동, 이후 시간이 연장돼도 판이 끝날 때까지 유지
     if (!lastSpurtEngaged
@@ -733,7 +695,7 @@ export function initGameApp() {
     }
 
     const lastSpurt = isLastSpurtActive();
-    timerContainer.classList.toggle('last-spurt', lastSpurt);
+    hud.setLastSpurt(lastSpurt);
     gameContainer.classList.toggle('last-spurt', lastSpurt);
   }
 
@@ -747,8 +709,7 @@ export function initGameApp() {
       clearInterval(gameTimer);
       resetFeverState();
 
-    dragLine.setAttribute('d', '');
-    dragLineGlow.setAttribute('d', '');
+    dragController.clear();
     selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected'));
 
     gameOverTitle.textContent = '타임 오버!';
@@ -884,70 +845,45 @@ export function initGameApp() {
     await loadGlobalLeaderboard();
   }
 
-  // 포인터 위치 타일
-  function getTileAtPosition(x, y) {
-    const tiles = document.querySelectorAll('.tile');
-    let targetTile = null;
-
-    tiles.forEach(tile => {
-      const rect = tile.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      
-      const dist = Math.hypot(x - centerX, y - centerY);
-      const activeRadius = rect.width * 0.4;
-      
-      if (dist < activeRadius) {
-        targetTile = tile;
-      }
-    });
-
-    return targetTile;
-  }
-
   function handleStart(clientX, clientY) {
     if (isGameOver || !isGameActive || fever.ending) return;
-    const tile = getTileAtPosition(clientX, clientY);
-    if (tile) {
-      const r = parseInt(tile.dataset.row);
-      const c = parseInt(tile.dataset.col);
+    const cell = dragController.getCellAtPoint(clientX, clientY);
+    if (cell) {
+      const { row: r, col: c } = cell;
       const tileData = boardData[r][c];
       if (tileData?.type === 'fever') {
         boardData[r][c] = createNormalTileData();
-        updateTileElement(tile, boardData[r][c]);
+        boardView.updateTile(r, c, boardData[r][c]);
         startFeverMode(tileData.feverType, tileData.feverAmount, tileData.feverLabel, tileData.feverTier || 'normal');
         return;
       }
     }
 
     isDragging = true;
-    if (tile) {
-      selectTile(tile);
+    if (cell) {
+      selectTile(cell.row, cell.col);
     }
   }
 
   function handleMove(clientX, clientY) {
     if (!isDragging || isGameOver || !isGameActive || fever.ending) return;
-    const tile = getTileAtPosition(clientX, clientY);
-    if (!tile) {
-      updateDragLine(clientX, clientY);
-      return;
-    }
+    const cell = dragController.getCellAtPoint(clientX, clientY);
+    dragController.setPointer(clientX, clientY);
+    if (!cell) return;
 
-    const r = parseInt(tile.dataset.row);
-    const c = parseInt(tile.dataset.col);
+    const { row: r, col: c } = cell;
 
     if (selectedTiles.length > 1) {
       const lastSecond = selectedTiles[selectedTiles.length - 2];
       if (lastSecond.row === r && lastSecond.col === c) {
         const popped = selectedTiles.pop();
         popped.element.classList.remove('selected', 'last-selected');
-        
+
         if (selectedTiles.length > 0) {
           selectedTiles[selectedTiles.length - 1].element.classList.add('last-selected');
         }
-        
-        updateDragLine(clientX, clientY);
+
+        dragController.setSelection(selectedTiles);
         return;
       }
     }
@@ -964,13 +900,13 @@ export function initGameApp() {
       if (!isNeighbor) return;
     }
 
-    selectTile(tile);
-    updateDragLine(clientX, clientY);
+    selectTile(r, c);
   }
 
   function handleEnd() {
     if (!isDragging) return;
     isDragging = false;
+    dragController.clearPointer();
 
     if (selectedTiles.length >= 3) {
       evaluateSequence();
@@ -979,11 +915,10 @@ export function initGameApp() {
     }
   }
 
-  function selectTile(tileElement) {
-    const r = parseInt(tileElement.dataset.row);
-    const c = parseInt(tileElement.dataset.col);
+  function selectTile(r, c) {
     const tileData = boardData[r][c];
-    if (!tileData || tileData.type === 'fever') return;
+    const tileElement = boardView.getTileEl(r, c);
+    if (!tileData || !tileElement || tileData.type === 'fever') return;
     const val = getDisplayValue(tileData);
 
     if (selectedTiles.length > 0) {
@@ -998,86 +933,36 @@ export function initGameApp() {
       element: tileElement
     });
 
+    dragController.setSelection(selectedTiles);
     playSound('tileSelect');
   }
 
-  function updateDragLine(currentX, currentY) {
-    if (selectedTiles.length === 0) {
-      dragLine.setAttribute('d', '');
-      dragLineGlow.setAttribute('d', '');
-      return;
-    }
+  // 반복 페널티 배수 — 엔진에 상수 주입
+  const repeatMultipliers = {
+    pathScoreMultiplier: REPEATED_PATH_SCORE_MULTIPLIER,
+    patternScoreMultiplier: REPEATED_PATTERN_SCORE_MULTIPLIER,
+    pathTimeMultiplier: REPEATED_PATH_TIME_MULTIPLIER,
+    patternTimeMultiplier: REPEATED_PATTERN_TIME_MULTIPLIER
+  };
 
-    const wrapperRect = boardWrapper.getBoundingClientRect();
-    const points = [];
-
-    selectedTiles.forEach((tile) => {
-      const rect = tile.element.getBoundingClientRect();
-      const x = rect.left + rect.width / 2 - wrapperRect.left;
-      const y = rect.top + rect.height / 2 - wrapperRect.top;
-      points.push({ x, y });
-    });
-
-    if (isDragging && currentX !== undefined && currentY !== undefined) {
-      const localX = currentX - wrapperRect.left;
-      const localY = currentY - wrapperRect.top;
-      if (localX >= 0 && localX <= wrapperRect.width && localY >= 0 && localY <= wrapperRect.height) {
-        points.push({ x: localX, y: localY });
-      }
-    }
-
-    const pathData = buildCenteredDragPath(points);
-    dragLine.setAttribute('d', pathData);
-    dragLineGlow.setAttribute('d', pathData);
-  }
-
-  function buildCenteredDragPath(points) {
-    if (points.length === 0) return '';
-    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-    let pathData = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      pathData += ` L ${points[i].x} ${points[i].y}`;
-    }
-    return pathData;
-  }
-
-  // 판정
+  // 판정 — 드래그 중 실시간 판정과 동일한 classifyChain을 사용한다
   function evaluateSequence() {
     const values = selectedTiles.map(t => t.value);
     const len = values.length;
+    const chain = classifyChain(values);
 
-    let isAP = true;
-    const diff = values[1] - values[0];
-    for (let i = 1; i < len - 1; i++) {
-      if (values[i + 1] - values[i] !== diff) {
-        isAP = false;
-        break;
-      }
-    }
-
-    let isGP = true;
-    const ratio = values[1] / values[0];
-    for (let i = 1; i < len - 1; i++) {
-      if (Math.abs((values[i + 1] / values[i]) - ratio) > 1e-9) {
-        isGP = false;
-        break;
-      }
-    }
-    const allSame = values.every(value => value === values[0]);
-    const sequenceKind = allSame || (!isAP && isGP) ? 'GP' : 'AP';
-    const sequenceRule = sequenceKind === 'GP'
-      ? (allSame ? '1' : formatRatioValue(values[1], values[0]))
-      : formatDifferenceValue(diff);
-
-    if (isAP || isGP) {
+    if (chain.state === 'valid') {
       playSound('sequenceSuccess');
-      const repeatResult = classifySequenceRepeat(values);
+      const repeatResult = classifyRepeat(recentSuccessfulSequences, selectedTiles, values, repeatMultipliers);
       clearCount++;
       if (fever.active) feverClearCount++;
       if (repeatResult.type === 'path') repeatedPathCount++;
       if (repeatResult.type === 'pattern') repeatedValuePatternCount++;
       maxChainLength = Math.max(maxChainLength, len);
-      rememberSuccessfulSequence(values);
+      pushHistory(recentSuccessfulSequences, {
+        pathSignature: getPathSignature(selectedTiles),
+        valueSignature: getValueSignature(values)
+      }, RECENT_SEQUENCE_LIMIT);
 
       combo++;
       if (combo > maxCombo) {
@@ -1087,13 +972,16 @@ export function initGameApp() {
       // 콤보 제한 시간 5초 완전 충전 리셋
       comboTimeLeft = 5.0;
 
-      // 콤보 점수 보너스 대폭 강화 (비선형 가중치 체감형 점수 부스팅)
-      const comboBonus = combo > 1 ? (combo - 1) * 80 * (1 + (combo * 0.15)) : 0;
-      const basePoints = Math.floor((len * 100) + comboBonus);
       const feverMultiplier = fever.active ? fever.scoreMultiplier : 1;
       const lastSpurtMultiplier = isLastSpurtActive() ? LAST_SPURT_SCORE_MULTIPLIER : 1;
       const totalMultiplier = feverMultiplier * lastSpurtMultiplier;
-      const points = Math.round(basePoints * repeatResult.scoreMultiplier * totalMultiplier);
+      const points = computePoints({
+        len,
+        combo,
+        repeatMultiplier: repeatResult.scoreMultiplier,
+        feverMultiplier,
+        lastSpurtMultiplier
+      });
       score += points;
 
       // 어제의 1등 기록 돌파 연출 (싱글 타임어택만)
@@ -1108,41 +996,27 @@ export function initGameApp() {
       if (score > bestScore) {
         bestScore = score;
         localStorage.setItem('seq_pang_best', bestScore);
-        bestScoreVal.textContent = bestScore;
-        welcomeBestVal.textContent = bestScore;
+        hud.setBestScore(bestScore);
       }
 
-      scoreVal.textContent = score;
-      scoreVal.classList.add('pop');
-      setTimeout(() => scoreVal.classList.remove('pop'), 150);
+      hud.setScore(score, { pop: true });
 
       // 멀티플레이 모드일 때 서버에 실시간 점수 업데이트 전송
       if (isMultiplayMode && socket && socket.connected) {
         socket.emit('updateScore', { score: score });
       }
 
-      comboVal.textContent = combo;
-      comboBadge.style.display = 'inline-block';
-      comboBadge.textContent = `🔥 ${comboTimeLeft.toFixed(1)}s`;
+      hud.setCombo(combo, comboTimeLeft);
 
-      // ── 수열 종류·공차별 시간 보너스 ──────────────────────────
-      let bonusTime = 0;
-      if (sequenceKind === 'GP') {
-        // 등비수열: 공비 클수록 어렵고 보너스 큼
-        const activeRatio = allSame ? 1 : ratio;
-        bonusTime = activeRatio >= 2 ? 1.2 : 0.9;
-      } else {
-        // 등차수열: 공차가 클수록 어렵고 보너스 큼
-        const absDiff = Math.abs(diff);
-        if (absDiff >= 4)      bonusTime = 1.2;
-        else if (absDiff >= 2) bonusTime = 1.0;
-        else                   bonusTime = 0.7; // 공차 1은 쉬움
-      }
-      
-      // 콤보 계수 비례 추가 시간을 제거하고, 맞춤 고정 보너스(0.5초)만 가산
-      bonusTime += 0.5;
-      bonusTime *= repeatResult.timeMultiplier;
-      
+      // ── 수열 종류·공차별 시간 보너스 (+0.5 고정 가산, 반복 페널티 포함) ──
+      const bonusTime = getTimeBonus({
+        kind: chain.kind,
+        diff: chain.diff,
+        ratio: chain.ratio,
+        allSame: chain.allSame,
+        repeatTimeMultiplier: repeatResult.timeMultiplier
+      });
+
       if (fever.active) {
         fever.timeLeftMs = Math.min(MAX_TIME * 1000, fever.timeLeftMs + (bonusTime * 1000 * getFeverTimeBonusRate()));
         updateFeverUI();
@@ -1152,8 +1026,8 @@ export function initGameApp() {
       }
 
       spawnFloatingScore(points, totalMultiplier, repeatResult.type);
-      spawnSequenceHintRich(sequenceKind, sequenceRule);
-      maybeQueueFeverSpawn(len, allSame);
+      boardView.spawnSequenceHint(selectedTiles[selectedTiles.length - 1].element, chain.kind, chain.ruleLabel);
+      maybeQueueFeverSpawn(len, chain.allSame);
 
       selectedTiles.forEach(t => t.element.classList.add('matched'));
       setTimeout(() => {
@@ -1163,9 +1037,7 @@ export function initGameApp() {
     } else {
       playSound('sequenceFail');
       combo = 0;
-      comboVal.textContent = combo;
-      comboBadge.style.display = 'none';
-      comboBadge.textContent = '🔥';
+      hud.clearCombo();
       timeLeft = Math.max(0, timeLeft - 3.0);
       updateTimerUI();
 
@@ -1178,181 +1050,11 @@ export function initGameApp() {
     }
   }
 
-  function classifySequenceRepeat(values) {
-    const pathSignature = getPathSignature(selectedTiles);
-    const valueSignature = values.join(',');
-    if (recentSuccessfulSequences.some(sequence => sequence.pathSignature === pathSignature)) {
-      return {
-        type: 'path',
-        scoreMultiplier: REPEATED_PATH_SCORE_MULTIPLIER,
-        timeMultiplier: REPEATED_PATH_TIME_MULTIPLIER
-      };
-    }
-    if (recentSuccessfulSequences.some(sequence => sequence.valueSignature === valueSignature)) {
-      return {
-        type: 'pattern',
-        scoreMultiplier: REPEATED_PATTERN_SCORE_MULTIPLIER,
-        timeMultiplier: REPEATED_PATTERN_TIME_MULTIPLIER
-      };
-    }
-    return { type: 'new', scoreMultiplier: 1, timeMultiplier: 1 };
-  }
-
-  function rememberSuccessfulSequence(values) {
-    recentSuccessfulSequences.push({
-      pathSignature: getPathSignature(selectedTiles),
-      valueSignature: values.join(',')
-    });
-    if (recentSuccessfulSequences.length > RECENT_SEQUENCE_LIMIT) {
-      recentSuccessfulSequences.shift();
-    }
-  }
-
-  function getPathSignature(tiles) {
-    const forward = tiles.map(tile => `${tile.row}:${tile.col}`).join('|');
-    const reverse = [...tiles].reverse().map(tile => `${tile.row}:${tile.col}`).join('|');
-    return forward < reverse ? forward : reverse;
-  }
-
-  function formatDifferenceValue(value) {
-    return value > 0 ? `+${value}` : `${value}`;
-  }
-
-  function formatRatioValue(numerator, denominator) {
-    if (numerator % denominator === 0) {
-      return {
-        type: 'text',
-        value: `${numerator / denominator}`
-      };
-    }
-
-    const divisor = getGcd(Math.abs(numerator), Math.abs(denominator));
-    return {
-      type: 'fraction',
-      numerator: numerator / divisor,
-      denominator: denominator / divisor
-    };
-  }
-
-  function getGcd(a, b) {
-    while (b !== 0) {
-      const remainder = a % b;
-      a = b;
-      b = remainder;
-    }
-    return a || 1;
-  }
-
-  function spawnSequenceHint(kind, ruleValue) {
+  function spawnFloatingScore(points, multiplier = 1, repeatType = 'new') {
     const lastTile = selectedTiles[selectedTiles.length - 1].element;
-    const rect = lastTile.getBoundingClientRect();
-    const wrapperRect = boardWrapper.getBoundingClientRect();
-
-    const x = rect.left + rect.width / 2 - wrapperRect.left;
-    const y = rect.top + rect.height / 2 - wrapperRect.top - 22;
-    const label = kind === 'GP' ? '등비수열' : '등차수열';
-    const ruleName = kind === 'GP' ? '공비' : '공차';
-
-    const hintSpan = document.createElement('span');
-    hintSpan.className = 'sequence-hint';
-    hintSpan.textContent = `${label} · ${ruleName} ${ruleValue}`;
-    hintSpan.style.left = `${x}px`;
-    hintSpan.style.top = `${y}px`;
-
-    boardWrapper.appendChild(hintSpan);
-    const hintRect = hintSpan.getBoundingClientRect();
-    const clampedX = Math.min(
-      Math.max(x, hintRect.width / 2 + 8),
-      wrapperRect.width - hintRect.width / 2 - 8
-    );
-    hintSpan.style.left = `${clampedX}px`;
-
-    setTimeout(() => {
-      hintSpan.remove();
-    }, 1150);
-  }
-
-  function spawnSequenceHintRich(kind, ruleValue) {
-    const lastTile = selectedTiles[selectedTiles.length - 1].element;
-    const rect = lastTile.getBoundingClientRect();
-    const wrapperRect = boardWrapper.getBoundingClientRect();
-
-    const x = rect.left + rect.width / 2 - wrapperRect.left;
-    const y = rect.top + rect.height / 2 - wrapperRect.top - 22;
-    const label = kind === 'GP' ? '등비수열' : '등차수열';
-    const ruleName = kind === 'GP' ? '공비' : '공차';
-
-    const hintSpan = document.createElement('span');
-    hintSpan.className = 'sequence-hint';
-    hintSpan.append(
-      document.createTextNode(`${label} · ${ruleName} `),
-      createRuleValueElement(ruleValue)
-    );
-    hintSpan.style.left = `${x}px`;
-    hintSpan.style.top = `${y}px`;
-
-    boardWrapper.appendChild(hintSpan);
-    const hintRect = hintSpan.getBoundingClientRect();
-    const clampedX = Math.min(
-      Math.max(x, hintRect.width / 2 + 8),
-      wrapperRect.width - hintRect.width / 2 - 8
-    );
-    hintSpan.style.left = `${clampedX}px`;
-
-    setTimeout(() => {
-      hintSpan.remove();
-    }, 1150);
-  }
-
-  function createRuleValueElement(ruleValue) {
-    if (typeof ruleValue === 'string') {
-      return document.createTextNode(ruleValue);
-    }
-
-    if (ruleValue.type === 'text') {
-      return document.createTextNode(ruleValue.value);
-    }
-
-    const fraction = document.createElement('span');
-    fraction.className = 'sequence-fraction';
-
-    const numerator = document.createElement('span');
-    numerator.className = 'sequence-fraction-num';
-    numerator.textContent = ruleValue.numerator;
-
-    const bar = document.createElement('span');
-    bar.className = 'sequence-fraction-bar';
-
-    const denominator = document.createElement('span');
-    denominator.className = 'sequence-fraction-den';
-    denominator.textContent = ruleValue.denominator;
-
-    fraction.append(numerator, bar, denominator);
-    return fraction;
-  }
-
-  function spawnFloatingScore(scoreVal, multiplier = 1, repeatType = 'new') {
-    const lastTile = selectedTiles[selectedTiles.length - 1].element;
-    const rect = lastTile.getBoundingClientRect();
-    const wrapperRect = boardWrapper.getBoundingClientRect();
-
-    const x = rect.left + rect.width / 2 - wrapperRect.left;
-    const y = rect.top + rect.height / 2 - wrapperRect.top;
-
-    const floatSpan = document.createElement('span');
-    floatSpan.className = 'floating-score';
     const multiplierLabel = multiplier > 1 ? ` ×${multiplier}` : '';
     const repeatLabel = repeatType === 'path' ? ' · 반복 경로' : repeatType === 'pattern' ? ' · 반복 수열' : '';
-    floatSpan.textContent = `+${scoreVal}${multiplierLabel}${repeatLabel}`;
-    floatSpan.classList.toggle('fever-score', multiplier > 1);
-    floatSpan.style.left = `${x}px`;
-    floatSpan.style.top = `${y}px`;
-
-    boardWrapper.appendChild(floatSpan);
-
-    setTimeout(() => {
-      floatSpan.remove();
-    }, 800);
+    boardView.spawnFloatingScore(lastTile, `+${points}${multiplierLabel}${repeatLabel}`, { fever: multiplier > 1 });
   }
 
   function triggerFailureShock() {
@@ -1366,74 +1068,12 @@ export function initGameApp() {
   }
 
   function eliminateAndRefill() {
-    selectedTiles.forEach(tile => {
-      boardData[tile.row][tile.col] = null;
-    });
-
-    for (let c = 0; c < BOARD_SIZE; c++) {
-      let tempCol = [];
-      
-      for (let r = BOARD_SIZE - 1; r >= 0; r--) {
-        if (boardData[r][c] !== null) {
-          tempCol.push(boardData[r][c]);
-        }
-      }
-      
-      const missingCount = BOARD_SIZE - tempCol.length;
-      for (let i = 0; i < missingCount; i++) {
-        tempCol.push(createNormalTileData());
-      }
-      
-      tempCol.reverse();
-      
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        boardData[r][c] = tempCol[r];
-      }
-    }
+    const { board: nextBoard } = collapseAndRefill(boardData, selectedTiles, createNormalTileData);
+    boardData = nextBoard;
 
     spawnQueuedFeverBlock();
-    renderGravityRefill();
+    boardView.renderGravityRefill(boardData);
     clearSelection();
-  }
-
-  function renderGravityRefill() {
-    // 열별로 빈칸 개수를 계산해 낙하 거리·딜레이 결정
-    for (let c = 0; c < BOARD_SIZE; c++) {
-      let newRowCount = 0; // 이 열에서 새로 생성된 타일 수
-
-      // 먼저 몇 개가 새 값인지 파악 (renderGravity 직전 boardData 기준)
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        const tile = document.getElementById(`tile-${r}-${c}`);
-        if (tile.textContent != getDisplayValue(boardData[r][c]) || tile.dataset.tileType !== boardData[r][c]?.type) newRowCount++;
-      }
-
-      let newIdx = 0; // 위에서부터 새 타일 인덱스
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        const tile = document.getElementById(`tile-${r}-${c}`);
-        const tileData = boardData[r][c];
-        const newVal = getDisplayValue(tileData);
-
-        if (tile.textContent != newVal || tile.dataset.tileType !== tileData?.type) {
-          updateTileElement(tile, tileData);
-
-          // 낙하 거리: 빈칸 수만큼 위에서 떨어짐
-          const fallPx = (newRowCount - newIdx) * 56; // 타일 한 칸 ≒ 56px
-          tile.style.setProperty('--fall-from', `-${fallPx}px`);
-          tile.style.animationDelay = `${newIdx * 30}ms`; // 순서대로 떨어짐
-          tile.classList.remove('falling');
-          tile.offsetHeight; // reflow
-          tile.classList.add('falling');
-          setTimeout(() => {
-            tile.classList.remove('falling');
-            tile.style.animationDelay = '';
-          }, 380 + newIdx * 30);
-          newIdx++;
-        }
-        tile.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid');
-        tile.classList.toggle('fever-tile', tileData?.type === 'fever');
-        tile.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
-      }
-    }
   }
 
   function clearSelection() {
@@ -1441,8 +1081,7 @@ export function initGameApp() {
       t.element.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid');
     });
     selectedTiles = [];
-    dragLine.setAttribute('d', '');
-    dragLineGlow.setAttribute('d', '');
+    dragController.clear();
   }
 
   // ----------------------------------------------------
