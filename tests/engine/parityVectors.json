@@ -1,0 +1,74 @@
+{
+  "comment": "리팩터 전(gameEngine.js 1,906줄 시점) 공식으로 수기 계산한 패리티 벡터. 점수/시간 공식을 바꾸면 이 벡터도 같이 갱신할 것.",
+  "sourceFormula": {
+    "comboBonus": "combo > 1 ? (combo - 1) * 80 * (1 + combo * 0.15) : 0",
+    "basePoints": "floor(len * 100 + comboBonus)",
+    "points": "round(basePoints * repeatMultiplier * feverMultiplier * lastSpurtMultiplier)",
+    "timeBonus": "(GP: ratio>=2 ? 1.2 : 0.9 | AP: |d|>=4 ? 1.2 : |d|>=2 ? 1.0 : 0.7) + 0.5, × repeatTimeMultiplier"
+  },
+  "scoreCases": [
+    { "name": "len3 combo1", "len": 3, "combo": 1, "expected": 300 },
+    { "name": "len4 combo3 fever x1.5", "len": 4, "combo": 3, "feverMultiplier": 1.5, "expected": 948 },
+    { "name": "len3 combo1 path repeat x0.2", "len": 3, "combo": 1, "repeatMultiplier": 0.2, "expected": 60 },
+    { "name": "len3 combo1 pattern repeat x0.5", "len": 3, "combo": 1, "repeatMultiplier": 0.5, "expected": 150 },
+    { "name": "len5 combo2", "len": 5, "combo": 2, "expected": 604 },
+    { "name": "len4 combo1 lastSpurt x2", "len": 4, "combo": 1, "lastSpurtMultiplier": 2, "expected": 800 },
+    { "name": "len4 combo3 fever x1.5 lastSpurt x2", "len": 4, "combo": 3, "feverMultiplier": 1.5, "lastSpurtMultiplier": 2, "expected": 1896 },
+    { "name": "len6 combo10", "len": 6, "combo": 10, "expected": 2400 },
+    { "name": "len3 combo2 superFever x2", "len": 3, "combo": 2, "feverMultiplier": 2, "expected": 808 },
+    { "name": "len7 combo5", "len": 7, "combo": 5, "expected": 1260 },
+    { "name": "len3 combo1 path repeat + fever x1.5", "len": 3, "combo": 1, "repeatMultiplier": 0.2, "feverMultiplier": 1.5, "expected": 90 },
+    { "name": "len4 combo2 pattern repeat x0.5", "len": 4, "combo": 2, "repeatMultiplier": 0.5, "expected": 252 },
+    { "name": "len5 combo3 fever x2 lastSpurt x2", "len": 5, "combo": 3, "feverMultiplier": 2, "lastSpurtMultiplier": 2, "expected": 2928 },
+    { "name": "len3 combo15", "len": 3, "combo": 15, "expected": 3940 }
+  ],
+  "timeBonusCases": [
+    { "name": "GP ratio 2", "kind": "GP", "ratio": 2, "allSame": false, "expected": 1.7 },
+    { "name": "GP ratio 3", "kind": "GP", "ratio": 3, "allSame": false, "expected": 1.7 },
+    { "name": "GP ratio 3/2", "kind": "GP", "ratio": 1.5, "allSame": false, "expected": 1.4 },
+    { "name": "GP allSame (ratio 1 취급)", "kind": "GP", "ratio": 1, "allSame": true, "expected": 1.4 },
+    { "name": "AP diff +1", "kind": "AP", "diff": 1, "expected": 1.2 },
+    { "name": "AP diff -1", "kind": "AP", "diff": -1, "expected": 1.2 },
+    { "name": "AP diff +2", "kind": "AP", "diff": 2, "expected": 1.5 },
+    { "name": "AP diff -3", "kind": "AP", "diff": -3, "expected": 1.5 },
+    { "name": "AP diff +4", "kind": "AP", "diff": 4, "expected": 1.7 },
+    { "name": "AP diff -5", "kind": "AP", "diff": -5, "expected": 1.7 },
+    { "name": "AP diff 1 + 반복 패턴 x0.5", "kind": "AP", "diff": 1, "repeatTimeMultiplier": 0.5, "expected": 0.6 },
+    { "name": "GP ratio 2 + 반복 경로 x0", "kind": "GP", "ratio": 2, "allSame": false, "repeatTimeMultiplier": 0, "expected": 0 }
+  ],
+  "classifyCases": [
+    { "name": "AP +1", "values": [1, 2, 3], "state": "valid", "kind": "AP", "diff": 1 },
+    { "name": "AP -3", "values": [9, 6, 3], "state": "valid", "kind": "AP", "diff": -3 },
+    { "name": "GP x2", "values": [2, 4, 8], "state": "valid", "kind": "GP", "ratio": 2 },
+    { "name": "GP 3/2 (부동소수)", "values": [4, 6, 9], "state": "valid", "kind": "GP", "ruleFraction": [3, 2] },
+    { "name": "GP 2/3 (부동소수)", "values": [9, 6, 4], "state": "valid", "kind": "GP", "ruleFraction": [2, 3] },
+    { "name": "상수열 = GP 공비 1", "values": [5, 5, 5], "state": "valid", "kind": "GP", "allSame": true, "ruleLabel": "1" },
+    { "name": "상수열 len4", "values": [3, 3, 3, 3], "state": "valid", "kind": "GP", "allSame": true },
+    { "name": "깨진 수열", "values": [1, 2, 4], "state": "broken" },
+    { "name": "len<3 pending", "values": [1, 2], "state": "pending" },
+    { "name": "0 포함 AP", "values": [0, 1, 2], "state": "valid", "kind": "AP", "diff": 1 },
+    { "name": "0 상수열은 GP 허용", "values": [0, 0, 0], "state": "valid", "kind": "GP", "allSame": true },
+    { "name": "0 포함 비상수 GP 불허", "values": [2, 0, 0], "state": "broken" },
+    { "name": "음수 diff AP (음수 피버 대비)", "values": [-2, -4, -6], "state": "valid", "kind": "AP", "diff": -2 }
+  ],
+  "feverDisplayCases": [
+    { "name": "add +2", "baseValue": 3, "feverType": "add", "amount": 2, "expected": 5 },
+    { "name": "add +3", "baseValue": 7, "feverType": "add", "amount": 3, "expected": 10 },
+    { "name": "multiply x2", "baseValue": 3, "feverType": "multiply", "amount": 2, "expected": 6 },
+    { "name": "multiply x3", "baseValue": 4, "feverType": "multiply", "amount": 3, "expected": 12 }
+  ],
+  "pathSignatureCases": [
+    {
+      "name": "정방향/역방향 동일 서명",
+      "forward": [[0, 0], [0, 1], [0, 2]],
+      "reverse": [[0, 2], [0, 1], [0, 0]],
+      "expected": "0:0|0:1|0:2"
+    },
+    {
+      "name": "대각 경로 정규화",
+      "forward": [[2, 2], [3, 3], [4, 4]],
+      "reverse": [[4, 4], [3, 3], [2, 2]],
+      "expected": "2:2|3:3|4:4"
+    }
+  ]
+}
