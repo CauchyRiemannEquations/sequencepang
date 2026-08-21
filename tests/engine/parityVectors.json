@@ -44,7 +44,7 @@
     { "name": "GP 2/3 (부동소수)", "values": [9, 6, 4], "state": "valid", "kind": "GP", "ruleFraction": [2, 3] },
     { "name": "상수열 = GP 공비 1", "values": [5, 5, 5], "state": "valid", "kind": "GP", "allSame": true, "ruleLabel": "1" },
     { "name": "상수열 len4", "values": [3, 3, 3, 3], "state": "valid", "kind": "GP", "allSame": true },
-    { "name": "깨진 수열", "values": [1, 2, 4], "state": "broken" },
+    { "name": "깨진 수열", "values": [1, 2, 5], "state": "broken" },
     { "name": "len<3 pending", "values": [1, 2], "state": "pending" },
     { "name": "0 포함 AP", "values": [0, 1, 2], "state": "valid", "kind": "AP", "diff": 1 },
     { "name": "0 상수열은 GP 허용", "values": [0, 0, 0], "state": "valid", "kind": "GP", "allSame": true },
