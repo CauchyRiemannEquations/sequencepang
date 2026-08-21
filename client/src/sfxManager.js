@@ -108,6 +108,16 @@ function playComboExpire() {
   playTone(220, 0, 0.16, { type: 'triangle', gain: 0.04, endFrequency: 110 });
 }
 
+// 판정선 pending→valid 전환 순간의 잠금음 (작게)
+function playChainLock() {
+  playTone(880, 0, 0.04, { type: 'sine', gain: 0.03 });
+}
+
+// 판정선 valid→broken 전환음 — 기존 실패음보다 훨씬 작게
+function playChainBreak() {
+  playTone(180, 0, 0.06, { type: 'sine', gain: 0.025 });
+}
+
 function playCountdownTick() {
   playTone(440, 0, 0.13, { type: 'triangle', gain: 0.11, endFrequency: 500 });
 }
@@ -124,6 +134,8 @@ const soundPlayers = {
   sequenceSuccess: playSequenceSuccess,
   sequenceFail: playSequenceFail,
   comboExpire: playComboExpire,
+  chainLock: playChainLock,
+  chainBreak: playChainBreak,
   feverStart: playFeverStart,
   gameOver: playGameOver,
   countdownTick: playCountdownTick,

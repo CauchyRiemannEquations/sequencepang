@@ -415,6 +415,113 @@ export function initGameApp() {
     }, durationMs);
   }
 
+  // ── 드래그 중 실시간 판정선 ──────────────────────────────
+  // 계산은 선택 타일 집합이 바뀔 때만(추가/백트래킹). pointer move마다 하지 않는다.
+  // 손 뗄 때 판정(evaluateSequence)과 같은 classifyChain을 사용해 불일치를 차단한다.
+  const chainRuleBadge = document.createElement('div');
+  chainRuleBadge.className = 'chain-rule-badge';
+  boardWrapper.appendChild(chainRuleBadge);
+  let chainState = 'pending';
+  let chainBadgeHideTimer = null;
+  let chainBrokenShakeTimer = null;
+
+  function formatChainBadgeText(chain) {
+    if (chain.kind === 'AP') {
+      return `공차 ${String(chain.ruleLabel).replace('-', '−')}`;
+    }
+    if (chain.allSame) return '공비 ×1';
+    const label = chain.ruleLabel;
+    if (typeof label === 'object' && label.type === 'fraction') {
+      return `공비 ${label.numerator}/${label.denominator}`;
+    }
+    const value = typeof label === 'object' ? label.value : label;
+    return `공비 ×${value}`;
+  }
+
+  function positionChainBadge() {
+    const center = dragController.getLastCellCenterLocal();
+    if (!center) return;
+    const { width: wrapperWidth } = dragController.getWrapperSize();
+    chainRuleBadge.style.top = `${center.y - 22}px`;
+    chainRuleBadge.style.left = `${center.x}px`;
+    // 좌우 클램프 — 배지 폭 측정은 선택 변경 시 1회뿐이라 부담 없음
+    const badgeWidth = chainRuleBadge.offsetWidth;
+    const clampedX = Math.min(
+      Math.max(center.x, badgeWidth / 2 + 8),
+      wrapperWidth - badgeWidth / 2 - 8
+    );
+    chainRuleBadge.style.left = `${clampedX}px`;
+  }
+
+  function hideChainBadge() {
+    if (chainBadgeHideTimer) {
+      clearTimeout(chainBadgeHideTimer);
+      chainBadgeHideTimer = null;
+    }
+    chainRuleBadge.classList.remove('show', 'is-broken');
+  }
+
+  function resetChainFeedback() {
+    chainState = 'pending';
+    delete boardWrapper.dataset.chainState;
+    hideChainBadge();
+  }
+
+  function updateChainFeedback() {
+    if (selectedTiles.length === 0) {
+      resetChainFeedback();
+      return;
+    }
+
+    const chain = classifyChain(selectedTiles.map(t => t.value));
+    const previousState = chainState;
+    chainState = chain.state;
+    boardWrapper.dataset.chainState = chain.state;
+
+    if (chain.state === 'valid') {
+      if (previousState !== 'valid') playSound('chainLock');
+      if (chainBadgeHideTimer) {
+        clearTimeout(chainBadgeHideTimer);
+        chainBadgeHideTimer = null;
+      }
+      chainRuleBadge.classList.remove('is-broken');
+      chainRuleBadge.textContent = formatChainBadgeText(chain);
+      chainRuleBadge.classList.add('show');
+      positionChainBadge();
+      return;
+    }
+
+    if (chain.state === 'broken') {
+      if (previousState === 'valid') {
+        playSound('chainBreak');
+        // 배지는 ✕로 바꿔 0.3초 후 숨김
+        chainRuleBadge.classList.add('is-broken');
+        chainRuleBadge.textContent = '✕';
+        positionChainBadge();
+        if (chainBadgeHideTimer) clearTimeout(chainBadgeHideTimer);
+        chainBadgeHideTimer = setTimeout(() => {
+          hideChainBadge();
+        }, 300);
+      } else {
+        hideChainBadge();
+      }
+      const lastTile = selectedTiles[selectedTiles.length - 1]?.element;
+      if (lastTile) {
+        lastTile.classList.remove('chain-broken');
+        void lastTile.offsetWidth;
+        lastTile.classList.add('chain-broken');
+        if (chainBrokenShakeTimer) clearTimeout(chainBrokenShakeTimer);
+        chainBrokenShakeTimer = setTimeout(() => {
+          lastTile.classList.remove('chain-broken');
+          chainBrokenShakeTimer = null;
+        }, 120);
+      }
+      return;
+    }
+
+    hideChainBadge();
+  }
+
   function showFeverNotice(message) {
     feverNotice.textContent = message;
     feverNotice.classList.remove('show');
@@ -484,6 +591,7 @@ export function initGameApp() {
     selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected', 'matched'));
     selectedTiles = [];
     dragController.clear();
+    resetChainFeedback();
 
     // 빅넘버 피버가 남긴 10 이상 타일은 롤백 연출과 함께 1~9로 원상복구
     if (wasBigNumber) {
@@ -583,6 +691,7 @@ export function initGameApp() {
     isGameOver = false;
     isGameActive = false; // 카운트다운이 완전히 끝날 때까지 조작 제한
     selectedTiles = [];
+    resetChainFeedback();
     resetFeverState();
 
     // 멀티플레이 모드일 때 서버에 시작 점수(0점) 전송하여 대시보드 리셋
@@ -710,6 +819,7 @@ export function initGameApp() {
       resetFeverState();
 
     dragController.clear();
+    resetChainFeedback();
     selectedTiles.forEach(t => t.element.classList.remove('selected', 'last-selected'));
 
     gameOverTitle.textContent = '타임 오버!';
@@ -884,6 +994,7 @@ export function initGameApp() {
         }
 
         dragController.setSelection(selectedTiles);
+        updateChainFeedback();
         return;
       }
     }
@@ -934,6 +1045,7 @@ export function initGameApp() {
     });
 
     dragController.setSelection(selectedTiles);
+    updateChainFeedback();
     playSound('tileSelect');
   }
 
@@ -1082,6 +1194,7 @@ export function initGameApp() {
     });
     selectedTiles = [];
     dragController.clear();
+    resetChainFeedback();
   }
 
   // ----------------------------------------------------

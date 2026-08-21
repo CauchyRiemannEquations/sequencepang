@@ -217,6 +217,21 @@
               <stop offset="45%" stop-color="#bef264"></stop>
               <stop offset="100%" stop-color="#22c55e"></stop>
             </linearGradient>
+            <!-- 실시간 판정선: 그라데이션은 미리 정의해 두고 stroke 참조만 전환한다 -->
+            <linearGradient id="drag-gradient-valid" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#fde68a"></stop>
+              <stop offset="50%" stop-color="#fbbf24"></stop>
+              <stop offset="100%" stop-color="#f59e0b"></stop>
+            </linearGradient>
+            <linearGradient id="drag-gradient-valid-hyper" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#ffffff"></stop>
+              <stop offset="55%" stop-color="#a7f3d0"></stop>
+              <stop offset="100%" stop-color="#34d399"></stop>
+            </linearGradient>
+            <linearGradient id="drag-gradient-broken" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#fca5a5"></stop>
+              <stop offset="100%" stop-color="#ef4444"></stop>
+            </linearGradient>
           </defs>
           <path class="drag-line drag-line-glow" id="drag-line-glow" d=""></path>
           <path class="drag-line drag-line-core" id="drag-line" d=""></path>

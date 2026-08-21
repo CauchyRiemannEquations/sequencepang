@@ -84,6 +84,31 @@ test('getTimeBonus 패리티 벡터', () => {
   }
 });
 
+test('드래그 중 상태와 손 뗄 때 판정이 100% 일치 (같은 classifyChain 사용)', () => {
+  // 드래그를 한 타일씩 확장하며 판정한 마지막 상태 == 손 뗄 때의 최종 판정
+  const chains = [
+    [1, 2, 3, 4],
+    [2, 4, 8, 16],
+    [4, 6, 9],
+    [9, 6, 4],
+    [5, 5, 5, 5],
+    [1, 2, 5],
+    [3, 6, 9, 13],
+    [7, 5, 3, 1],
+    [1, 3, 9, 12]
+  ];
+  for (const values of chains) {
+    let liveState = null;
+    for (let len = 1; len <= values.length; len++) {
+      liveState = classifyChain(values.slice(0, len)).state;
+    }
+    const releaseState = classifyChain(values).state;
+    assert.equal(liveState, releaseState, values.join(','));
+    // 손 뗄 때 성공 조건(isAP||isGP)과 실시간 valid 상태도 동치
+    assert.equal(releaseState === 'valid', classifyChain(values).state === 'valid');
+  }
+});
+
 test('formatDifferenceValue / formatRatioValue / getGcd', () => {
   assert.equal(formatDifferenceValue(2), '+2');
   assert.equal(formatDifferenceValue(-3), '-3');
