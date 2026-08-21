@@ -1060,7 +1060,8 @@ export function initGameApp() {
 
     dragController.setSelection(selectedTiles);
     updateChainFeedback();
-    playSound('tileSelect');
+    // 드래그 시작(step 0)부터 반음씩 상행하는 타일음
+    playSound('tileSelect', { step: selectedTiles.length - 1 });
   }
 
   // 반복 페널티 배수 — 엔진에 상수 주입
@@ -1078,7 +1079,8 @@ export function initGameApp() {
     const chain = classifyChain(values);
 
     if (chain.state === 'valid') {
-      playSound('sequenceSuccess');
+      // combo + 1 = 이번 성공 반영 후 콤보 — 화음 루트 이조 기준
+      playSound('sequenceSuccess', { combo: combo + 1, len });
       const repeatResult = classifyRepeat(recentSuccessfulSequences, selectedTiles, values, repeatMultipliers);
       clearCount++;
       if (fever.active) feverClearCount++;
