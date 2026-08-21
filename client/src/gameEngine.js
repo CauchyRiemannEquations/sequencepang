@@ -1274,6 +1274,7 @@ export function initGameApp() {
         ];
         const origin = { row: lastCell.row, col: lastCell.col };
         setTimeout(() => {
+          if (isGameOver) return;
           const burstMs = boardView.triggerPangBurst(pangExtraCells, origin, {
             durationMs: PANG_BURST_MS,
             staggerMs: PANG_BURST_STAGGER_MS
