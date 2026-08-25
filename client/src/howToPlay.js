@@ -57,6 +57,40 @@ export function initHowToPlayUI() {
       <p class="htp-caption"><strong>5개 이상</strong> 이으면 슈퍼피버 블록! <strong>×3 변신</strong> 또는 <strong>빅넘버(10~19)</strong> 등장, 점수 ×2</p>
     </section>`;
 
+  const demoGrid = Array.from({ length: 25 }, () => '<i aria-hidden="true"></i>').join('');
+
+  const demoPang = `
+    <section class="htp-section">
+      <div class="htp-stage htp-demo-pang">
+        <div class="htp-pang-card htp-pang-cross">
+          <span class="htp-pang-count">6개 연쇄</span>
+          <strong>크로스팡!</strong>
+          <div class="htp-mini-grid" aria-hidden="true">${demoGrid}</div>
+          <small>마지막 칸의 가로·세로 제거</small>
+        </div>
+        <div class="htp-pang-card htp-pang-full">
+          <span class="htp-pang-count">7개 이상 연쇄</span>
+          <strong>풀보드팡!</strong>
+          <div class="htp-mini-grid" aria-hidden="true">${demoGrid}</div>
+          <small>보드 전체를 한 번에 재생성</small>
+        </div>
+      </div>
+      <p class="htp-caption"><strong>6개</strong>를 이으면 크로스팡, <strong>7개 이상</strong>을 이으면 풀보드팡! 추가 타일마다 점수와 시간 보너스도 받아요</p>
+    </section>`;
+
+  const demoHyper = `
+    <section class="htp-section">
+      <div class="htp-stage htp-demo-hyper">
+        <span class="htp-hyper-score">1,000,000점 돌파</span>
+        <strong class="htp-hyper-title">하이퍼팡!</strong>
+        <div class="htp-hyper-tiles" aria-hidden="true">
+          <span>9</span><span>10</span><span>11</span><span>12</span>
+        </div>
+        <span class="htp-hyper-time">+5초</span>
+      </div>
+      <p class="htp-caption">한 판에 <strong>1,000,000점</strong>을 넘기면 하이퍼팡 발동! 보드가 새로 생성되고 숫자 범위가 <strong>1~12</strong>로 확장돼요</p>
+    </section>`;
+
   const demoLastPang = `
     <section class="htp-section">
       <div class="htp-stage htp-demo-last">
@@ -70,7 +104,6 @@ export function initHowToPlayUI() {
     <ul class="how-to-play-list">
       <li class="how-to-play-item"><span class="how-to-play-text">수열이 틀리면 시간 <strong>-3초</strong></span></li>
       <li class="how-to-play-item"><span class="how-to-play-text">같은 경로·같은 수열을 반복하면 점수가 줄어요</span></li>
-      <li class="how-to-play-item"><span class="how-to-play-text">한 판에 <strong>1,000,000점</strong>을 넘기면...?</span></li>
     </ul>`;
 
   const overlay = document.createElement('div');
@@ -87,7 +120,9 @@ export function initHowToPlayUI() {
         ${demoBasic}
         ${demoFever}
         ${demoSuper}
+        ${demoPang}
         ${isLastSpurtLive ? demoLastPang : ''}
+        ${demoHyper}
         ${textRules}
       </div>
       <button type="button" class="how-to-play-confirm">닫기</button>

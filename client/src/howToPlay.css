@@ -551,6 +551,166 @@
   100% { opacity: 0; }
 }
 
+
+/* ── 데모 4: 크로스팡 / 풀보드팡 ─────────────────────── */
+.htp-demo-pang {
+  height: 150px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px;
+  background: #123528;
+}
+
+.htp-pang-card {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 3px;
+  padding: 7px 5px 6px;
+  border-radius: 12px;
+  color: #f0f9ff;
+  text-align: center;
+}
+
+.htp-pang-cross {
+  background: linear-gradient(160deg, rgba(2, 132, 199, 0.92), rgba(8, 47, 73, 0.96));
+  border: 1px solid rgba(125, 211, 252, 0.55);
+}
+
+.htp-pang-full {
+  background: linear-gradient(160deg, rgba(124, 58, 237, 0.92), rgba(76, 29, 149, 0.96));
+  border: 1px solid rgba(216, 180, 254, 0.55);
+}
+
+.htp-pang-count {
+  font: 700 10px 'Outfit', sans-serif;
+  opacity: 0.8;
+}
+
+.htp-pang-card strong {
+  font-family: 'Jua', sans-serif;
+  font-size: 16px;
+}
+
+.htp-pang-card small {
+  font-size: 9.5px;
+  line-height: 1.25;
+  opacity: 0.85;
+}
+
+.htp-mini-grid {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 2px;
+  margin: 1px 0;
+}
+
+.htp-mini-grid i {
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.htp-pang-cross .htp-mini-grid i:nth-child(3),
+.htp-pang-cross .htp-mini-grid i:nth-child(8),
+.htp-pang-cross .htp-mini-grid i:nth-child(n+11):nth-child(-n+15),
+.htp-pang-cross .htp-mini-grid i:nth-child(18),
+.htp-pang-cross .htp-mini-grid i:nth-child(23) {
+  background: #67e8f9;
+  box-shadow: 0 0 7px rgba(103, 232, 249, 0.85);
+  animation: htpCrossPulse 2.4s ease-in-out infinite;
+}
+
+.htp-pang-full .htp-mini-grid i {
+  background: #e879f9;
+  box-shadow: 0 0 5px rgba(232, 121, 249, 0.62);
+  animation: htpFullPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes htpCrossPulse {
+  0%, 28% { opacity: 0.32; transform: scale(0.82); }
+  42%, 78% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.32; transform: scale(0.82); }
+}
+
+@keyframes htpFullPulse {
+  0%, 48% { opacity: 0.28; transform: scale(0.82); }
+  62%, 88% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.28; transform: scale(0.82); }
+}
+
+/* ── 데모 6: 하이퍼팡 ────────────────────────────────── */
+.htp-demo-hyper {
+  height: 118px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  background: radial-gradient(circle at 50% 38%, #ffe9a3 0%, #d9a92e 58%, #6b4307 100%);
+  border-color: rgba(255, 216, 77, 0.72);
+}
+
+.htp-hyper-score {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(69, 42, 2, 0.78);
+  color: #fff1ae;
+  font: 800 10px 'Outfit', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.htp-hyper-title {
+  color: #4a2b02;
+  font-family: 'Jua', sans-serif;
+  font-size: 22px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  animation: htpHyperPop 2.2s ease-in-out infinite;
+}
+
+.htp-hyper-tiles {
+  display: flex;
+  gap: 5px;
+}
+
+.htp-hyper-tiles span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(74, 43, 2, 0.18);
+  border-radius: 7px;
+  background: #fffbea;
+  color: #4a2b02;
+  font: 800 13px 'Outfit', sans-serif;
+  box-shadow: 0 2px 0 rgba(74, 43, 2, 0.18);
+}
+
+.htp-hyper-tiles span:nth-child(n+2) {
+  color: #a16207;
+  box-shadow: 0 0 10px rgba(255, 247, 173, 0.82), 0 2px 0 rgba(74, 43, 2, 0.18);
+}
+
+.htp-hyper-time {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #166534;
+  color: #dcfce7;
+  font: 800 11px 'Outfit', sans-serif;
+}
+
+@keyframes htpHyperPop {
+  0%, 100% { transform: scale(0.94); }
+  50% { transform: scale(1.06); }
+}
+
+
 /* 모션 최소화 설정 존중 */
 @media (prefers-reduced-motion: reduce) {
   .htp-stage *,
