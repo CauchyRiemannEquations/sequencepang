@@ -5,7 +5,7 @@ const ALLOWED_SCORE_MODES = new Set(['timeAttack']);
 // 제출 거부와 랭킹 노출 필터가 함께 다시 활성화된다.
 const MAX_ACCEPTED_SCORE = Number.MAX_SAFE_INTEGER;
 const MAX_ACCEPTED_COMBO = 10000;
-const SCORE_VERSION = '1.2.0';
+const SCORE_VERSION = '1.3.0';
 const GAME_SESSION_TTL_MS = 10 * 60 * 1000;
 const GAME_SESSION_DURATION_TOLERANCE_MS = 15000;
 const RANKING_RESET_AT_MS = Date.parse('2026-07-05T15:00:00.000Z');

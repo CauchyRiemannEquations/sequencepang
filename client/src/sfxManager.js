@@ -1,3 +1,5 @@
+import { vibrateFor } from './haptics.js';
+
 const MUTED_KEY = 'sequencepang-bgm-muted';
 const TILE_SELECT_THROTTLE_MS = 45;
 const BUTTON_SOUND_SELECTOR = [
@@ -24,7 +26,22 @@ let masterVolume = 1.0;
 let muted = localStorage.getItem(MUTED_KEY) === 'true';
 let initialized = false;
 let lastTileSelectAt = 0;
-let tilePitchIndex = 0;
+
+const TILE_SELECT_BASE_FREQUENCY = 523.25; // C5
+const TILE_SELECT_MAX_STEP = 14;
+
+// 콤보 구간별 성공 화음 루트 이조 (반음 수): 1~2 C5 / 3~5 D5 / 6~9 E5 / 10~14 G5 / 15+ C6
+function getSuccessRootSemitones(combo) {
+  if (combo >= 15) return 12;
+  if (combo >= 10) return 7;
+  if (combo >= 6) return 4;
+  if (combo >= 3) return 2;
+  return 0;
+}
+
+function semitoneRatio(semitones) {
+  return Math.pow(2, semitones / 12);
+}
 
 function getAudioContext() {
   if (!audioContext) {
@@ -65,22 +82,27 @@ function playButtonTap() {
   playTone(520, 0, 0.065, { type: 'sine', gain: 0.055, endFrequency: 620 });
 }
 
-function playTileSelect() {
+// 드래그 순서(step)에 따라 C5에서 반음씩 상행 — 드래그 시작마다 step 0부터 리셋
+function playTileSelect(payload) {
   const now = performance.now();
   if (now - lastTileSelectAt < TILE_SELECT_THROTTLE_MS) return;
   lastTileSelectAt = now;
 
-  const pitches = [620, 680, 740, 660];
-  const frequency = pitches[tilePitchIndex % pitches.length];
-  tilePitchIndex++;
+  const step = Math.max(0, Math.min(payload?.step ?? 0, TILE_SELECT_MAX_STEP));
+  const frequency = TILE_SELECT_BASE_FREQUENCY * semitoneRatio(step);
   playTone(frequency, 0, 0.075, { type: 'sine', gain: 0.035, endFrequency: frequency * 1.06 });
 }
 
-function playSequenceSuccess() {
+// 콤보 구간별로 화음 루트를 이조. len >= 5면 끝에 5도 위 장식음 추가
+function playSequenceSuccess(payload) {
+  const ratio = semitoneRatio(getSuccessRootSemitones(payload?.combo ?? 1));
   [523.25, 659.25, 783.99].forEach((frequency, index) => {
-    playTone(frequency, index * 0.095, 0.28, { type: 'triangle', gain: 0.085 });
+    playTone(frequency * ratio, index * 0.095, 0.28, { type: 'triangle', gain: 0.085 });
   });
-  playTone(1046.5, 0.31, 0.22, { type: 'sine', gain: 0.045 });
+  playTone(1046.5 * ratio, 0.31, 0.22, { type: 'sine', gain: 0.045 });
+  if ((payload?.len ?? 0) >= 5) {
+    playTone(1046.5 * ratio * semitoneRatio(7), 0.5, 0.2, { type: 'sine', gain: 0.04 });
+  }
 }
 
 function playSequenceFail() {
@@ -104,6 +126,40 @@ function playGameOver() {
   playTone(261.63, 0.78, 0.45, { type: 'sine', gain: 0.045 });
 }
 
+function playComboExpire() {
+  playTone(220, 0, 0.16, { type: 'triangle', gain: 0.04, endFrequency: 110 });
+}
+
+// 판정선 pending→valid 전환 순간의 잠금음 (작게)
+function playChainLock() {
+  playTone(880, 0, 0.04, { type: 'sine', gain: 0.03 });
+}
+
+// 판정선 valid→broken 전환음 — 기존 실패음보다 훨씬 작게
+function playChainBreak() {
+  playTone(180, 0, 0.06, { type: 'sine', gain: 0.025 });
+}
+
+// 크로스팡: 300→1200Hz 상행 스윕 180ms + 화음
+function playCrossPang() {
+  playTone(300, 0, 0.18, { type: 'sine', gain: 0.07, endFrequency: 1200 });
+  [659.25, 830.61, 987.77].forEach((frequency, index) => {
+    playTone(frequency, 0.14 + index * 0.07, 0.24, { type: 'triangle', gain: 0.075 });
+  });
+}
+
+// 풀보드팡: 스윕 + 화음 2회 + 저음 타격 1회
+function playFullPang() {
+  playTone(300, 0, 0.18, { type: 'sine', gain: 0.08, endFrequency: 1200 });
+  [523.25, 659.25, 783.99].forEach((frequency, index) => {
+    playTone(frequency, 0.14 + index * 0.07, 0.24, { type: 'triangle', gain: 0.08 });
+  });
+  [659.25, 830.61, 1046.5].forEach((frequency, index) => {
+    playTone(frequency, 0.42 + index * 0.07, 0.26, { type: 'triangle', gain: 0.07 });
+  });
+  playTone(98, 0.16, 0.3, { type: 'triangle', gain: 0.09, endFrequency: 65 });
+}
+
 function playCountdownTick() {
   playTone(440, 0, 0.13, { type: 'triangle', gain: 0.11, endFrequency: 500 });
 }
@@ -119,6 +175,11 @@ const soundPlayers = {
   tileSelect: playTileSelect,
   sequenceSuccess: playSequenceSuccess,
   sequenceFail: playSequenceFail,
+  comboExpire: playComboExpire,
+  chainLock: playChainLock,
+  chainBreak: playChainBreak,
+  crossPang: playCrossPang,
+  fullPang: playFullPang,
   feverStart: playFeverStart,
   gameOver: playGameOver,
   countdownTick: playCountdownTick,
@@ -135,12 +196,16 @@ export function unlockSfx() {
   }
 }
 
-export function playSound(name) {
+// payload는 큐별 추가 정보(타일 step, 콤보 등). 기존 playSound(name) 호출과 하위 호환.
+export function playSound(name, payload) {
   if (muted || !soundPlayers[name]) return;
+
+  // 진동은 SFX 음소거와 연동 — 음소거면 위 early return으로 함께 꺼진다
+  vibrateFor(name);
 
   try {
     void unlockSfx().then(() => {
-      if (!muted) soundPlayers[name]();
+      if (!muted) soundPlayers[name](payload);
     }).catch(() => {});
   } catch (_error) {
     // 효과음 실패는 게임 진행에 영향을 주지 않는다.

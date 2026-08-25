@@ -8,6 +8,7 @@
 - 피버 종류: `+2`, `+3`, `×2`
 - 5개 이상 긴 수열 성공 시 슈퍼피버 블록 등장 (기본 10초, 점수 ×2)
 - 슈퍼피버 종류: `×3`(보드 3배 변신), `빅넘버`(새 타일이 10~19로 등장, 종료 시 원상복구)
+- 크로스팡/풀보드팡: `6연쇄`는 마지막 타일의 행+열 추가 제거, `7연쇄+`는 보드 전체 재생성 (추가 1칸당 +40점, 시간 보너스)
 - 라스트팡: 남은 시간이 처음 `5초` 아래로 내려가면 발동, 이후 게임 종료까지 모든 점수 ×2 유지 (피버 배율과 중첩)
 - 하이퍼팡: 한 판 `1,000,000점` 돌파 시 보드가 새로 생성되고 숫자 범위가 `1~12`로 확장 (+5초, 황금 테마)
 - 어제의 1등 도전: 메인 화면에 어제 일간 1등 기록 표시, 게임 중 돌파 시 연출
@@ -32,8 +33,20 @@ client/
     service-worker.js
     update-notes.md
   src/
+    engine/          # 순수 게임 로직 (DOM 금지, node --test 대상)
+      board.js
+      chainTier.js
+      rng.js
+      scoring.js
+      sequence.js
+      tiles.js
+    ui/              # 보드 DOM·히트테스트·HUD 렌더링
+      boardView.js
+      dragController.js
+      hud.js
     gameConstants.js
     gameEngine.js
+    haptics.js
     main.js
     menuBgm.js
     rankingHome.css
@@ -55,6 +68,8 @@ server/
   scoreRoutes.js
   server.js
   socketHandlers.js
+tests/
+  engine/            # node --test — 패리티 벡터 포함
 package.json
 vite.config.js
 ```

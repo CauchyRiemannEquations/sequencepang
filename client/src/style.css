@@ -650,6 +650,18 @@
       animation: tilefall 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
+    /* 크로스팡/풀보드팡 추가 제거 버스트 (120ms, 체비쇼프 거리 스태거) */
+    .tile.pang-burst {
+      animation: pangBurst 0.12s ease-out both;
+      z-index: 9;
+    }
+
+    @keyframes pangBurst {
+      0% { transform: scale(1); filter: brightness(1); }
+      55% { transform: scale(1.18); filter: brightness(1.7); }
+      100% { transform: scale(0.88); filter: brightness(1.35); opacity: 0.85; }
+    }
+
     .tile.fever-tile {
       background-image: none;
       background: radial-gradient(circle at 35% 28%, #fff7ad 0%, #facc15 36%, #f97316 74%);
@@ -742,6 +754,91 @@
     @keyframes juicePulse {
       from { stroke-width: 6; }
       to { stroke-width: 8; }
+    }
+
+    /* ── 드래그 중 실시간 판정선 ─────────────────────────────
+       pending(기본): 라임 그라데이션 그대로
+       valid: 금색 + 글로우 강화 + dash 1.5배 속도
+       broken: 빨강 + dash 정지(색약 대비 필수) + 글로우 약화 */
+    .board-wrapper[data-chain-state="valid"] .drag-line-core {
+      stroke: url(#drag-gradient-valid);
+      animation: dashMove 0.43s linear infinite, juicePulse 0.9s ease-in-out infinite alternate;
+    }
+
+    .board-wrapper[data-chain-state="valid"] .drag-line-glow {
+      stroke: rgba(251, 191, 36, 0.38);
+      opacity: 1;
+    }
+
+    /* 하이퍼팡 황금 테마에서는 금색이 묻히므로 흰색/민트 계열로 대체 */
+    .board-wrapper.hyper-pang[data-chain-state="valid"] .drag-line-core {
+      stroke: url(#drag-gradient-valid-hyper);
+    }
+
+    .board-wrapper.hyper-pang[data-chain-state="valid"] .drag-line-glow {
+      stroke: rgba(167, 243, 208, 0.45);
+      opacity: 1;
+    }
+
+    .board-wrapper[data-chain-state="broken"] .drag-line-core {
+      stroke: url(#drag-gradient-broken);
+      animation: none; /* dash 정지 — 색만으로 구분하지 않는다 */
+      stroke-width: 7;
+    }
+
+    .board-wrapper[data-chain-state="broken"] .drag-line-glow {
+      stroke: rgba(239, 68, 68, 0.18);
+      opacity: 0.45;
+    }
+
+    /* 깨짐 순간 마지막 타일 미세 흔들림 (100ms) */
+    .tile.chain-broken {
+      animation: chainBrokenShake 0.1s ease-in-out;
+    }
+
+    @keyframes chainBrokenShake {
+      0% { transform: translateX(0); }
+      30% { transform: translateX(-3px); }
+      60% { transform: translateX(3px); }
+      100% { transform: translateX(0); }
+    }
+
+    /* 유효 수열 규칙 배지 — boardWrapper에 1개 상주, valid일 때만 표시 */
+    .chain-rule-badge {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(120, 53, 15, 0.92);
+      border: 1px solid rgba(251, 191, 36, 0.75);
+      color: #fef3c7;
+      font-family: 'Jua', sans-serif;
+      font-size: 13px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      z-index: 105;
+    }
+
+    .chain-rule-badge.show {
+      opacity: 1;
+    }
+
+    .chain-rule-badge.is-broken {
+      background: rgba(127, 29, 29, 0.92);
+      border-color: rgba(252, 165, 165, 0.8);
+      color: #fecaca;
+    }
+
+    /* 0초 드래그 유예: 타이머 숫자 0.0 고정 + 깜빡임 */
+    .timer-text.grace {
+      animation: graceBlink 0.3s steps(2, jump-none) infinite;
+    }
+
+    @keyframes graceBlink {
+      from { opacity: 1; }
+      to { opacity: 0.3; }
     }
 
     /* 플로팅 점수 */
