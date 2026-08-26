@@ -140,24 +140,28 @@ function playChainBreak() {
   playTone(180, 0, 0.06, { type: 'sine', gain: 0.025 });
 }
 
-// 크로스팡: 300→1200Hz 상행 스윕 180ms + 화음
+// 크로스팡: 충전음 → 저음 타격 → 고역 십자빔 → 완성 화음
 function playCrossPang() {
-  playTone(300, 0, 0.18, { type: 'sine', gain: 0.07, endFrequency: 1200 });
-  [659.25, 830.61, 987.77].forEach((frequency, index) => {
-    playTone(frequency, 0.14 + index * 0.07, 0.24, { type: 'triangle', gain: 0.075 });
+  playTone(180, 0, 0.24, { type: 'sawtooth', gain: 0.045, endFrequency: 720 });
+  playTone(82.41, 0.16, 0.34, { type: 'triangle', gain: 0.13, endFrequency: 55 });
+  playTone(420, 0.18, 0.32, { type: 'sine', gain: 0.09, endFrequency: 1800 });
+  [659.25, 830.61, 987.77, 1318.51].forEach((frequency, index) => {
+    playTone(frequency, 0.3 + index * 0.055, 0.3, { type: 'triangle', gain: 0.082 });
   });
 }
 
-// 풀보드팡: 스윕 + 화음 2회 + 저음 타격 1회
+// 풀보드팡: 깊은 충전 → 이중 충격 → 상승 화음 → 잔향
 function playFullPang() {
-  playTone(300, 0, 0.18, { type: 'sine', gain: 0.08, endFrequency: 1200 });
-  [523.25, 659.25, 783.99].forEach((frequency, index) => {
-    playTone(frequency, 0.14 + index * 0.07, 0.24, { type: 'triangle', gain: 0.08 });
+  playTone(110, 0, 0.42, { type: 'sawtooth', gain: 0.055, endFrequency: 880 });
+  playTone(65.41, 0.2, 0.46, { type: 'triangle', gain: 0.15, endFrequency: 42 });
+  playTone(98, 0.44, 0.38, { type: 'square', gain: 0.08, endFrequency: 55 });
+  [392, 523.25, 659.25, 783.99].forEach((frequency, index) => {
+    playTone(frequency, 0.28 + index * 0.075, 0.42, { type: 'triangle', gain: 0.09 });
   });
-  [659.25, 830.61, 1046.5].forEach((frequency, index) => {
-    playTone(frequency, 0.42 + index * 0.07, 0.26, { type: 'triangle', gain: 0.07 });
+  [783.99, 987.77, 1174.66, 1567.98].forEach((frequency, index) => {
+    playTone(frequency, 0.62 + index * 0.065, 0.44, { type: 'sine', gain: 0.065 });
   });
-  playTone(98, 0.16, 0.3, { type: 'triangle', gain: 0.09, endFrequency: 65 });
+  playTone(2093, 0.82, 0.5, { type: 'sine', gain: 0.04, endFrequency: 1568 });
 }
 
 function playCountdownTick() {

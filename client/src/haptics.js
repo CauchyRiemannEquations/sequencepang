@@ -7,8 +7,8 @@ const HAPTIC_PATTERNS = {
   sequenceSuccess: 25,
   sequenceFail: [30, 40, 30],
   feverStart: [40, 60, 40, 60, 80],
-  crossPang: [60, 30, 60],
-  fullPang: [80, 40, 80, 40, 120]
+  crossPang: [45, 22, 80, 28, 110],
+  fullPang: [70, 25, 95, 28, 130, 35, 180]
 };
 
 export function vibrate(pattern) {

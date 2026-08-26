@@ -52,8 +52,9 @@ export const CROSS_PANG_TIME_BONUS_S = 1.0;
 export const FULL_PANG_TIME_BONUS_S = 3.0;
 export const CROSS_PANG_LABEL = '크로스팡!';
 export const FULL_PANG_LABEL = '풀보드팡!';
-export const PANG_BURST_MS = 120;
-export const PANG_BURST_STAGGER_MS = 25;
+// 필살기 연출 시간: 판정 직후부터 리필 직전까지 게임·콤보·피버 타이머 정지
+export const PANG_BURST_MS = 720;
+export const PANG_BURST_STAGGER_MS = 55;
 
 // 0초 도달 시 드래그 유예: 3타일 이상 드래그 중이면 최대 1초 안에 마무리 허용
 export const TIMEOUT_GRACE_MS = 1000;

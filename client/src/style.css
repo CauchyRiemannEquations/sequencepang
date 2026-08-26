@@ -650,16 +650,67 @@
       animation: tilefall 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
-    /* 크로스팡/풀보드팡 추가 제거 버스트 (120ms, 체비쇼프 거리 스태거) */
-    .tile.pang-burst {
-      animation: pangBurst 0.12s ease-out both;
-      z-index: 9;
-    }
+    /* 크로스팡/풀보드팡 필살기 연출 */
+    .board-wrapper.pang-cinematic { isolation: isolate; overflow: hidden; pointer-events: none; }
+    .board-wrapper.pang-cinematic--cross { animation: pangBoardCrossKick .68s cubic-bezier(.2,.8,.2,1) both; }
+    .board-wrapper.pang-cinematic--full { animation: pangBoardFullKick .95s cubic-bezier(.16,1,.3,1) both; }
+    .tile.pang-burst { z-index: 54; will-change: transform, filter, opacity; }
+    .tile.pang-origin { z-index: 56; animation: pangOriginCharge .52s cubic-bezier(.16,1,.3,1) both !important; }
+    .tile.pang-cross-target { animation: pangCrossDetonate .72s cubic-bezier(.18,.84,.22,1) var(--pang-delay,0ms) both !important; }
+    .tile.pang-full-target { animation: pangFullDetonate .78s cubic-bezier(.16,.78,.18,1) calc(180ms + var(--pang-delay,0ms)) both !important; }
 
-    @keyframes pangBurst {
-      0% { transform: scale(1); filter: brightness(1); }
-      55% { transform: scale(1.18); filter: brightness(1.7); }
-      100% { transform: scale(0.88); filter: brightness(1.35); opacity: 0.85; }
+    .pang-cinematic-layer { position:absolute; inset:0; z-index:48; overflow:hidden; border-radius:inherit; pointer-events:none; }
+    .pang-screen-flash,.pang-shockwave,.pang-energy-core,.pang-ray,.pang-particles,.pang-cinematic-copy { position:absolute; pointer-events:none; }
+    .pang-screen-flash { inset:0; z-index:1; opacity:0; }
+    .pang-cinematic-layer--cross.show .pang-screen-flash { background:radial-gradient(circle at var(--pang-origin-x) var(--pang-origin-y),rgba(255,255,255,.98),rgba(34,211,238,.7) 18%,rgba(2,132,199,.12) 52%,transparent 72%); animation:pangFlashCross .72s ease-out both; }
+    .pang-cinematic-layer--full.show .pang-screen-flash { background:radial-gradient(circle at var(--pang-origin-x) var(--pang-origin-y),#fff 0%,rgba(232,121,249,.9) 16%,rgba(124,58,237,.38) 48%,rgba(24,8,52,.72) 100%); animation:pangFlashFull 1.08s ease-out both; }
+
+    .pang-energy-core { left:var(--pang-origin-x); top:var(--pang-origin-y); z-index:4; width:18px; height:18px; border:4px solid #fff; border-radius:50%; opacity:0; transform:translate(-50%,-50%) scale(.2); box-shadow:0 0 12px #fff,0 0 28px #22d3ee,0 0 54px #0284c7; }
+    .pang-cinematic-layer--full .pang-energy-core { box-shadow:0 0 14px #fff,0 0 34px #e879f9,0 0 72px #7c3aed; }
+    .pang-cinematic-layer.show .pang-energy-core { animation:pangCoreCharge .58s cubic-bezier(.16,1,.3,1) both; }
+
+    .pang-shockwave { left:var(--pang-origin-x); top:var(--pang-origin-y); z-index:3; width:28px; height:28px; border:5px solid rgba(255,255,255,.95); border-radius:50%; opacity:0; transform:translate(-50%,-50%) scale(.2); }
+    .pang-cinematic-layer--cross.show .pang-shockwave { box-shadow:0 0 18px #22d3ee,inset 0 0 16px #22d3ee; animation:pangShockCross .72s .16s ease-out both; }
+    .pang-cinematic-layer--full.show .pang-shockwave { border-width:7px; box-shadow:0 0 24px #e879f9,inset 0 0 22px #a855f7; animation:pangShockFull 1.05s .2s cubic-bezier(.12,.72,.18,1) both; }
+
+    .pang-ray { z-index:2; opacity:0; background:#e0faff; box-shadow:0 0 8px #fff,0 0 20px #22d3ee,0 0 38px #0284c7; }
+    .pang-ray--horizontal { left:0; top:var(--pang-origin-y); width:100%; height:9px; transform:translateY(-50%) scaleX(0); transform-origin:var(--pang-origin-x) center; }
+    .pang-ray--vertical { left:var(--pang-origin-x); top:0; width:9px; height:100%; transform:translateX(-50%) scaleY(0); transform-origin:center var(--pang-origin-y); }
+    .pang-cinematic-layer--cross.show .pang-ray--horizontal { animation:pangRayHorizontal .62s .18s cubic-bezier(.16,1,.3,1) both; }
+    .pang-cinematic-layer--cross.show .pang-ray--vertical { animation:pangRayVertical .62s .18s cubic-bezier(.16,1,.3,1) both; }
+    .pang-cinematic-layer--full .pang-ray { display:none; }
+
+    .pang-particles { left:var(--pang-origin-x); top:var(--pang-origin-y); z-index:5; width:1px; height:1px; }
+    .pang-particles i { position:absolute; left:0; top:0; width:var(--particle-size); height:var(--particle-size); border-radius:50%; background:#fff; opacity:0; box-shadow:0 0 8px #fff,0 0 14px #22d3ee; }
+    .pang-cinematic-layer--full .pang-particles i { background:#f5d0fe; box-shadow:0 0 8px #fff,0 0 16px #d946ef; }
+    .pang-cinematic-layer.show .pang-particles i { animation:pangParticleFly .72s calc(120ms + var(--particle-delay)) cubic-bezier(.12,.7,.2,1) both; }
+    .pang-cinematic-layer--full.show .pang-particles i { animation-duration:1.05s; animation-delay:calc(220ms + var(--particle-delay)); }
+
+    .pang-cinematic-copy { left:50%; top:50%; z-index:80; display:grid; justify-items:center; gap:3px; width:100%; opacity:0; transform:translate(-50%,-50%) scale(.45) rotate(-7deg); text-align:center; }
+    .pang-cinematic-title { color:#f0f9ff; font-family:'Jua',sans-serif; font-size:clamp(34px,11vw,58px); line-height:.95; letter-spacing:-.04em; text-shadow:0 3px 0 #075985,0 0 12px #fff,0 0 28px #22d3ee,0 8px 22px rgba(0,0,0,.6); }
+    .pang-cinematic-layer--full .pang-cinematic-title { color:#faf5ff; font-size:clamp(38px,12vw,64px); text-shadow:0 3px 0 #581c87,0 0 14px #fff,0 0 34px #e879f9,0 9px 24px rgba(0,0,0,.68); }
+    .pang-cinematic-subtitle { padding:4px 12px; border:1px solid rgba(255,255,255,.5); border-radius:999px; background:rgba(7,89,133,.88); color:#ecfeff; font:800 12px 'Outfit',sans-serif; box-shadow:0 4px 14px rgba(0,0,0,.28); }
+    .pang-cinematic-layer--full .pang-cinematic-subtitle { background:rgba(88,28,135,.9); color:#fae8ff; }
+    .pang-cinematic-layer--cross.show .pang-cinematic-copy { animation:pangTitleSlam .9s .1s cubic-bezier(.16,1,.3,1) both; }
+    .pang-cinematic-layer--full.show .pang-cinematic-copy { animation:pangTitleSlam 1.18s .16s cubic-bezier(.16,1,.3,1) both; }
+
+    @keyframes pangOriginCharge { 0%{transform:scale(1);filter:brightness(1)} 44%{transform:scale(.78) rotate(-5deg);filter:brightness(2.5) saturate(1.8)} 70%{transform:scale(1.34) rotate(4deg);filter:brightness(3.5);box-shadow:0 0 22px #fff,0 0 44px #22d3ee} 100%{transform:scale(1.08);filter:brightness(2.2)} }
+    @keyframes pangCrossDetonate { 0%,26%{opacity:1;transform:scale(1);filter:brightness(1)} 42%{transform:scale(.72) rotate(-4deg);filter:brightness(2.8) saturate(2)} 62%{opacity:1;transform:translate(var(--pang-dx),var(--pang-dy)) scale(1.42) rotate(var(--pang-rot));filter:brightness(4);box-shadow:0 0 24px #fff,0 0 42px #22d3ee} 100%{opacity:0;transform:translate(calc(var(--pang-dx)*2),calc(var(--pang-dy)*2)) scale(.1) rotate(var(--pang-rot));filter:brightness(5)} }
+    @keyframes pangFullDetonate { 0%,18%{opacity:1;transform:scale(1);filter:brightness(1)} 38%{transform:scale(.62) rotate(-5deg);filter:brightness(2.4) saturate(1.8)} 58%{opacity:1;transform:translate(var(--pang-dx),var(--pang-dy)) scale(1.55) rotate(var(--pang-rot));filter:brightness(4.5);box-shadow:0 0 28px #fff,0 0 50px #d946ef} 100%{opacity:0;transform:translate(calc(var(--pang-dx)*2.8),calc(var(--pang-dy)*2.8)) scale(.05) rotate(calc(var(--pang-rot)*2));filter:brightness(5)} }
+    @keyframes pangFlashCross { 0%{opacity:0} 18%{opacity:.96} 42%{opacity:.32} 100%{opacity:0} }
+    @keyframes pangFlashFull { 0%{opacity:0} 20%{opacity:.98} 48%{opacity:.48} 100%{opacity:0} }
+    @keyframes pangCoreCharge { 0%{opacity:0;transform:translate(-50%,-50%) scale(.15)} 34%{opacity:1} 72%{opacity:1;transform:translate(-50%,-50%) scale(2.2)} 100%{opacity:0;transform:translate(-50%,-50%) scale(4.5)} }
+    @keyframes pangShockCross { 0%{opacity:1;transform:translate(-50%,-50%) scale(.2)} 100%{opacity:0;transform:translate(-50%,-50%) scale(15)} }
+    @keyframes pangShockFull { 0%{opacity:1;transform:translate(-50%,-50%) scale(.2)} 45%{opacity:.92} 100%{opacity:0;transform:translate(-50%,-50%) scale(24)} }
+    @keyframes pangRayHorizontal { 0%{opacity:0;transform:translateY(-50%) scaleX(0)} 18%{opacity:1} 58%{opacity:1;transform:translateY(-50%) scaleX(1)} 100%{opacity:0;transform:translateY(-50%) scaleX(1);height:24px} }
+    @keyframes pangRayVertical { 0%{opacity:0;transform:translateX(-50%) scaleY(0)} 18%{opacity:1} 58%{opacity:1;transform:translateX(-50%) scaleY(1)} 100%{opacity:0;transform:translateX(-50%) scaleY(1);width:24px} }
+    @keyframes pangParticleFly { 0%{opacity:0;transform:translate(0,0) scale(.2)} 18%{opacity:1} 72%{opacity:1} 100%{opacity:0;transform:translate(var(--particle-x),var(--particle-y)) scale(1.35)} }
+    @keyframes pangTitleSlam { 0%{opacity:0;transform:translate(-50%,-50%) scale(.35) rotate(-8deg)} 28%{opacity:1;transform:translate(-50%,-50%) scale(1.22) rotate(2deg)} 42%{transform:translate(-50%,-50%) scale(.96) rotate(-1deg)} 56%,78%{opacity:1;transform:translate(-50%,-50%) scale(1)} 100%{opacity:0;transform:translate(-50%,-58%) scale(1.06)} }
+    @keyframes pangBoardCrossKick { 0%,100%{transform:translate(0,0) scale(1)} 28%{transform:translate(-3px,2px) scale(.99)} 36%{transform:translate(4px,-2px) scale(1.012)} 44%{transform:translate(-4px,-1px) scale(1.008)} 54%{transform:translate(2px,2px) scale(1.004)} }
+    @keyframes pangBoardFullKick { 0%,100%{transform:translate(0,0) scale(1)} 22%{transform:translate(-4px,3px) scale(.975)} 30%{transform:translate(5px,-3px) scale(1.02)} 38%{transform:translate(-6px,-2px) scale(1.015)} 47%{transform:translate(4px,3px) scale(1.01)} 58%{transform:translate(-2px,1px) scale(1.005)} }
+
+    @media (prefers-reduced-motion:reduce) {
+      .board-wrapper.pang-cinematic,.tile.pang-burst,.tile.pang-origin,.pang-cinematic-layer * { animation-duration:.18s !important; animation-delay:0ms !important; }
     }
 
     .tile.fever-tile {

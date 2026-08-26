@@ -180,6 +180,8 @@ export function initGameApp() {
   let hyperPangTriggered = false;
   let hyperPangActive = false;
   let hyperPangPaused = false;
+  let pangCinematicActive = false; // 크로스팡·풀보드팡 필살기 연출 중 모든 게임 시간 정지
+  let gameOverAfterPang = false; // 0초 유예에서 팡 성공 시 연출 완료 뒤 게임오버
   let timeoutGraceActive = false; // 0초 도달 시 드래그 유예 상태
   let timeoutGraceTimer = null;
   const fever = {
@@ -347,7 +349,7 @@ export function initGameApp() {
   // ── 하이퍼팡: 한 판 100만점 돌파 시 숫자 범위 1~12 확장 ──
   function maybeTriggerHyperPang() {
     // 유예 중에는 곧 게임오버 — 하이퍼팡 모달을 띄우지 않는다
-    if (hyperPangTriggered || isGameOver || !isGameActive || timeoutGraceActive) return;
+    if (hyperPangTriggered || isGameOver || !isGameActive || timeoutGraceActive || pangCinematicActive) return;
     if (score < HYPER_PANG_SCORE_THRESHOLD) return;
 
     hyperPangTriggered = true;
@@ -545,7 +547,7 @@ export function initGameApp() {
   }
 
   function startFeverMode(type, amount, label, tier = 'normal') {
-    if (fever.active || fever.ending || isGameOver || !isGameActive) return;
+    if (fever.active || fever.ending || isGameOver || !isGameActive || pangCinematicActive) return;
 
     if (fever.rollbackTimer) {
       clearTimeout(fever.rollbackTimer);
@@ -574,7 +576,7 @@ export function initGameApp() {
 
     if (fever.timer) clearInterval(fever.timer);
     fever.timer = setInterval(() => {
-      if (hyperPangPaused) return; // 하이퍼팡 안내 중에는 피버 시간도 정지
+      if (hyperPangPaused || pangCinematicActive) return; // 하이퍼팡 안내·팡 필살기 연출 중 피버 시간 정지
       fever.timeLeftMs -= 100;
       if (fever.timeLeftMs <= 0) {
         finishFeverMode();
@@ -703,6 +705,9 @@ export function initGameApp() {
     hyperPangTriggered = false;
     hyperPangActive = false;
     hyperPangPaused = false;
+    pangCinematicActive = false;
+    gameOverAfterPang = false;
+    boardView.clearPangBurst();
     gameContainer.classList.remove('hyper-pang');
     boardWrapper.classList.remove('hyper-pang');
     isGameOver = false;
@@ -775,6 +780,7 @@ export function initGameApp() {
   function tickTimer() {
     if (isGameOver || !isGameActive) return;
     if (fever.active || fever.ending) return;
+    if (pangCinematicActive) return; // 필살기 연출 중 메인·콤보 타이머 완전 정지
     if (timeoutGraceActive) return; // 유예 중 메인·콤보 타이머 모두 정지 (표시 0.0 고정)
 
     timeLeft -= 0.1;
@@ -870,6 +876,9 @@ export function initGameApp() {
   function triggerGameOver() {
       clearTimeoutGrace();
       isGameOver = true;
+      pangCinematicActive = false;
+      gameOverAfterPang = false;
+      boardView.clearPangBurst();
       gameContainer.classList.remove('game-active', 'last-spurt');
       timerContainer.classList.remove('last-spurt');
       playSound('gameOver');
@@ -1017,7 +1026,7 @@ export function initGameApp() {
   }
 
   function handleStart(clientX, clientY) {
-    if (isGameOver || !isGameActive || fever.ending) return;
+    if (isGameOver || !isGameActive || fever.ending || pangCinematicActive) return;
     if (timeoutGraceActive) return; // 유예 중 새 드래그 금지 (진행 중 드래그만 허용)
     const cell = dragController.getCellAtPoint(clientX, clientY);
     if (cell) {
@@ -1038,7 +1047,7 @@ export function initGameApp() {
   }
 
   function handleMove(clientX, clientY) {
-    if (!isDragging || isGameOver || !isGameActive || fever.ending) return;
+    if (!isDragging || isGameOver || !isGameActive || fever.ending || pangCinematicActive) return;
     const cell = dragController.getCellAtPoint(clientX, clientY);
     dragController.setPointer(clientX, clientY);
     if (!cell) return;
@@ -1086,11 +1095,16 @@ export function initGameApp() {
       clearSelection();
     }
 
-    // 유예 중 손을 뗐으면 판정 반영(라스트팡 ×2 포함) 직후 바로 종료
+    // 유예 중 팡이 완성되면 필살기 연출까지 온전히 보여준 뒤 게임오버
     if (endedInGrace && !isGameOver) {
       timeLeft = 0;
       updateTimerUI();
-      triggerGameOver();
+      if (pangCinematicActive) {
+        clearTimeoutGrace();
+        gameOverAfterPang = true;
+      } else {
+        triggerGameOver();
+      }
     }
   }
 
@@ -1169,6 +1183,12 @@ export function initGameApp() {
       // 추가 제거 타일은 콤보·반복 기록·maxChainLength에 영향 없음(수열 1개로만 카운트).
       const chainTier = getChainTier(len, chain.allSame);
       const lastCell = selectedTiles[selectedTiles.length - 1];
+      const matchedTiles = selectedTiles.slice();
+      if (chainTier === 'cross' || chainTier === 'full') {
+        pangCinematicActive = true;
+        isDragging = false;
+        dragController.clearPointer();
+      }
       let pangExtraCells = [];
       let pangExtraPoints = 0;
       if (chainTier === 'cross' || chainTier === 'full') {
@@ -1209,8 +1229,6 @@ export function initGameApp() {
         showInfoToast('어제의 1등을 넘었어요!');
       }
 
-      maybeTriggerHyperPang();
-      
       if (score > bestScore) {
         bestScore = score;
         localStorage.setItem('seq_pang_best', bestScore);
@@ -1263,30 +1281,48 @@ export function initGameApp() {
         }, 150);
       }
 
-      selectedTiles.forEach(t => t.element.classList.add('matched'));
-      if (pangExtraCells.length > 0) {
-        // 연쇄 matched(350ms) → 십자/전판 pang-burst(바깥으로 퍼짐) → collapse + 낙하
+      matchedTiles.forEach(t => t.element.classList.add('matched'));
+      if (chainTier === 'cross' || chainTier === 'full') {
+        // 판정 즉시 타이머를 멈춘 뒤: 충전 → 타이틀 → 십자빔/충격파 → 연쇄 폭발 → 리필
         const removedCells = [
-          ...selectedTiles.map(t => ({ row: t.row, col: t.col })),
+          ...matchedTiles.map(t => ({ row: t.row, col: t.col })),
           ...pangExtraCells
         ];
         const origin = { row: lastCell.row, col: lastCell.col };
+        const pangLabel = chainTier === 'cross' ? CROSS_PANG_LABEL : FULL_PANG_LABEL;
+
         setTimeout(() => {
           if (isGameOver) return;
-          const burstMs = boardView.triggerPangBurst(pangExtraCells, origin, {
+          const cinematicMs = boardView.triggerPangBurst(removedCells, origin, {
+            tier: chainTier,
+            label: pangLabel,
+            extraPoints: pangExtraPoints,
             durationMs: PANG_BURST_MS,
             staggerMs: PANG_BURST_STAGGER_MS
           });
+
           setTimeout(() => {
+            if (isGameOver) return;
             eliminateAndRefill(removedCells);
-          }, burstMs);
-        }, 350);
+            pangCinematicActive = false;
+
+            if (gameOverAfterPang) {
+              gameOverAfterPang = false;
+              timeLeft = 0;
+              updateTimerUI();
+              triggerGameOver();
+              return;
+            }
+            maybeTriggerHyperPang();
+          }, cinematicMs);
+        }, 180);
       } else {
         // 제거 대상을 판정 시점에 스냅샷 — 350ms 안에 새 드래그가 시작돼도
         // 그 타일이 함께 제거되지 않는다
-        const removedCells = selectedTiles.map(t => ({ row: t.row, col: t.col }));
+        const removedCells = matchedTiles.map(t => ({ row: t.row, col: t.col }));
         setTimeout(() => {
           eliminateAndRefill(removedCells);
+          maybeTriggerHyperPang();
         }, 350);
       }
 
