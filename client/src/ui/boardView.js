@@ -168,9 +168,14 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
       const delay = dist * staggerMs;
       maxDelay = Math.max(maxDelay, delay);
       tile.style.setProperty('--pang-delay', `${delay}ms`);
+      const directionScale = tierClass === 'full' ? 22 : 16;
+      const rotation = ((cell.row * 7 + cell.col * 11) % 2 ? 1 : -1) * (10 + dist * 7);
       tile.style.setProperty('--pang-dx', `${colDelta * 8}px`);
       tile.style.setProperty('--pang-dy', `${rowDelta * 8}px`);
-      tile.style.setProperty('--pang-rot', `${((cell.row * 7 + cell.col * 11) % 2 ? 1 : -1) * (10 + dist * 7)}deg`);
+      tile.style.setProperty('--pang-dx-far', `${colDelta * directionScale}px`);
+      tile.style.setProperty('--pang-dy-far', `${rowDelta * directionScale}px`);
+      tile.style.setProperty('--pang-rot', `${rotation}deg`);
+      tile.style.setProperty('--pang-rot-far', `${rotation * 2}deg`);
       tile.classList.add('pang-burst', `pang-${tierClass}-target`);
     });
 
@@ -195,7 +200,10 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
         tile.style.removeProperty('--pang-delay');
         tile.style.removeProperty('--pang-dx');
         tile.style.removeProperty('--pang-dy');
+        tile.style.removeProperty('--pang-dx-far');
+        tile.style.removeProperty('--pang-dy-far');
         tile.style.removeProperty('--pang-rot');
+        tile.style.removeProperty('--pang-rot-far');
       }
     }
   }

@@ -659,7 +659,7 @@
     .tile.pang-cross-target { animation: pangCrossDetonate .72s cubic-bezier(.18,.84,.22,1) var(--pang-delay,0ms) both !important; }
     .tile.pang-full-target { animation: pangFullDetonate .78s cubic-bezier(.16,.78,.18,1) calc(180ms + var(--pang-delay,0ms)) both !important; }
 
-    .pang-cinematic-layer { position:absolute; inset:0; z-index:48; overflow:hidden; border-radius:inherit; pointer-events:none; }
+    .pang-cinematic-layer { position:absolute; inset:0; z-index:64; overflow:hidden; border-radius:inherit; pointer-events:none; }
     .pang-screen-flash,.pang-shockwave,.pang-energy-core,.pang-ray,.pang-particles,.pang-cinematic-copy { position:absolute; pointer-events:none; }
     .pang-screen-flash { inset:0; z-index:1; opacity:0; }
     .pang-cinematic-layer--cross.show .pang-screen-flash { background:radial-gradient(circle at var(--pang-origin-x) var(--pang-origin-y),rgba(255,255,255,.98),rgba(34,211,238,.7) 18%,rgba(2,132,199,.12) 52%,transparent 72%); animation:pangFlashCross .72s ease-out both; }
@@ -695,8 +695,8 @@
     .pang-cinematic-layer--full.show .pang-cinematic-copy { animation:pangTitleSlam 1.18s .16s cubic-bezier(.16,1,.3,1) both; }
 
     @keyframes pangOriginCharge { 0%{transform:scale(1);filter:brightness(1)} 44%{transform:scale(.78) rotate(-5deg);filter:brightness(2.5) saturate(1.8)} 70%{transform:scale(1.34) rotate(4deg);filter:brightness(3.5);box-shadow:0 0 22px #fff,0 0 44px #22d3ee} 100%{transform:scale(1.08);filter:brightness(2.2)} }
-    @keyframes pangCrossDetonate { 0%,26%{opacity:1;transform:scale(1);filter:brightness(1)} 42%{transform:scale(.72) rotate(-4deg);filter:brightness(2.8) saturate(2)} 62%{opacity:1;transform:translate(var(--pang-dx),var(--pang-dy)) scale(1.42) rotate(var(--pang-rot));filter:brightness(4);box-shadow:0 0 24px #fff,0 0 42px #22d3ee} 100%{opacity:0;transform:translate(calc(var(--pang-dx)*2),calc(var(--pang-dy)*2)) scale(.1) rotate(var(--pang-rot));filter:brightness(5)} }
-    @keyframes pangFullDetonate { 0%,18%{opacity:1;transform:scale(1);filter:brightness(1)} 38%{transform:scale(.62) rotate(-5deg);filter:brightness(2.4) saturate(1.8)} 58%{opacity:1;transform:translate(var(--pang-dx),var(--pang-dy)) scale(1.55) rotate(var(--pang-rot));filter:brightness(4.5);box-shadow:0 0 28px #fff,0 0 50px #d946ef} 100%{opacity:0;transform:translate(calc(var(--pang-dx)*2.8),calc(var(--pang-dy)*2.8)) scale(.05) rotate(calc(var(--pang-rot)*2));filter:brightness(5)} }
+    @keyframes pangCrossDetonate { 0%,26%{opacity:1;transform:scale(1);filter:brightness(1)} 42%{transform:scale(.72) rotate(-4deg);filter:brightness(2.8) saturate(2)} 62%{opacity:1;transform:translate(var(--pang-dx),var(--pang-dy)) scale(1.42) rotate(var(--pang-rot));filter:brightness(4);box-shadow:0 0 24px #fff,0 0 42px #22d3ee} 100%{opacity:0;transform:translate(var(--pang-dx-far),var(--pang-dy-far)) scale(.1) rotate(var(--pang-rot));filter:brightness(5)} }
+    @keyframes pangFullDetonate { 0%,18%{opacity:1;transform:scale(1);filter:brightness(1)} 38%{transform:scale(.62) rotate(-5deg);filter:brightness(2.4) saturate(1.8)} 58%{opacity:1;transform:translate(var(--pang-dx),var(--pang-dy)) scale(1.55) rotate(var(--pang-rot));filter:brightness(4.5);box-shadow:0 0 28px #fff,0 0 50px #d946ef} 100%{opacity:0;transform:translate(var(--pang-dx-far),var(--pang-dy-far)) scale(.05) rotate(var(--pang-rot-far));filter:brightness(5)} }
     @keyframes pangFlashCross { 0%{opacity:0} 18%{opacity:.96} 42%{opacity:.32} 100%{opacity:0} }
     @keyframes pangFlashFull { 0%{opacity:0} 20%{opacity:.98} 48%{opacity:.48} 100%{opacity:0} }
     @keyframes pangCoreCharge { 0%{opacity:0;transform:translate(-50%,-50%) scale(.15)} 34%{opacity:1} 72%{opacity:1;transform:translate(-50%,-50%) scale(2.2)} 100%{opacity:0;transform:translate(-50%,-50%) scale(4.5)} }
