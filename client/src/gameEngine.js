@@ -1798,3 +1798,50 @@ export function initGameApp() {
       }[tag] || tag)
     );
   }
+
+  btnRetry.addEventListener('click', () => {
+    isGameActive = false;
+    void resumeMenuBgm();
+    gameOverOverlay.classList.remove('show');
+
+    if (isMultiplayMode) {
+      // 멀티플레이 모드인 경우, 소켓 끊지 않고 대기방으로 유턴!
+      lobbyOverlay.classList.remove('hide');
+      leaderboardPanel.style.display = 'none'; // 대기방에서는 리더보드 가림
+      
+      // 내 게임 화면 점수 및 상태 초기화
+      score = 0;
+      combo = 0;
+      maxCombo = 0;
+      scoreVal.textContent = '0';
+      comboVal.textContent = '0';
+      comboBadge.style.display = 'none';
+      
+      // 대기실 복귀 즉시 최신 대기방 정보(점수/참여자 목록) 재조회 요청!
+      if (socket && socket.connected) {
+        socket.emit('requestLobbyUpdate');
+      }
+      // 내 점수를 유지하여 대기방 순위표에 뽐낼 수 있도록 하며, 0점 리셋은 다음 게임 플레이 시작 버튼을 누를 때 수행합니다.
+    } else {
+      // 싱글플레이 모드인 경우, 웰컴 메인 화면으로 귀환
+      welcomeOverlay.classList.remove('hide');
+    }
+  });
+
+  scoreSubmitRetry.addEventListener('click', () => {
+    saveFinalScoreAndLoadLeaderboard();
+  });
+
+  document.addEventListener('click', event => {
+    if (!event.target?.id) return;
+
+    if (event.target.id === 'btn-global-ranking-daily') {
+      loadGlobalLeaderboard('daily');
+    }
+
+    if (event.target.id === 'btn-global-ranking-weekly') {
+      loadGlobalLeaderboard('weekly');
+    }
+  });
+    
+}
