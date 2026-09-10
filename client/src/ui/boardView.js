@@ -180,7 +180,11 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
     });
 
     requestAnimationFrame(() => layer.classList.add('show'));
-    return durationMs + maxDelay + (tierClass === 'full' ? 430 : 280);
+    // 마지막 타일의 폭발이 끝나는 즉시 리필한다. 이전의 추가 여유 시간은
+    // 모든 타일이 투명해진 뒤 빈 보드만 남아 보이는 구간을 만들었다.
+    const tileStartDelayMs = tierClass === 'full' ? 180 : 0;
+    const tileDurationMs = tierClass === 'full' ? durationMs + 60 : durationMs;
+    return tileStartDelayMs + tileDurationMs + maxDelay;
   }
 
   // 연출 잔여 상태 정리 (collapse 직전 호출 — 낙하 애니메이션과 충돌 방지)
