@@ -740,6 +740,11 @@ body {
   text-shadow: 0 0 34px rgba(148, 242, 13, .56);
 }
 
+.game-container.hyper-pang .countdown-text {
+  color: var(--lv-gold);
+  text-shadow: 0 0 34px rgba(255, 216, 77, .62);
+}
+
 /* Game over and Firestore rankings */
 .overlay {
   background: rgba(0, 18, 12, .88);
