@@ -1,0 +1,40 @@
+.welcome-mascot-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+.sequel-sticker {
+  position: relative;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-height: 58px;
+  padding: 10px 14px 11px;
+  border: 2px solid #fff2b0;
+  border-radius: 12px 12px 18px 12px;
+  background: linear-gradient(145deg, #ffe890, #ffc74b);
+  color: #183d2b;
+  text-align: center;
+  text-decoration: none;
+  transform: rotate(7deg);
+  box-shadow: 0 3px 0 #b9832c, 0 7px 15px #001f2040;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.sequel-sticker::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px 0 12px 0;
+  background: linear-gradient(135deg, #fff5ca 48%, #ca9037 52%);
+}
+.sequel-sticker-title { display: block; font-size: 14px; font-weight: 800; line-height: 1.35; white-space: nowrap; }
+.sequel-sticker-title > span { color: #936212; font-size: 12px; }
+.sequel-sticker-action { display: block; margin-top: 3px; font-size: 12px; font-weight: 700; line-height: 1.3; }
+.sequel-sticker:focus-visible { outline: 3px solid #fffbea; outline-offset: 5px; }
+@media (hover: hover) { .sequel-sticker:hover { transform: rotate(3deg) translateY(-2px); } }
+.sequel-sticker:active { transform: rotate(3deg) translateY(1px); box-shadow: 0 1px 0 #b9832c; }
+@media (prefers-reduced-motion: reduce) { .sequel-sticker { transition: none; } }
