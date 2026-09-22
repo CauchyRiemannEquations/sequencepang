@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sequencepang-v22';
+const CACHE_NAME = 'sequencepang-v23';
 
 const CORE_ASSETS = [
   '/manifest.webmanifest',
@@ -40,3 +40,4 @@ self.addEventListener('fetch', event => {
     fetch(event.request).catch(() => caches.match(event.request))
   );
 });
+

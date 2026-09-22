@@ -72,3 +72,105 @@
   .star-ambience i, .star-time-active .tile.selected::before { animation: none; }
   .star-time-active .tile.matched:not(.pang-burst) { animation: none; opacity: .45; }
 }
+
+
+/* A full-scene bonus state, with all motion outside the number faces. */
+.star-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 36px;
+}
+.star-panel.is-active {
+  border: 1px solid #fff2a6;
+  background: linear-gradient(110deg, #ffe788, #ffcd45 55%, #fff0ad);
+  color: #302509;
+  box-shadow: 0 0 22px #ffd34f55, inset 0 1px #fff9db;
+  animation: star-banner-enter 480ms cubic-bezier(.2,.8,.2,1) both;
+}
+.star-panel.is-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, #ffffff99 50%, transparent 70%);
+  transform: translateX(-110%);
+  animation: star-banner-sweep 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.star-panel.is-active .star-label {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-shadow: 0 1px #fff7cc;
+}
+.star-panel.is-active .star-label::before { content: '★ '; }
+.star-panel.is-active .star-timer { font-size: 13px; font-weight: 900; }
+.star-panel.is-active .star-feedback { color: #59400b; font-size: 10px; }
+.game-container:has(.board-wrapper.star-time-active) {
+  background: radial-gradient(ellipse at 50% 52%, #286356 0%, #123e3b 55%, #072b30 100%);
+  border-color: #ffe28d;
+  box-shadow: 0 0 38px #ffd75d55, inset 0 0 48px #ffd75d16;
+}
+.game-container:has(.board-wrapper.star-time-active)::before {
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 6% 20%, #ffe998 0 2px, transparent 3px),
+    radial-gradient(circle at 94% 34%, #ffe998 0 2px, transparent 3px),
+    radial-gradient(circle at 4% 66%, #fff4c7 0 1px, transparent 3px),
+    radial-gradient(circle at 97% 80%, #fff4c7 0 2px, transparent 3px),
+    radial-gradient(ellipse at 50% 100%, #ffd65728, transparent 65%);
+}
+.board-wrapper.star-time-active {
+  border-color: #ffe889;
+  background: #a6ceac;
+  outline: 2px solid #ffcf4b;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px #ffd65722, 0 0 32px #ffd65788, inset 0 0 18px #fff3ac88;
+}
+.star-time-active .star-ambience {
+  border-radius: inherit;
+  box-shadow: inset 0 0 12px #fff2ae77;
+  animation: star-frame-breathe 1.6s ease-in-out infinite alternate;
+}
+.star-time-active .star-ambience i {
+  font-size: 25px;
+  color: #fff1a2;
+  opacity: .95;
+  text-shadow: 0 0 8px #ffcc42, 0 0 16px #ffcc4288;
+  animation: star-orbit-spark 1.8s ease-in-out infinite alternate;
+}
+.star-time-active .star-ambience i:nth-child(1) { left: -12px; top: 20%; }
+.star-time-active .star-ambience i:nth-child(2) { right: -12px; top: 70%; animation-delay: -.6s; }
+.star-time-active .star-ambience i:nth-child(3) { top: -16px; left: 78%; animation-delay: -1.2s; }
+.star-time-active .star-ambience i:nth-child(4) { bottom: -16px; left: 20%; animation-delay: -.9s; }
+.star-time-active .tile.selected:not(.fever-tile)::before {
+  color: #fff6b6;
+  font-size: 20px;
+  text-shadow: 0 0 6px #eab308;
+}
+.star-panel.is-ending { background: linear-gradient(110deg, #ffd16d, #ffb94d, #ffe59c); }
+.star-panel.is-ending .star-timer { color: #792a07; }
+.star-time-ending .star-ambience { animation-duration: .6s; }
+@keyframes star-banner-enter {
+  from { transform: translateY(-6px) scale(.96); opacity: .5; }
+  60% { transform: translateY(0) scale(1.025); opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes star-banner-sweep { 45%, 100% { transform: translateX(110%); } }
+@keyframes star-frame-breathe { to { opacity: .5; } }
+@keyframes star-orbit-spark { to { transform: translateY(-5px) rotate(25deg) scale(.7); opacity: .5; } }
+@media (max-width: 380px) {
+  .star-panel.is-active { gap: 5px; padding-inline: 6px; }
+  .star-panel.is-active .star-label { font-size: 12px; letter-spacing: 0; }
+  .star-panel.is-active .star-timer { font-size: 11px; }
+  .star-panel.is-active .star-feedback { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star-panel.is-active, .star-panel.is-active::before,
+  .star-time-active .star-ambience, .star-time-active .star-ambience i { animation: none; }
+  .star-panel.is-active::before { display: none; }
+}

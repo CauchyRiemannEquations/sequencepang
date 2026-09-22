@@ -22,6 +22,9 @@ export function createStarTimeView({ panel, boardWrapper, required, multiplier }
     }
     wasActive = isStarTime;
     panel.classList.toggle('is-active', isStarTime);
+    const ending = isStarTime && starTimeRemaining <= 3;
+    panel.classList.toggle('is-ending', ending);
+    boardWrapper.classList.toggle('star-time-ending', ending);
     boardWrapper.classList.toggle('star-time-active', isStarTime);
     label.textContent = isStarTime ? 'STAR TIME' : 'STAR';
     gauge.hidden = isStarTime;
