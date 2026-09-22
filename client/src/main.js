@@ -8,6 +8,7 @@ import './howToPlay.css';
 import './sequelLaunchNotice.css';
 import './sequelSticker.css';
 import './starTime.css';
+import './starTimeNotice.css';
 import { initGameApp } from './gameEngine.js';
 import { initHomeRankingUI } from './rankingHome.js';
 import { initUpdateNotesUI } from './updateNotes.js';
@@ -15,6 +16,7 @@ import { initSfx } from './sfxManager.js';
 import { initRankingResetNotice } from './rankingResetNotice.js';
 import { initHowToPlayUI } from './howToPlay.js';
 import { initSequelLaunchNotice } from './sequelLaunchNotice.js';
+import { initStarTimeNotice } from './starTimeNotice.js';
 
 function ensureWelcomeLinksRow() {
   const welcomeCard = document.querySelector('.welcome-card');
@@ -53,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initContactLink();
   initMenuBgm();
   initRankingResetNotice();
-  initSequelLaunchNotice();
+  initSequelLaunchNotice({ onComplete: initStarTimeNotice });
 });
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
