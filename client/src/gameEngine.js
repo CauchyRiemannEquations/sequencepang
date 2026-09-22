@@ -3,6 +3,12 @@ import {
   MAX_TIME,
   TILE_NUMBER_MIN,
   TILE_NUMBER_MAX,
+  STAR_SPAWN_RATE,
+  STAR_REQUIRED,
+  STAR_TIME_DURATION,
+  STAR_TIME_EXTENSION,
+  STAR_TIME_MAX,
+  STAR_SCORE_MULTIPLIER,
   MAX_ROOM_PLAYERS,
   FEVER_TRIGGER_MIN_LENGTH,
   SUPER_FEVER_TRIGGER_MIN_LENGTH,
@@ -63,6 +69,8 @@ import {
 import { createBoardView } from './ui/boardView.js';
 import { createDragController } from './ui/dragController.js';
 import { createHud } from './ui/hud.js';
+import { createStarTime, withStar } from './engine/starTime.js';
+import { createStarTimeView } from './ui/starTimeView.js';
 
 export function initGameApp() {
   // ----------------------------------------------------
@@ -99,14 +107,14 @@ export function initGameApp() {
     }
 
     candidates.slice(0, count).forEach(({ r, c }) => {
-      boardData[r][c] = createNormalTile(bigNumberTilePool);
+      boardData[r][c] = { ...createNormalTile(bigNumberTilePool), isStar: !!boardData[r][c].isStar };
     });
   }
 
   function createNormalTileData() {
     // 빅넘버 슈퍼피버 중에는 새 타일이 10~19 원본 숫자로 등장
     const useBigNumber = fever.active && fever.type === 'bigNumber';
-    return createNormalTile(useBigNumber ? bigNumberTilePool : getCurrentTilePool());
+    return withStar(createNormalTile(useBigNumber ? bigNumberTilePool : getCurrentTilePool()), STAR_SPAWN_RATE);
   }
 
   // 개발 모드에서 ?feverTest=1 을 붙이면 적용 시각 전에도 이벤트를 미리 체험 가능
@@ -184,6 +192,12 @@ export function initGameApp() {
   let gameOverAfterPang = false; // 0초 유예에서 팡 성공 시 연출 완료 뒤 게임오버
   let timeoutGraceActive = false; // 0초 도달 시 드래그 유예 상태
   let timeoutGraceTimer = null;
+  const starTime = createStarTime({
+    required: STAR_REQUIRED,
+    duration: STAR_TIME_DURATION,
+    extension: STAR_TIME_EXTENSION,
+    max: STAR_TIME_MAX
+  });
   const fever = {
     active: false,
     ending: false,
@@ -286,6 +300,22 @@ export function initGameApp() {
     feverTimerFill,
     feverTimerText
   });
+  const starTimeView = createStarTimeView({
+    panel: document.getElementById('star-panel'),
+    boardWrapper,
+    required: STAR_REQUIRED,
+    multiplier: STAR_SCORE_MULTIPLIER
+  });
+
+  function updateStarTime() {
+    starTimeView.render(starTime.sync(performance.now()));
+  }
+
+  function resetStarTime() {
+    starTime.reset();
+    starTimeView.reset(starTime.state);
+  }
+  resetStarTime();
 
   // 보드 지오메트리는 레이아웃이 바뀌면 무효화하고, 다음 히트테스트에서 지연 측정
   // (스크롤/리사이즈 이벤트마다 동기 레이아웃을 강제하지 않는다)
@@ -616,7 +646,7 @@ export function initGameApp() {
         for (let c = 0; c < BOARD_SIZE; c++) {
           const tileData = boardData[r][c];
           if (tileData?.type === 'normal' && tileData.baseValue > getCurrentTileMax()) {
-            boardData[r][c] = createNormalTile(getCurrentTilePool());
+            boardData[r][c] = { ...createNormalTile(getCurrentTilePool()), isStar: !!boardData[r][c].isStar };
           }
         }
       }
@@ -717,6 +747,8 @@ export function initGameApp() {
     resetChainFeedback();
     resetFeverState();
 
+    resetStarTime();
+
     // 멀티플레이 모드일 때 서버에 시작 점수(0점) 전송하여 대시보드 리셋
     if (isMultiplayMode && socket && socket.connected) {
       socket.emit('updateScore', { score: 0 });
@@ -779,6 +811,8 @@ export function initGameApp() {
 
   function tickTimer() {
     if (isGameOver || !isGameActive) return;
+    // 별 시간은 실제 경과 시간 사용. 피버·팡 연출의 기존 타이머 정지와 독립적이다.
+    updateStarTime();
     if (fever.active || fever.ending) return;
     if (pangCinematicActive) return; // 필살기 연출 중 메인·콤보 타이머 완전 정지
     if (timeoutGraceActive) return; // 유예 중 메인·콤보 타이머 모두 정지 (표시 0.0 고정)
@@ -834,6 +868,8 @@ export function initGameApp() {
 
   function tickComboTimer() {
     if (isGameOver || !isGameActive) return;
+    // 성공/실패 규칙은 유지하고 STAR TIME 동안 콤보 만료만 잠시 보류한다.
+    if (starTime.state.isStarTime) return;
 
     if (combo > 0) {
       comboTimeLeft -= 0.1;
@@ -885,6 +921,7 @@ export function initGameApp() {
       isDragging = false;
       clearInterval(gameTimer);
       resetFeverState();
+      resetStarTime();
 
     dragController.clear();
     resetChainFeedback();
@@ -1168,15 +1205,32 @@ export function initGameApp() {
       // 콤보 제한 시간 5초 완전 충전 리셋
       comboTimeLeft = 5.0;
 
+      // 선택 수열만 검사: 크로스·풀보드의 부수 제거는 별을 추가 지급하지 않는다.
+      // 다섯 번째 별을 획득한 수열부터 즉시 ×2를 적용한다.
+      const starEvent = starTime.collect(
+        selectedTiles.some(t => boardData[t.row][t.col]?.isStar), performance.now()
+      );
+      // 리필 애니메이션 전에 같은 타일을 다시 입력해도 이미 얻은 별은 중복 지급하지 않는다.
+      selectedTiles.forEach(t => { boardData[t.row][t.col].isStar = false; });
+      updateStarTime();
+      const starMultiplier = starTime.state.isStarTime ? STAR_SCORE_MULTIPLIER : 1;
+      if (starEvent?.type === 'started') starTimeView.notify('STAR TIME!');
+      else if (starEvent?.type === 'extended') {
+        const added = Number(starEvent.added.toFixed(1));
+        starTimeView.notify(added > 0 ? `+${added}s ⭐` : '최대 시간 ⭐');
+      } else if (starEvent?.type === 'collected') starTimeView.notify('+1 ⭐');
+      else if (starTime.state.isStarTime && len >= 5) starTimeView.notify(`${len}연쇄! ⭐`);
+
       const feverMultiplier = fever.active ? fever.scoreMultiplier : 1;
       const lastSpurtMultiplier = isLastSpurtActive() ? LAST_SPURT_SCORE_MULTIPLIER : 1;
-      const totalMultiplier = feverMultiplier * lastSpurtMultiplier;
+      const totalMultiplier = feverMultiplier * lastSpurtMultiplier * starMultiplier;
       const points = computePoints({
         len,
         combo,
         repeatMultiplier: repeatResult.scoreMultiplier,
         feverMultiplier,
-        lastSpurtMultiplier
+        lastSpurtMultiplier,
+        starMultiplier
       });
 
       // ── 6·7연쇄 티어: 크로스팡(십자 추가 제거) / 풀보드팡(전판 재생성) ──
@@ -1207,7 +1261,8 @@ export function initGameApp() {
         pangExtraCells = candidateCells.filter(cell =>
           !selectedKeys.has(`${cell.row}:${cell.col}`)
           && boardData[cell.row][cell.col]?.type !== 'fever');
-        pangExtraPoints = Math.round(pangExtraCells.length * CROSS_PANG_POINTS_PER_TILE * totalMultiplier);
+        pangExtraPoints = Math.round(Math.round(pangExtraCells.length * CROSS_PANG_POINTS_PER_TILE
+          * feverMultiplier * lastSpurtMultiplier) * starMultiplier);
 
         if (chainTier === 'cross') {
           crossPangCount++;

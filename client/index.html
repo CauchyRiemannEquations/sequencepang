@@ -199,6 +199,13 @@
         </div>
       </div>
 
+      <div class="star-panel" id="star-panel">
+        <strong class="star-label">STAR</strong>
+        <span class="star-gauge" role="img" aria-label="별 0 / 5"></span>
+        <span class="star-timer" role="timer" aria-label="STAR TIME 남은 시간" hidden></span>
+        <span class="star-feedback" role="status" aria-live="polite"></span>
+      </div>
+
       <!-- 타이머 영역 -->
       <div class="timer-container" id="timer-container">
         <div class="timer-bar" id="timer-bar"></div>
@@ -214,6 +221,7 @@
 
       <!-- 게임 보드 -->
       <div class="board-wrapper" id="board-wrapper">
+        <div class="star-ambience" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i><i>✧</i></div>
         <div class="fever-notice" id="fever-notice">피버!</div>
         <div class="board" id="board"></div>
         <svg class="drag-svg">

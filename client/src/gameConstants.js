@@ -4,6 +4,14 @@ export const MIN_SEQUENCE_LENGTH = 3;
 export const TILE_NUMBER_MIN = 1;
 export const TILE_NUMBER_MAX = 9;
 
+// STAR TIME: 초 단위. 36칸에서 평균 2.88개, 3칸 수열에 약 22% 확률로 별 포함.
+export const STAR_SPAWN_RATE = 0.08;
+export const STAR_REQUIRED = 5;
+export const STAR_TIME_DURATION = 8;
+export const STAR_TIME_EXTENSION = 1;
+export const STAR_TIME_MAX = 15;
+export const STAR_SCORE_MULTIPLIER = 2;
+
 export const MAX_ROOM_PLAYERS = 30;
 
 export const FEVER_TRIGGER_MIN_LENGTH = 4;

@@ -7,6 +7,7 @@ import './rankingResetNotice.css';
 import './howToPlay.css';
 import './sequelLaunchNotice.css';
 import './sequelSticker.css';
+import './starTime.css';
 import { initGameApp } from './gameEngine.js';
 import { initHomeRankingUI } from './rankingHome.js';
 import { initUpdateNotesUI } from './updateNotes.js';

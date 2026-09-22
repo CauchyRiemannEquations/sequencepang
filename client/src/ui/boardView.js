@@ -12,6 +12,9 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
     tileElement.classList.toggle('fever-tile', tileData?.type === 'fever');
     tileElement.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
     tileElement.classList.toggle('big-number-tile', tileData?.type === 'normal' && isBigNumberTile(tileData));
+    tileElement.classList.toggle('star-number', !!tileData?.isStar);
+    tileElement.dataset.isStar = String(!!tileData?.isStar);
+    tileElement.setAttribute('aria-label', `${tileData?.isStar ? '별 숫자 ' : ''}${getDisplayValue(tileData)}`);
     tileElement.dataset.tileType = tileData?.type || 'normal';
     tileElement.dataset.baseValue = tileData?.baseValue ?? '';
     tileElement.dataset.feverTier = tileData?.feverTier ?? '';
@@ -84,6 +87,9 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
             tile.style.animationDelay = '';
           }, 380 + newIdx * 30);
           newIdx++;
+        } else {
+          // 같은 숫자/타입이 내려와도 별 메타데이터는 반드시 갱신한다.
+          updateTileElement(tile, tileData);
         }
         tile.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid', 'pang-burst');
         tile.classList.toggle('fever-tile', tileData?.type === 'fever');

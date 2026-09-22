@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sequencepang-v19';
+const CACHE_NAME = 'sequencepang-v20';
 
 const CORE_ASSETS = [
   '/manifest.webmanifest',

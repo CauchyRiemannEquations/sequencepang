@@ -1,0 +1,74 @@
+/* 기존 멜론 색감과 숫자 크기를 유지하는 작은 보너스 레이어. */
+.star-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin: 4px 0 7px;
+  padding: 3px 9px;
+  border: 1px solid #d9e8bc;
+  border-radius: 10px;
+  background: #f7fceeee;
+  color: #365314;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.star-panel [hidden] { display: none; }
+.star-label { font-size: 11px; white-space: nowrap; }
+.star-gauge { display: inline-flex; gap: 3px; color: #758558; font-size: 18px; line-height: 1; }
+.star-gauge .is-filled { color: #a66a00; }
+.star-timer { white-space: nowrap; }
+.star-feedback { margin-left: auto; color: #805400; font-size: 11px; white-space: nowrap; }
+.star-panel.is-active { border-color: #d6ba50; background: #fafce9; }
+.game-container:has(.welcome-overlay:not(.hide)) .star-panel,
+.game-container:has(.lobby-overlay:not(.hide)) .star-panel { display: none; }
+
+.tile.star-number::after {
+  content: '★';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  color: #986200;
+  font: 12px/1 sans-serif;
+  text-shadow: 0 0 4px #ffe9a4;
+  pointer-events: none;
+}
+.tile.star-number { outline: 1px solid #d4b458; outline-offset: -2px; }
+.star-ambience { display: none; position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.star-time-active .star-ambience { display: block; }
+.star-ambience i { position: absolute; color: #b69130; font-style: normal; font-size: 13px; opacity: .4; animation: star-glimmer 2.4s ease-in-out infinite alternate; }
+.star-ambience i:nth-child(1) { left: 1px; top: 24%; }
+.star-ambience i:nth-child(2) { right: 1px; top: 62%; animation-delay: -.8s; }
+.star-ambience i:nth-child(3) { top: -3px; left: 65%; animation-delay: -1.6s; }
+.star-ambience i:nth-child(4) { bottom: -3px; left: 28%; animation-delay: -1.2s; }
+.board-wrapper.star-time-active { outline: 2px solid #d5c878; outline-offset: 2px; }
+/* 선택한 타일 가장자리에 별가루 표시. 포인터 이동마다 DOM을 생성하지 않는다. */
+.star-time-active .tile.selected:not(.fever-tile)::before {
+  content: '✧';
+  position: absolute;
+  left: 3px;
+  bottom: 2px;
+  color: #946600;
+  font: 13px/1 sans-serif;
+  pointer-events: none;
+  animation: star-dust .8s ease-in-out infinite alternate;
+}
+.star-time-active .tile.matched:not(.pang-burst) { animation: star-pop .35s ease-out forwards; }
+@keyframes star-glimmer { to { opacity: .7; transform: translateY(-2px); } }
+@keyframes star-dust { to { opacity: .3; transform: translateY(-3px) scale(.8); } }
+@keyframes star-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.16); opacity: 1; }
+  100% { transform: scale(.45); opacity: 0; }
+}
+@media (max-width: 360px) {
+  .star-panel { gap: 5px; padding-inline: 6px; }
+  .star-label, .star-feedback { font-size: 10px; }
+  .star-timer { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star-ambience i, .star-time-active .tile.selected::before { animation: none; }
+  .star-time-active .tile.matched:not(.pang-burst) { animation: none; opacity: .45; }
+}
