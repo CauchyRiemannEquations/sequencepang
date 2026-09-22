@@ -5,7 +5,6 @@ const TILE_FALL_PX = 56; // 타일 한 칸 낙하 거리 (기존 renderGravityRe
 
 export function createBoardView({ boardElement, boardWrapper, size, getDisplayValue, isBigNumberTile }) {
   let tileEls = [];
-  let pangLayer = null;
 
   function updateTileElement(tileElement, tileData) {
     tileElement.textContent = getDisplayValue(tileData);
@@ -98,122 +97,32 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
     }
   }
 
-  // 크로스팡/풀보드팡 필살기 연출.
-  // 타이틀·빔·충격파·입자와 타일 연쇄 폭발을 한 타임라인으로 묶고 전체 소요 시간을 반환한다.
-  function triggerPangBurst(cells, originCell, {
-    tier = 'cross',
-    label = tier === 'full' ? '풀보드팡!' : '크로스팡!',
-    extraPoints = 0,
-    durationMs,
-    staggerMs
-  }) {
+  // 제거 대상만 짧게 축소한다. 중앙 타이틀·화면 전체 플래시·입자는 만들지 않는다.
+  function triggerPangBurst(cells, originCell, { tier = 'cross', durationMs, staggerMs }) {
     clearPangBurst();
-
-    const originTile = getTileEl(originCell.row, originCell.col);
-    if (!originTile) return durationMs;
-    const { x, y } = getTileCenterInWrapper(originTile);
-    const tierClass = tier === 'full' ? 'full' : 'cross';
-
-    boardWrapper.classList.add('pang-cinematic', `pang-cinematic--${tierClass}`);
-    boardWrapper.style.setProperty('--pang-origin-x', `${x}px`);
-    boardWrapper.style.setProperty('--pang-origin-y', `${y}px`);
-    originTile.classList.add('pang-origin');
-
-    const layer = document.createElement('div');
-    layer.className = `pang-cinematic-layer pang-cinematic-layer--${tierClass}`;
-    layer.setAttribute('aria-hidden', 'true');
-
-    const flash = document.createElement('span');
-    flash.className = 'pang-screen-flash';
-    const shockwave = document.createElement('span');
-    shockwave.className = 'pang-shockwave';
-    const core = document.createElement('span');
-    core.className = 'pang-energy-core';
-    const horizontalRay = document.createElement('span');
-    horizontalRay.className = 'pang-ray pang-ray--horizontal';
-    const verticalRay = document.createElement('span');
-    verticalRay.className = 'pang-ray pang-ray--vertical';
-
-    const titleWrap = document.createElement('span');
-    titleWrap.className = 'pang-cinematic-copy';
-    const title = document.createElement('strong');
-    title.className = 'pang-cinematic-title';
-    title.textContent = label;
-    const subtitle = document.createElement('small');
-    subtitle.className = 'pang-cinematic-subtitle';
-    subtitle.textContent = extraPoints > 0
-      ? `보너스 +${extraPoints.toLocaleString('ko-KR')}`
-      : (tierClass === 'full' ? '보드 전체 재생성' : '가로 · 세로 싹쓸이');
-    titleWrap.append(title, subtitle);
-
-    const particles = document.createElement('span');
-    particles.className = 'pang-particles';
-    const particleCount = tierClass === 'full' ? 32 : 22;
-    for (let i = 0; i < particleCount; i++) {
-      const particle = document.createElement('i');
-      const angle = (Math.PI * 2 * i) / particleCount;
-      const distance = (tierClass === 'full' ? 150 : 105) + (i % 4) * 18;
-      particle.style.setProperty('--particle-x', `${Math.cos(angle) * distance}px`);
-      particle.style.setProperty('--particle-y', `${Math.sin(angle) * distance}px`);
-      particle.style.setProperty('--particle-delay', `${(i % 7) * 18}ms`);
-      particle.style.setProperty('--particle-size', `${3 + (i % 4)}px`);
-      particles.appendChild(particle);
-    }
-
-    layer.append(flash, shockwave, core, horizontalRay, verticalRay, particles, titleWrap);
-    boardWrapper.appendChild(layer);
-    pangLayer = layer;
-
+    boardWrapper.classList.add('pang-cinematic');
     let maxDelay = 0;
     cells.forEach(cell => {
       const tile = getTileEl(cell.row, cell.col);
       if (!tile) return;
-      const rowDelta = cell.row - originCell.row;
-      const colDelta = cell.col - originCell.col;
-      const dist = Math.max(Math.abs(rowDelta), Math.abs(colDelta));
-      const delay = dist * staggerMs;
+      const distance = Math.max(Math.abs(cell.row - originCell.row), Math.abs(cell.col - originCell.col));
+      const delay = distance * staggerMs;
       maxDelay = Math.max(maxDelay, delay);
-      tile.style.setProperty('--pang-delay', `${delay}ms`);
-      const directionScale = tierClass === 'full' ? 22 : 16;
-      const rotation = ((cell.row * 7 + cell.col * 11) % 2 ? 1 : -1) * (10 + dist * 7);
-      tile.style.setProperty('--pang-dx', `${colDelta * 8}px`);
-      tile.style.setProperty('--pang-dy', `${rowDelta * 8}px`);
-      tile.style.setProperty('--pang-dx-far', `${colDelta * directionScale}px`);
-      tile.style.setProperty('--pang-dy-far', `${rowDelta * directionScale}px`);
-      tile.style.setProperty('--pang-rot', `${rotation}deg`);
-      tile.style.setProperty('--pang-rot-far', `${rotation * 2}deg`);
-      tile.classList.add('pang-burst', `pang-${tierClass}-target`);
+      tile.style.setProperty('--pang-delay', delay + 'ms');
+      tile.style.setProperty('--pang-duration', durationMs + 'ms');
+      tile.classList.add('pang-burst', tier === 'full' ? 'pang-full-target' : 'pang-cross-target');
     });
-
-    requestAnimationFrame(() => layer.classList.add('show'));
-    // 마지막 타일의 폭발이 끝나는 즉시 리필한다. 이전의 추가 여유 시간은
-    // 모든 타일이 투명해진 뒤 빈 보드만 남아 보이는 구간을 만들었다.
-    const tileStartDelayMs = tierClass === 'full' ? 180 : 0;
-    const tileDurationMs = tierClass === 'full' ? durationMs + 60 : durationMs;
-    return tileStartDelayMs + tileDurationMs + maxDelay;
+    return durationMs + maxDelay;
   }
 
-  // 연출 잔여 상태 정리 (collapse 직전 호출 — 낙하 애니메이션과 충돌 방지)
   function clearPangBurst() {
-    pangLayer?.remove();
-    pangLayer = null;
-    boardWrapper.classList.remove('pang-cinematic', 'pang-cinematic--cross', 'pang-cinematic--full');
-    boardWrapper.style.removeProperty('--pang-origin-x');
-    boardWrapper.style.removeProperty('--pang-origin-y');
-
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size; c++) {
-        const tile = tileEls[r]?.[c];
-        if (!tile) continue;
-        tile.classList.remove('pang-burst', 'pang-cross-target', 'pang-full-target', 'pang-origin');
+    boardWrapper.classList.remove('pang-cinematic');
+    for (const row of tileEls) {
+      for (const tile of row) {
+        tile.classList.remove('pang-burst', 'pang-cross-target', 'pang-full-target');
         tile.style.animationDelay = '';
         tile.style.removeProperty('--pang-delay');
-        tile.style.removeProperty('--pang-dx');
-        tile.style.removeProperty('--pang-dy');
-        tile.style.removeProperty('--pang-dx-far');
-        tile.style.removeProperty('--pang-dy-far');
-        tile.style.removeProperty('--pang-rot');
-        tile.style.removeProperty('--pang-rot-far');
+        tile.style.removeProperty('--pang-duration');
       }
     }
   }

@@ -2,12 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createBoardView } from '../../client/src/ui/boardView.js';
 import { createStarTimeView } from '../../client/src/ui/starTimeView.js';
+import { PANG_BURST_MS, PANG_BURST_STAGGER_MS, PANG_BURST_LEAD_IN_MS } from '../../client/src/gameConstants.js';
 
 function element() {
   const classes = new Set();
   const attributes = new Map();
   return {
-    dataset: {}, style: {}, children: [], textContent: '', hidden: false,
+    dataset: {}, style: { setProperty() {}, removeProperty() {} }, children: [], textContent: '', hidden: false,
     classList: {
       contains: name => classes.has(name),
       add: (...names) => names.forEach(name => classes.add(name)),
@@ -74,4 +75,28 @@ test('STAR 종료·게임 리셋은 효과와 알림 타이머를 정리하며 H
   assert.equal(parts['.star-feedback'].textContent, '새 게임');
   t.mock.timers.tick(1000);
   assert.equal(parts['.star-feedback'].textContent, '');
+});
+
+test('팡은 중앙 오버레이 없이 대상 타일만 팝하고 410ms 안에 리필 가능하다', t => {
+  const previous = globalThis.document;
+  globalThis.document = { createElement: element };
+  t.after(() => { globalThis.document = previous; });
+  const wrapper = element();
+  const view = createBoardView({
+    boardElement: element(), boardWrapper: wrapper, size: 6,
+    getDisplayValue: tile => tile.baseValue, isBigNumberTile: () => false
+  });
+  view.build(Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => ({ type: 'normal', baseValue: 1 }))));
+  const cells = Array.from({ length: 36 }, (_, i) => ({ row: Math.floor(i / 6), col: i % 6 }));
+  for (const tier of ['cross', 'full']) {
+    const duration = view.triggerPangBurst(cells, { row: 0, col: 0 }, {
+      tier, durationMs: PANG_BURST_MS, staggerMs: PANG_BURST_STAGGER_MS
+    });
+    assert.equal(duration + PANG_BURST_LEAD_IN_MS, 410);
+    assert.equal(wrapper.children.length, 0);
+    assert.equal(view.getTileEl(5, 5).classList.contains('pang-burst'), true);
+    view.clearPangBurst();
+    assert.equal(wrapper.classList.contains('pang-cinematic'), false);
+    assert.equal(view.getTileEl(5, 5).classList.contains('pang-burst'), false);
+  }
 });

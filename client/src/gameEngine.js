@@ -38,6 +38,8 @@ import {
   FULL_PANG_LABEL,
   PANG_BURST_MS,
   PANG_BURST_STAGGER_MS,
+  PANG_BURST_LEAD_IN_MS,
+  GAME_NOTICE_DURATION_MS,
   TIMEOUT_GRACE_MS,
   RECENT_SEQUENCE_LIMIT,
   REPEATED_PATH_SCORE_MULTIPLIER,
@@ -222,7 +224,6 @@ export function initGameApp() {
   const feverPanel = document.getElementById('fever-panel');
   const feverTimerFill = document.getElementById('fever-timer-fill');
   const feverTimerText = document.getElementById('fever-timer-text');
-  const feverNotice = document.getElementById('fever-notice');
 
   const scoreVal = document.getElementById('score-val');
   const bestScoreVal = document.getElementById('best-score-val');
@@ -372,7 +373,6 @@ export function initGameApp() {
     boardWrapper.classList.remove('fever-active', 'super-fever-active', 'fever-rollback');
     gameContainer.classList.remove('fever-active', 'super-fever-active');
     feverPanel.classList.remove('super-fever');
-    feverNotice.classList.remove('show');
     updateFeverUI();
   }
 
@@ -443,23 +443,27 @@ export function initGameApp() {
     });
   }
 
-  // 플레이를 가리지 않는 정보성 알림: 보드 상단의 얇은 토스트
-  // (중앙 대형 공지는 보드를 가려 유저 불만이 있었음 — 피버 상태 변화 전용으로만 사용)
+  // 알림은 보드 밖 고정 상태줄에서만 표시한다. 새 알림은 이전 알림을 대체한다.
   const infoToast = document.createElement('div');
   infoToast.className = 'game-toast';
-  boardWrapper.appendChild(infoToast);
+  infoToast.setAttribute('role', 'status');
+  infoToast.setAttribute('aria-live', 'polite');
+  document.getElementById('game-status-slot').appendChild(infoToast);
   let infoToastTimer = null;
 
-  function showInfoToast(message, variant = '', durationMs = 1500) {
+  function clearInfoToast() {
+    clearTimeout(infoToastTimer);
+    infoToastTimer = null;
+    infoToast.classList.remove('show');
+    infoToast.textContent = '';
+  }
+
+  function showInfoToast(message, variant = '', durationMs = GAME_NOTICE_DURATION_MS) {
+    clearInfoToast();
     infoToast.textContent = message;
-    infoToast.className = `game-toast${variant ? ` game-toast--${variant}` : ''}`;
-    void infoToast.offsetWidth;
+    infoToast.className = 'game-toast' + (variant ? ' game-toast--' + variant : '');
     infoToast.classList.add('show');
-    if (infoToastTimer) clearTimeout(infoToastTimer);
-    infoToastTimer = setTimeout(() => {
-      infoToast.classList.remove('show');
-      infoToastTimer = null;
-    }, durationMs);
+    infoToastTimer = setTimeout(clearInfoToast, durationMs);
   }
 
   // ── 드래그 중 실시간 판정선 ──────────────────────────────
@@ -570,10 +574,7 @@ export function initGameApp() {
   }
 
   function showFeverNotice(message) {
-    feverNotice.textContent = message;
-    feverNotice.classList.remove('show');
-    void feverNotice.offsetWidth;
-    feverNotice.classList.add('show');
+    showInfoToast(message, 'fever');
   }
 
   function startFeverMode(type, amount, label, tier = 'normal') {
@@ -593,9 +594,7 @@ export function initGameApp() {
     fever.scoreMultiplier = tier === 'super' ? SUPER_FEVER_SCORE_MULTIPLIER : FEVER_SCORE_MULTIPLIER;
     fever.durationMs = tier === 'super' ? SUPER_FEVER_DURATION_MS : getNormalFeverDurationMs();
     fever.timeLeftMs = fever.durationMs;
-    if (tier === 'super') {
-      showFeverNotice(`슈퍼피버 ${label}!`);
-    }
+    showFeverNotice(`${tier === 'super' ? '슈퍼피버' : '피버'} ${label}!`);
     // 빅넘버는 리필만 기다리면 조합할 재료가 늦게 모이므로 발동 즉시 일부 타일을 교체
     if (type === 'bigNumber') {
       seedBigNumberTiles();
@@ -659,7 +658,6 @@ export function initGameApp() {
 
     fever.rollbackTimer = setTimeout(() => {
       boardWrapper.classList.remove('fever-rollback');
-      feverNotice.classList.remove('show');
       fever.rollbackTimer = null;
     }, FEVER_ROLLBACK_MS);
   }
@@ -748,6 +746,7 @@ export function initGameApp() {
     resetFeverState();
 
     resetStarTime();
+    clearInfoToast();
 
     // 멀티플레이 모드일 때 서버에 시작 점수(0점) 전송하여 대시보드 리셋
     if (isMultiplayMode && socket && socket.connected) {
@@ -900,7 +899,7 @@ export function initGameApp() {
       && timeLeft > 0
       && timeLeft <= LAST_SPURT_THRESHOLD_S) {
       lastSpurtEngaged = true;
-      showInfoToast('라스트팡! 점수 ×2', 'last', 2000);
+      showInfoToast('라스트팡! 점수 ×2', 'last');
     }
 
     const lastSpurt = isLastSpurtActive();
@@ -922,6 +921,7 @@ export function initGameApp() {
       clearInterval(gameTimer);
       resetFeverState();
       resetStarTime();
+      clearInfoToast();
 
     dragController.clear();
     resetChainFeedback();
@@ -1266,11 +1266,11 @@ export function initGameApp() {
 
         if (chainTier === 'cross') {
           crossPangCount++;
-          showInfoToast(CROSS_PANG_LABEL, 'cross');
+          showInfoToast(`${CROSS_PANG_LABEL} +${pangExtraPoints.toLocaleString('ko-KR')}`, 'cross');
           playSound('crossPang');
         } else {
           fullPangCount++;
-          showInfoToast(FULL_PANG_LABEL, 'full');
+          showInfoToast(`${FULL_PANG_LABEL} +${pangExtraPoints.toLocaleString('ko-KR')}`, 'full');
           playSound('fullPang');
         }
       }
@@ -1325,17 +1325,6 @@ export function initGameApp() {
       boardView.spawnSequenceHint(lastCell.element, chain.kind, chain.ruleLabel);
       maybeQueueFeverSpawn(len, chain.allSame);
 
-      if (pangExtraCells.length > 0) {
-        const pangLabel = chainTier === 'cross' ? '크로스' : '풀보드';
-        setTimeout(() => {
-          boardView.spawnFloatingScore(
-            lastCell.element,
-            `+${pangExtraPoints.toLocaleString('ko-KR')} · ${pangLabel}`,
-            { fever: true }
-          );
-        }, 150);
-      }
-
       matchedTiles.forEach(t => t.element.classList.add('matched'));
       if (chainTier === 'cross' || chainTier === 'full') {
         // 팡 연출·보드 리필 사이에 이전 선택선이 한 프레임 다시 그려지지 않도록
@@ -1343,20 +1332,17 @@ export function initGameApp() {
         dragController.clear();
         resetChainFeedback();
 
-        // 판정 즉시 타이머를 멈춘 뒤: 충전 → 타이틀 → 십자빔/충격파 → 연쇄 폭발 → 리필
+        // 제거되는 타일만 짧게 팝한 뒤 즉시 리필한다. 중앙 글자/화면 덮개 없음.
         const removedCells = [
           ...matchedTiles.map(t => ({ row: t.row, col: t.col })),
           ...pangExtraCells
         ];
         const origin = { row: lastCell.row, col: lastCell.col };
-        const pangLabel = chainTier === 'cross' ? CROSS_PANG_LABEL : FULL_PANG_LABEL;
 
         setTimeout(() => {
           if (isGameOver) return;
           const cinematicMs = boardView.triggerPangBurst(removedCells, origin, {
             tier: chainTier,
-            label: pangLabel,
-            extraPoints: pangExtraPoints,
             durationMs: PANG_BURST_MS,
             staggerMs: PANG_BURST_STAGGER_MS
           });
@@ -1375,7 +1361,7 @@ export function initGameApp() {
             }
             maybeTriggerHyperPang();
           }, cinematicMs);
-        }, 180);
+        }, PANG_BURST_LEAD_IN_MS);
       } else {
         // 제거 대상을 판정 시점에 스냅샷 — 350ms 안에 새 드래그가 시작돼도
         // 그 타일이 함께 제거되지 않는다
