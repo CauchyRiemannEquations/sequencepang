@@ -74,7 +74,7 @@
 }
 
 
-/* A full-scene bonus state, with all motion outside the number faces. */
+/* Gold accents preserve the game's existing background and tile palette. */
 .star-panel {
   position: relative;
   isolation: isolate;
@@ -108,7 +108,6 @@
 .star-panel.is-active .star-timer { font-size: 13px; font-weight: 900; }
 .star-panel.is-active .star-feedback { color: #59400b; font-size: 10px; }
 .game-container:has(.board-wrapper.star-time-active) {
-  background: radial-gradient(ellipse at 50% 52%, #286356 0%, #123e3b 55%, #072b30 100%);
   border-color: #ffe28d;
   box-shadow: 0 0 38px #ffd75d55, inset 0 0 48px #ffd75d16;
 }
@@ -126,7 +125,6 @@
 }
 .board-wrapper.star-time-active {
   border-color: #ffe889;
-  background: #a6ceac;
   outline: 2px solid #ffcf4b;
   outline-offset: 3px;
   box-shadow: 0 0 0 6px #ffd65722, 0 0 32px #ffd65788, inset 0 0 18px #fff3ac88;

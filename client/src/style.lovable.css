@@ -1076,3 +1076,32 @@ body {
     font-size: 54px;
   }
 }
+
+
+/* 라스트팡: 게임판 바깥의 붉은 링. 별 보너스와 겹쳐도 숫자는 그대로. */
+.game-container.last-spurt .board-wrapper {
+  border-color: #ff865c;
+  box-shadow: 0 0 0 2px #ff623e66, 0 0 28px #ff623e88, inset 0 1px 0 #fff4d8;
+}
+.game-container.last-spurt .board-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border: 2px solid #ff744d;
+  border-radius: 23px;
+  box-shadow: 0 0 15px #ff633d77;
+  pointer-events: none;
+  animation: last-pang-ring 1s ease-in-out infinite alternate;
+}
+/* STAR의 금빛 안쪽 테두리 + 라스트팡의 붉은 바깥 링. */
+.game-container.last-spurt .board-wrapper.star-time-active {
+  border-color: #ffe889;
+  box-shadow: 0 0 0 2px #ffd65744, 0 0 30px #ff623e88, inset 0 0 18px #fff3ac88;
+}
+@keyframes last-pang-ring {
+  from { opacity: .45; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-container.last-spurt .board-wrapper::after { animation: none; opacity: .85; }
+}
