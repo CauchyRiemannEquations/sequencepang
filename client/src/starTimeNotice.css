@@ -1,0 +1,27 @@
+.star-time-notice { border-color: #b5d97888; }
+.star-intro-tile {
+  position: relative; display: grid; place-items: center;
+  width: 70px; height: 70px; margin: 0 auto 16px;
+  border: 2px solid #a7d570; border-radius: 17px;
+  background: #fffbea; color: #173a29; font: 800 40px 'Outfit', sans-serif;
+  box-shadow: 0 5px 0 #4c783c; transform: rotate(-7deg);
+}
+.star-intro-tile span { position: absolute; right: 5px; top: 3px; font: 16px/1 sans-serif; color: #ac7408; }
+#star-time-notice-copy { margin: 0; font-size: 15px; line-height: 1.6; }
+.star-intro-gauge { margin: 15px 0 8px; color: #ffdc76; letter-spacing: 5px; font-size: 24px; }
+.star-intro-rule { margin: 0; font-size: 15px; line-height: 1.65; color: #e4ead2; }
+.star-intro-rule strong, #star-time-notice-copy strong { color: #bef264; }
+.star-intro-benefits { display: flex; gap: 8px; margin-top: 16px; }
+.star-intro-benefits span {
+  flex: 1; padding: 12px 4px; border: 1px solid #b5d97844; border-radius: 12px;
+  background: #ffffff08; color: #c4d7bf; font-size: 10px; line-height: 1.6;
+}
+.star-intro-benefits strong { display: block; color: #ffdc76; font-size: 15px; }
+.star-intro-close { width: 100%; border: 0; font-family: inherit; cursor: pointer; min-height: 44px; }
+@media (max-height: 620px) {
+  .star-intro-tile { width: 48px; height: 48px; margin-bottom: 10px; font-size: 29px; border-radius: 12px; }
+  .star-intro-tile span { font-size: 12px; }
+  .star-intro-gauge { margin-top: 8px; font-size: 21px; }
+  .star-intro-benefits { margin-top: 10px; }
+  .star-intro-benefits span { padding-block: 8px; }
+}

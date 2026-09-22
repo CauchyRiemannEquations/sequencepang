@@ -12,13 +12,13 @@ export function shouldShowLaunchNotice(now, seenDay) {
     && seenDay !== launchNoticeDay(now);
 }
 
-export function initSequelLaunchNotice() {
+export function initSequelLaunchNotice({ onComplete = () => {} } = {}) {
   const home = document.getElementById('welcome-overlay');
   if (!home || home.classList.contains('hide') || document.getElementById('sequel-launch-notice')) return;
   const now = Date.now();
   let seenDay;
   try { seenDay = localStorage.getItem(SEEN_KEY); } catch { /* Storage can be disabled. */ }
-  if (!shouldShowLaunchNotice(now, seenDay)) return;
+  if (!shouldShowLaunchNotice(now, seenDay)) { onComplete(); return; }
 
   const dialog = document.createElement('dialog');
   dialog.id = 'sequel-launch-notice';
@@ -36,7 +36,7 @@ export function initSequelLaunchNotice() {
     <p class="sequel-launch-footnote">이 안내는 하루에 한 번만 보여요.</p>
   `;
   document.body.appendChild(dialog);
-  if (typeof dialog.showModal !== 'function') { dialog.remove(); return; }
+  if (typeof dialog.showModal !== 'function') { dialog.remove(); onComplete(); return; }
   dialog.showModal();
   try { localStorage.setItem(SEEN_KEY, launchNoticeDay(now)); } catch { /* The game remains usable. */ }
 
@@ -50,5 +50,6 @@ export function initSequelLaunchNotice() {
     clearTimeout(expiryTimer);
     document.removeEventListener('visibilitychange', expire);
     dialog.remove();
+    onComplete();
   }, { once: true });
 }

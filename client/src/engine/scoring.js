@@ -10,10 +10,12 @@ export function computePoints({
   combo,
   repeatMultiplier = 1,
   feverMultiplier = 1,
-  lastSpurtMultiplier = 1
+  lastSpurtMultiplier = 1,
+  starMultiplier = 1
 }) {
   const basePoints = Math.floor(len * 100 + getComboBonus(combo));
-  return Math.round(basePoints * repeatMultiplier * feverMultiplier * lastSpurtMultiplier);
+  const points = Math.round(basePoints * repeatMultiplier * feverMultiplier * lastSpurtMultiplier);
+  return Math.round(points * starMultiplier);
 }
 
 // 정방향/역방향을 같은 경로로 취급하는 정규화 서명

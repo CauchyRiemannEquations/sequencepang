@@ -3,7 +3,7 @@
   "sourceFormula": {
     "comboBonus": "combo > 1 ? (combo - 1) * 80 * (1 + combo * 0.15) : 0",
     "basePoints": "floor(len * 100 + comboBonus)",
-    "points": "round(basePoints * repeatMultiplier * feverMultiplier * lastSpurtMultiplier)",
+    "points": "round(round(basePoints * repeatMultiplier * feverMultiplier * lastSpurtMultiplier) * starMultiplier)",
     "timeBonus": "(GP: ratio>=2 ? 1.2 : 0.9 | AP: |d|>=4 ? 1.2 : |d|>=2 ? 1.0 : 0.7) + 0.5, × repeatTimeMultiplier"
   },
   "scoreCases": [
@@ -20,7 +20,10 @@
     { "name": "len3 combo1 path repeat + fever x1.5", "len": 3, "combo": 1, "repeatMultiplier": 0.2, "feverMultiplier": 1.5, "expected": 90 },
     { "name": "len4 combo2 pattern repeat x0.5", "len": 4, "combo": 2, "repeatMultiplier": 0.5, "expected": 252 },
     { "name": "len5 combo3 fever x2 lastSpurt x2", "len": 5, "combo": 3, "feverMultiplier": 2, "lastSpurtMultiplier": 2, "expected": 2928 },
-    { "name": "len3 combo15", "len": 3, "combo": 15, "expected": 3940 }
+    { "name": "len3 combo15", "len": 3, "combo": 15, "expected": 3940 },
+    { "name": "STAR len3 combo1", "len": 3, "combo": 1, "starMultiplier": 2, "expected": 600 },
+    { "name": "STAR + super fever + last spurt", "len": 5, "combo": 3, "feverMultiplier": 2, "lastSpurtMultiplier": 2, "starMultiplier": 2, "expected": 5856 },
+    { "name": "STAR preserves existing repeat rounding", "len": 3, "combo": 3, "feverMultiplier": 1.5, "repeatMultiplier": 0.2, "starMultiplier": 2, "expected": 320 }
   ],
   "timeBonusCases": [
     { "name": "GP ratio 2", "kind": "GP", "ratio": 2, "allSame": false, "expected": 1.7 },

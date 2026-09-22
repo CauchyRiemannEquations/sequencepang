@@ -29,7 +29,8 @@ test('computePoints 패리티 벡터', () => {
       combo: vector.combo,
       repeatMultiplier: vector.repeatMultiplier ?? 1,
       feverMultiplier: vector.feverMultiplier ?? 1,
-      lastSpurtMultiplier: vector.lastSpurtMultiplier ?? 1
+      lastSpurtMultiplier: vector.lastSpurtMultiplier ?? 1,
+      starMultiplier: vector.starMultiplier ?? 1
     });
     assert.equal(points, vector.expected, vector.name);
   }
