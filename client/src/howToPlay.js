@@ -1,4 +1,7 @@
-import { LAST_SPURT_LAUNCH_AT_MS } from './gameConstants.js';
+import {
+  LAST_SPURT_LAUNCH_AT_MS, STAR_REQUIRED, STAR_TIME_DURATION,
+  STAR_TIME_EXTENSION, STAR_TIME_MAX, STAR_SCORE_MULTIPLIER
+} from './gameConstants.js';
 
 export function initHowToPlayUI() {
   const welcomeCard = document.querySelector('.welcome-card');
@@ -100,6 +103,26 @@ export function initHowToPlayUI() {
       <p class="htp-caption">남은 시간이 처음 <strong>5초</strong> 아래로 내려가면 발동 — 이후 게임이 끝날 때까지 모든 점수 <strong>×2</strong>! 피버 배율과 중첩</p>
     </section>`;
 
+  const demoStarTime = `
+    <section class="htp-section">
+      <div class="htp-stage htp-demo-star" role="img" aria-label="별 숫자 4가 들어간 2, 4, 6 수열을 이어 별 다섯 번째를 모으면 STAR TIME 배너와 금빛 게임판이 나타나는 시범">
+        <div class="htp-star-hud" aria-hidden="true">
+          <span class="htp-star-before"><strong>STAR</strong><span class="htp-star-gauge">${'★'.repeat(STAR_REQUIRED - 1)}<span>☆</span></span></span>
+          <span class="htp-star-after"><strong>★ STAR TIME</strong><span>${STAR_TIME_DURATION}.0s · 점수 ×${STAR_SCORE_MULTIPLIER}</span></span>
+        </div>
+        <div class="htp-star-board" aria-hidden="true">
+          <span>7</span><span>3</span><span>9</span>
+          <span class="htp-star-chain">2</span><span class="htp-star-chain htp-star-number">4</span><span class="htp-star-chain">6</span>
+          <span>5</span><span>1</span><span>8</span>
+          <i class="htp-star-connection"></i>
+        </div>
+        <span class="htp-star-spark" aria-hidden="true">✦</span>
+        <span class="htp-star-state" aria-hidden="true">별 숫자를 포함해 연결!</span>
+      </div>
+      <p class="htp-caption">★가 붙은 숫자를 수열에 넣어 지우면 별을 모아요. <strong>별 ${STAR_REQUIRED}개</strong>를 모으면 <strong>${STAR_TIME_DURATION}초간 스타타임</strong>! 다섯 번째 별을 얻은 수열부터 점수가 <strong>×${STAR_SCORE_MULTIPLIER}</strong>가 돼요.</p>
+      <p class="htp-caption">스타타임 동안 <strong>콤보 시간이 멈추고</strong>, 별 숫자를 또 지우면 <strong>+${STAR_TIME_EXTENSION}초</strong>씩 최대 <strong>${STAR_TIME_MAX}초</strong>까지 연장돼요. 한 수열에 별이 여럿 있어도 한 번에 별 하나만 모아요.</p>
+    </section>`;
+
   const textRules = `
     <ul class="how-to-play-list">
       <li class="how-to-play-item"><span class="how-to-play-text">수열이 틀리면 시간 <strong>-3초</strong></span></li>
@@ -116,14 +139,17 @@ export function initHowToPlayUI() {
         <h2 id="how-to-play-title">플레이 방법</h2>
         <button type="button" class="how-to-play-close" aria-label="플레이 방법 닫기">✕</button>
       </header>
+      <div class="how-to-play-tabs" role="tablist" aria-label="플레이 방법 종류">
+        <button type="button" role="tab" id="htp-tab-basic" aria-controls="htp-panel-basic" aria-selected="true" tabindex="0">기본</button>
+        <button type="button" role="tab" id="htp-tab-fever" aria-controls="htp-panel-fever" aria-selected="false" tabindex="-1">피버</button>
+        <button type="button" role="tab" id="htp-tab-pang" aria-controls="htp-panel-pang" aria-selected="false" tabindex="-1">각종 팡</button>
+        <button type="button" role="tab" id="htp-tab-star" aria-controls="htp-panel-star" aria-selected="false" tabindex="-1">스타타임</button>
+      </div>
       <div class="how-to-play-scroll">
-        ${demoBasic}
-        ${demoFever}
-        ${demoSuper}
-        ${demoPang}
-        ${isLastSpurtLive ? demoLastPang : ''}
-        ${demoHyper}
-        ${textRules}
+        <div role="tabpanel" id="htp-panel-basic" aria-labelledby="htp-tab-basic" tabindex="0">${demoBasic}${textRules}</div>
+        <div role="tabpanel" id="htp-panel-fever" aria-labelledby="htp-tab-fever" tabindex="0" hidden>${demoFever}${demoSuper}</div>
+        <div role="tabpanel" id="htp-panel-pang" aria-labelledby="htp-tab-pang" tabindex="0" hidden>${demoPang}${isLastSpurtLive ? demoLastPang : ''}${demoHyper}</div>
+        <div role="tabpanel" id="htp-panel-star" aria-labelledby="htp-tab-star" tabindex="0" hidden>${demoStarTime}</div>
       </div>
       <button type="button" class="how-to-play-confirm">닫기</button>
     </section>
@@ -134,7 +160,34 @@ export function initHowToPlayUI() {
 
   const closeButton = overlay.querySelector('.how-to-play-close');
   const confirmButton = overlay.querySelector('.how-to-play-confirm');
+  const tabs = [...overlay.querySelectorAll('[role="tab"]')];
+  const scrollArea = overlay.querySelector('.how-to-play-scroll');
   let returnFocus = null;
+
+  function selectTab(tab, focus = false) {
+    for (const item of tabs) {
+      const selected = item === tab;
+      item.setAttribute('aria-selected', String(selected));
+      item.tabIndex = selected ? 0 : -1;
+      overlay.querySelector(`#${item.getAttribute('aria-controls')}`).hidden = !selected;
+    }
+    scrollArea.scrollTop = 0;
+    if (focus) tab.focus();
+  }
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => selectTab(tab));
+    tab.addEventListener('keydown', event => {
+      let next;
+      if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      selectTab(tabs[next], true);
+    });
+  });
 
   function closeModal() {
     overlay.classList.remove('is-open');
@@ -144,6 +197,7 @@ export function initHowToPlayUI() {
 
   function openModal() {
     returnFocus = document.activeElement;
+    selectTab(tabs[0]);
     overlay.hidden = false;
     overlay.classList.add('is-open');
     closeButton.focus();

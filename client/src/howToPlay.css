@@ -67,6 +67,39 @@
   color: #d8ff6a;
 }
 
+.how-to-play-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #06291f;
+}
+
+.how-to-play-tabs button {
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px 1px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #c9dcc1;
+  font: 700 clamp(10px, 3vw, 12px) 'Jua', 'Outfit', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.how-to-play-tabs button[aria-selected="true"] {
+  background: #d8ff6a;
+  color: #082d23;
+}
+
+.how-to-play-tabs button:focus-visible {
+  outline: 2px solid #fffbea;
+  outline-offset: 2px;
+}
+
 .how-to-play-close {
   border: 0;
   background: transparent;
@@ -128,10 +161,16 @@
 .how-to-play-scroll {
   overflow-y: auto;
   overscroll-behavior: contain;
-  display: grid;
-  gap: 12px;
+  min-height: 0;
   margin-bottom: 14px;
 }
+
+.how-to-play-scroll [role="tabpanel"] {
+  display: grid;
+  gap: 12px;
+}
+
+.how-to-play-scroll [role="tabpanel"][hidden] { display: none; }
 
 .how-to-play-list {
   overflow: visible;
@@ -710,6 +749,163 @@
   50% { transform: scale(1.06); }
 }
 
+/* 스타타임: 실제 HUD·별 타일·금빛 보드를 축소한 시범 */
+.htp-demo-star {
+  height: 205px;
+  background: #cbeeb0;
+  isolation: isolate;
+}
+
+.htp-demo-star::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 65%, #ffdc5955, transparent 70%);
+  opacity: 0;
+  animation: htpStarGlow 7s infinite;
+  pointer-events: none;
+}
+
+.htp-star-hud {
+  position: absolute;
+  inset: 9px 10px auto;
+  height: 30px;
+  border: 1px solid #d9e8bc;
+  border-radius: 9px;
+  background: #f7fcee;
+  color: #365314;
+  font: 800 12px 'Outfit', 'Jua', sans-serif;
+  overflow: hidden;
+}
+
+.htp-star-before, .htp-star-after {
+  position: absolute;
+  inset: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.htp-star-before { animation: htpStarBefore 7s infinite; }
+.htp-star-gauge { color: #a66a00; font-size: 17px; letter-spacing: 2px; }
+.htp-star-gauge span { animation: htpStarFill 7s infinite; }
+.htp-star-after {
+  justify-content: space-between;
+  color: #302509;
+  opacity: 0;
+  animation: htpStarAfter 7s infinite;
+}
+.htp-star-after strong { font: 900 13px 'Jua', sans-serif; }
+.htp-star-after span { font-size: 11px; }
+.htp-star-hud { animation: htpStarHud 7s infinite; }
+
+.htp-star-board {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(3, 36px);
+  gap: 3px;
+  padding: 5px;
+  border: 2px solid #5b9d40;
+  border-radius: 10px;
+  background: #8bc776;
+  animation: htpStarBoard 7s infinite;
+}
+
+.htp-star-board > span {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #c8d2b8;
+  border-radius: 6px;
+  background: #fffbea;
+  color: #14532d;
+  font: 800 17px 'Outfit', sans-serif;
+}
+
+.htp-star-board .htp-star-chain { animation: htpStarChain 7s infinite; }
+.htp-star-board .htp-star-number { outline: 1px solid #d4b458; outline-offset: -2px; }
+.htp-star-number::after {
+  content: '★';
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  color: #986200;
+  font: 9px/1 sans-serif;
+}
+
+.htp-star-connection {
+  position: absolute;
+  z-index: 1;
+  top: 63px;
+  left: 23px;
+  width: 72px;
+  height: 4px;
+  border-radius: 4px;
+  background: #70b629;
+  transform-origin: left;
+  animation: htpStarLine 7s infinite;
+  pointer-events: none;
+}
+
+.htp-star-spark {
+  position: absolute;
+  top: 88px;
+  left: calc(50% + 6px);
+  z-index: 2;
+  color: #ffde52;
+  font-size: 25px;
+  text-shadow: 0 0 9px #efb316;
+  opacity: 0;
+  animation: htpStarSpark 7s infinite;
+}
+
+.htp-star-state {
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  width: 100%;
+  color: #365314;
+  font: 800 11px 'Jua', sans-serif;
+  text-align: center;
+}
+
+@keyframes htpStarLine {
+  0%, 10% { transform: scaleX(0); opacity: 0; }
+  20% { transform: scaleX(.5); opacity: 1; }
+  35%, 42% { transform: scaleX(1); opacity: 1; }
+  50%, 100% { transform: scaleX(1); opacity: 0; }
+}
+@keyframes htpStarChain {
+  0%, 10%, 51%, 100% { background: #fffbea; }
+  20%, 42% { background: #d8ff6a; }
+}
+@keyframes htpStarFill {
+  0%, 38% { color: #758558; }
+  42%, 100% { color: #a66a00; }
+}
+@keyframes htpStarBefore { 0%, 40% { opacity: 1; } 47%, 92% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes htpStarAfter { 0%, 40% { opacity: 0; } 47%, 92% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes htpStarHud {
+  0%, 40%, 100% { background: #f7fcee; border-color: #d9e8bc; box-shadow: none; }
+  47%, 92% { background: #ffda62; border-color: #fff2a6; box-shadow: 0 0 14px #ffd34f88; }
+}
+@keyframes htpStarBoard {
+  0%, 40%, 100% { border-color: #5b9d40; box-shadow: none; }
+  47%, 92% { border-color: #ffe889; box-shadow: 0 0 0 3px #ffcf4b, 0 0 17px #ffd657; }
+}
+@keyframes htpStarGlow { 0%, 40%, 100% { opacity: 0; } 47%, 92% { opacity: 1; } }
+@keyframes htpStarSpark {
+  0%, 37% { opacity: 0; transform: translateY(0) scale(.7); }
+  41% { opacity: 1; transform: translateY(-9px) scale(1.3); }
+  49%, 100% { opacity: 0; transform: translateY(-61px) scale(.8); }
+}
+
 
 /* 모션 최소화 설정 존중 */
 @media (prefers-reduced-motion: reduce) {
@@ -721,4 +917,9 @@
   .htp-finger { opacity: 0.9; }
   .htp-line { opacity: 0.8; }
   .htp-last-badge { opacity: 1; transform: translateX(-50%); }
+  .htp-star-before, .htp-star-connection, .htp-star-spark { display: none; }
+  .htp-star-after, .htp-demo-star::before { opacity: 1; }
+  .htp-demo-star::before { animation: none; }
+  .htp-star-hud { background: #ffda62; border-color: #fff2a6; }
+  .htp-star-board { border-color: #ffe889; box-shadow: 0 0 0 3px #ffcf4b; }
 }
