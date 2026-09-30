@@ -9,6 +9,7 @@ import './sequelLaunchNotice.css';
 import './sequelSticker.css';
 import './starTime.css';
 import './starTimeNotice.css';
+import './pangEffects.css';
 import { initGameApp } from './gameEngine.js';
 import { initHomeRankingUI } from './rankingHome.js';
 import { initUpdateNotesUI } from './updateNotes.js';

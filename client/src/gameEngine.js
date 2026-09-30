@@ -1321,8 +1321,10 @@ export function initGameApp() {
         updateTimerUI();
       }
 
-      spawnFloatingScore(lastCell.element, points, totalMultiplier, repeatResult.type);
-      boardView.spawnSequenceHint(lastCell.element, chain.kind, chain.ruleLabel);
+      if (chainTier !== 'cross' && chainTier !== 'full') {
+        spawnFloatingScore(lastCell.element, points, totalMultiplier, repeatResult.type);
+        boardView.spawnSequenceHint(lastCell.element, chain.kind, chain.ruleLabel);
+      }
       maybeQueueFeverSpawn(len, chain.allSame);
 
       matchedTiles.forEach(t => t.element.classList.add('matched'));
@@ -1332,7 +1334,7 @@ export function initGameApp() {
         dragController.clear();
         resetChainFeedback();
 
-        // 제거되는 타일만 짧게 팝한 뒤 즉시 리필한다. 중앙 글자/화면 덮개 없음.
+        // 선택된 마지막 칸에서 제거 범위를 보여준 뒤 리필한다.
         const removedCells = [
           ...matchedTiles.map(t => ({ row: t.row, col: t.col })),
           ...pangExtraCells
@@ -1351,6 +1353,7 @@ export function initGameApp() {
             if (isGameOver) return;
             eliminateAndRefill(removedCells);
             pangCinematicActive = false;
+            spawnFloatingScore(lastCell.element, points + pangExtraPoints, totalMultiplier, repeatResult.type);
 
             if (gameOverAfterPang) {
               gameOverAfterPang = false;
@@ -1414,7 +1417,7 @@ export function initGameApp() {
 
     spawnQueuedFeverBlock();
     boardView.clearPangBurst();
-    boardView.renderGravityRefill(boardData);
+    boardView.renderGravityRefill(boardData, removedCells);
     clearSelection();
   }
 

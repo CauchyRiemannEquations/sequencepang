@@ -609,18 +609,7 @@
       animation: tilefall 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
-    /* 팡: 대상 타일만 작게 팝. 보드 전체 흔들림이나 화면 덮개 없음. */
-    .board-wrapper.pang-cinematic { pointer-events: none; }
-    .tile.pang-burst {
-      animation: pangQuickPop var(--pang-duration,280ms) ease-out var(--pang-delay,0ms) both !important;
-    }
-    @keyframes pangQuickPop {
-      0% { transform: scale(1); opacity: 1; }
-      30% { transform: scale(1.08); opacity: 1; }
-      100% { transform: scale(.65); opacity: 0; }
-    }
     @media (prefers-reduced-motion: reduce) {
-      .tile.pang-burst { animation: none !important; opacity: .4; }
       .game-status-slot .game-toast { transition: none; }
     }
 

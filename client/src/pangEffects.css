@@ -1,0 +1,132 @@
+/* 팡의 제거 범위를 보드 위에서 직접 보여준다. 상태줄의 점수 알림은 별도로 유지. */
+.board-wrapper.pang-cinematic { pointer-events: none; }
+.board-wrapper.pang-cinematic--cross {
+  box-shadow: 0 0 0 3px #40dbfa, 0 0 30px rgba(34, 211, 238, .8);
+}
+.board-wrapper.pang-cinematic--full {
+  box-shadow: 0 0 0 4px #d8a6ff, 0 0 42px rgba(168, 85, 247, .9);
+}
+
+.tile.pang-cross-target,
+.tile.pang-full-target {
+  position: relative;
+  z-index: 12;
+  color: #fff !important;
+  border: 2px solid #fff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .7) !important;
+}
+.tile.pang-cross-target {
+  background: #0891b2 !important;
+  box-shadow: 0 0 16px #22d3ee, inset 0 0 12px rgba(255, 255, 255, .65) !important;
+}
+.tile.pang-full-target {
+  background: #9333ea !important;
+  box-shadow: 0 0 17px #d8b4fe, inset 0 0 12px rgba(255, 255, 255, .6) !important;
+}
+.tile.pang-burst {
+  animation: pangClear var(--pang-duration, 560ms) ease-in var(--pang-delay, 0ms) both !important;
+}
+@keyframes pangClear {
+  0%, 24% { transform: scale(1.05); opacity: 1; filter: brightness(1.2); }
+  55% { transform: scale(1.17); opacity: 1; filter: brightness(1.8); }
+  100% { transform: scale(.12); opacity: 0; filter: brightness(2); }
+}
+
+.pang-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.pang-stage__beam { position: absolute; display: block; }
+.pang-stage__beam--row {
+  left: 0;
+  top: var(--pang-origin-y);
+  width: 100%;
+  height: 15%;
+  transform: translateY(-50%) scaleX(0);
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, .78) 47%, #22d3ee 50%, rgba(255, 255, 255, .78) 53%, transparent);
+  animation: pangRow .52s ease-out forwards;
+}
+.pang-stage__beam--col {
+  top: 0;
+  left: var(--pang-origin-x);
+  height: 100%;
+  width: 15%;
+  transform: translateX(-50%) scaleY(0);
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, .78) 47%, #22d3ee 50%, rgba(255, 255, 255, .78) 53%, transparent);
+  animation: pangCol .52s ease-out forwards;
+}
+@keyframes pangRow {
+  0% { transform: translateY(-50%) scaleX(0); opacity: 1; }
+  65% { transform: translateY(-50%) scaleX(1); opacity: 1; }
+  100% { transform: translateY(-50%) scaleX(1); opacity: 0; }
+}
+@keyframes pangCol {
+  0% { transform: translateX(-50%) scaleY(0); opacity: 1; }
+  65% { transform: translateX(-50%) scaleY(1); opacity: 1; }
+  100% { transform: translateX(-50%) scaleY(1); opacity: 0; }
+}
+.pang-stage__wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--pang-origin-x) var(--pang-origin-y), rgba(255, 255, 255, .95), rgba(192, 132, 252, .72) 45%, rgba(88, 28, 135, .25) 80%);
+  animation: pangWash .7s ease-out forwards;
+}
+@keyframes pangWash {
+  0% { clip-path: circle(0 at var(--pang-origin-x) var(--pang-origin-y)); opacity: 1; }
+  68% { clip-path: circle(150% at var(--pang-origin-x) var(--pang-origin-y)); opacity: .85; }
+  100% { clip-path: circle(150% at var(--pang-origin-x) var(--pang-origin-y)); opacity: 0; }
+}
+.pang-stage__ring {
+  position: absolute;
+  left: var(--pang-origin-x);
+  top: var(--pang-origin-y);
+  width: 50px;
+  height: 50px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 20px #fff;
+  animation: pangRing .56s ease-out forwards;
+}
+.pang-stage--cross .pang-stage__ring { border-color: #67e8f9; box-shadow: 0 0 20px #22d3ee; }
+@keyframes pangRing {
+  0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(5); opacity: 0; }
+}
+.pang-stage__label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  max-width: 90%;
+  padding: 8px 18px;
+  border: 2px solid currentColor;
+  border-radius: 16px;
+  background: rgba(11, 24, 36, .88);
+  color: #cffafe;
+  text-shadow: 0 2px 8px #020617;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+  animation: pangLabel .7s ease-out both;
+}
+.pang-stage--full .pang-stage__label { color: #f3e8ff; background: rgba(40, 13, 68, .9); }
+.pang-stage__label strong { font: 900 clamp(25px, 8vw, 42px)/1.1 'Jua', sans-serif; }
+.pang-stage__label small { font: 800 clamp(13px, 3.7vw, 17px)/1.2 'Jua', sans-serif; }
+@keyframes pangLabel {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); }
+  22%, 70% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile.pang-burst { animation: none !important; opacity: .35; filter: none; }
+  .pang-stage__beam, .pang-stage__wash, .pang-stage__ring { animation: none; opacity: .35; }
+  .pang-stage__label { animation: none; opacity: 1; transform: translate(-50%, -50%); }
+}

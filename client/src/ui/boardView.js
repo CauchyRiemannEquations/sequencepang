@@ -5,6 +5,7 @@ const TILE_FALL_PX = 56; // 타일 한 칸 낙하 거리 (기존 renderGravityRe
 
 export function createBoardView({ boardElement, boardWrapper, size, getDisplayValue, isBigNumberTile }) {
   let tileEls = [];
+  let pangStage = null;
 
   function updateTileElement(tileElement, tileData) {
     tileElement.textContent = getDisplayValue(tileData);
@@ -57,13 +58,15 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
   }
 
   // 중력 리필 후 표시값이 바뀐 타일에 낙하 애니메이션 (기존 로직 유지)
-  function renderGravityRefill(boardData) {
+  function renderGravityRefill(boardData, removedCells = []) {
+    const removedKeys = new Set(removedCells.map(({ row, col }) => `${row}:${col}`));
     for (let c = 0; c < size; c++) {
       let newRowCount = 0;
 
       for (let r = 0; r < size; r++) {
         const tile = tileEls[r][c];
-        if (tile.textContent != getDisplayValue(boardData[r][c]) || tile.dataset.tileType !== boardData[r][c]?.type) newRowCount++;
+        if (tile.textContent != getDisplayValue(boardData[r][c]) || tile.dataset.tileType !== boardData[r][c]?.type
+          || removedKeys.has(`${r}:${c}`)) newRowCount++;
       }
 
       let newIdx = 0;
@@ -72,7 +75,7 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
         const tileData = boardData[r][c];
         const newVal = getDisplayValue(tileData);
 
-        if (tile.textContent != newVal || tile.dataset.tileType !== tileData?.type) {
+        if (tile.textContent != newVal || tile.dataset.tileType !== tileData?.type || removedKeys.has(`${r}:${c}`)) {
           updateTileElement(tile, tileData);
 
           const fallPx = (newRowCount - newIdx) * TILE_FALL_PX;
@@ -97,10 +100,21 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
     }
   }
 
-  // 제거 대상만 짧게 축소한다. 중앙 타이틀·화면 전체 플래시·입자는 만들지 않는다.
+  // 마지막 칸에서 십자가 뻗거나 보드 전체로 충격파가 퍼지는 동안 제거 칸을 강조한다.
   function triggerPangBurst(cells, originCell, { tier = 'cross', durationMs, staggerMs }) {
     clearPangBurst();
-    boardWrapper.classList.add('pang-cinematic');
+    boardWrapper.classList.add('pang-cinematic', `pang-cinematic--${tier}`);
+    const origin = getTileEl(originCell.row, originCell.col);
+    const center = getTileCenterInWrapper(origin);
+    pangStage = document.createElement('div');
+    pangStage.className = `pang-stage pang-stage--${tier}`;
+    pangStage.setAttribute('aria-hidden', 'true');
+    pangStage.style.setProperty('--pang-origin-x', `${center.x}px`);
+    pangStage.style.setProperty('--pang-origin-y', `${center.y}px`);
+    pangStage.innerHTML = tier === 'cross'
+      ? '<span class="pang-stage__beam pang-stage__beam--row"></span><span class="pang-stage__beam pang-stage__beam--col"></span><span class="pang-stage__ring"></span><span class="pang-stage__label"><strong>크로스팡!</strong><small>가로 · 세로 제거</small></span>'
+      : '<span class="pang-stage__wash"></span><span class="pang-stage__ring"></span><span class="pang-stage__label"><strong>풀보드팡!</strong><small>보드 전체 제거</small></span>';
+    boardWrapper.appendChild(pangStage);
     let maxDelay = 0;
     cells.forEach(cell => {
       const tile = getTileEl(cell.row, cell.col);
@@ -110,13 +124,16 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
       maxDelay = Math.max(maxDelay, delay);
       tile.style.setProperty('--pang-delay', delay + 'ms');
       tile.style.setProperty('--pang-duration', durationMs + 'ms');
+      tile.classList.remove('matched', 'last-selected');
       tile.classList.add('pang-burst', tier === 'full' ? 'pang-full-target' : 'pang-cross-target');
     });
     return durationMs + maxDelay;
   }
 
   function clearPangBurst() {
-    boardWrapper.classList.remove('pang-cinematic');
+    pangStage?.remove();
+    pangStage = null;
+    boardWrapper.classList.remove('pang-cinematic', 'pang-cinematic--cross', 'pang-cinematic--full');
     for (const row of tileEls) {
       for (const tile of row) {
         tile.classList.remove('pang-burst', 'pang-cross-target', 'pang-full-target');

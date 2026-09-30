@@ -9,6 +9,7 @@ function element() {
   const attributes = new Map();
   return {
     dataset: {}, style: { setProperty() {}, removeProperty() {} }, children: [], textContent: '', hidden: false,
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 60, height: 60 }),
     classList: {
       contains: name => classes.has(name),
       add: (...names) => names.forEach(name => classes.add(name)),
@@ -17,7 +18,7 @@ function element() {
     },
     setAttribute: (name, value) => attributes.set(name, value),
     getAttribute: name => attributes.get(name),
-    appendChild(child) { this.children.push(child); }
+    appendChild(child) { this.children.push(child); child.remove = () => { this.children = this.children.filter(item => item !== child); }; }
   };
 }
 
@@ -77,7 +78,7 @@ test('STAR 종료·게임 리셋은 효과와 알림 타이머를 정리하며 H
   assert.equal(parts['.star-feedback'].textContent, '');
 });
 
-test('팡은 중앙 오버레이 없이 대상 타일만 팝하고 410ms 안에 리필 가능하다', t => {
+test('팡은 범위별 연출을 보여주고 종료 시 대상과 오버레이를 정리한다', t => {
   const previous = globalThis.document;
   globalThis.document = { createElement: element };
   t.after(() => { globalThis.document = previous; });
@@ -92,11 +93,28 @@ test('팡은 중앙 오버레이 없이 대상 타일만 팝하고 410ms 안에 
     const duration = view.triggerPangBurst(cells, { row: 0, col: 0 }, {
       tier, durationMs: PANG_BURST_MS, staggerMs: PANG_BURST_STAGGER_MS
     });
-    assert.equal(duration + PANG_BURST_LEAD_IN_MS, 410);
-    assert.equal(wrapper.children.length, 0);
+    assert.equal(duration + PANG_BURST_LEAD_IN_MS, 820);
+    assert.equal(wrapper.children.length, 1);
+    assert.equal(wrapper.children[0].className, `pang-stage pang-stage--${tier}`);
+    assert.match(wrapper.children[0].innerHTML, tier === 'cross' ? /가로 · 세로 제거/ : /보드 전체 제거/);
     assert.equal(view.getTileEl(5, 5).classList.contains('pang-burst'), true);
     view.clearPangBurst();
+    assert.equal(wrapper.children.length, 0);
     assert.equal(wrapper.classList.contains('pang-cinematic'), false);
     assert.equal(view.getTileEl(5, 5).classList.contains('pang-burst'), false);
   }
+});
+
+test('팡으로 사라진 칸은 같은 숫자로 리필되어도 낙하한다', t => {
+  const previous = globalThis.document;
+  globalThis.document = { createElement: element };
+  t.after(() => { globalThis.document = previous; });
+  const view = createBoardView({
+    boardElement: element(), boardWrapper: element(), size: 1,
+    getDisplayValue: tile => tile.baseValue, isBigNumberTile: () => false
+  });
+  view.build([[{ type: 'normal', baseValue: 7 }]]);
+  const tile = view.getTileEl(0, 0);
+  view.renderGravityRefill([[{ type: 'normal', baseValue: 7 }]], [{ row: 0, col: 0 }]);
+  assert.equal(tile.classList.contains('falling'), true);
 });
