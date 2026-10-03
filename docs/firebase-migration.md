@@ -166,7 +166,7 @@ Functions의 `functions/.env.<기존-project-id>`에는 다음 공개 설정을 
 | Firestore Rules/Indexes | 전체 브라우저 read/write 거부. `scores`의 시즌/일간/주간 복합 인덱스 3개가 사용 설정됨. CLI 배포 시 기존 인덱스 삭제 없이 호환 여부 확인 |
 | Billing | Blaze 이미 활성화; 결제 변경 없음 |
 | RTDB | 같은 프로젝트에 `sequencepang-default-rtdb` 생성; 싱가포르 `asia-southeast1`; 잠금 모드로 시작 후 검증한 `database.rules.json` 게시 |
-| Anonymous Auth | 실제 제공업체 사용 설정됨. 계정 자동 삭제/Identity Platform 업그레이드 없음 |
+| Anonymous Auth | 실제 제공업체 사용 설정됨. 설정된 원격 Preview에서 익명 로그인 성공과 Console의 테스트 계정 생성을 확인. 계정 자동 삭제/Identity Platform 업그레이드 없음 |
 | Web Config | 기존 앱 ID `1:147997579779:web:7050ee7d014693c3334c36`; 공개 설정 파일에 기록 |
 | Vercel | 기존 `sequencepang` 프로젝트 Preview에 필수 변수 7개 저장. 원래 환경변수 목록에는 레거시 API/소켓 변수가 없었음. Production 변경 없음 |
 | Functions/production 검증 | 아직 미실행; CLI 인증·실제 배포 필요 |
@@ -205,7 +205,9 @@ npm run deploy:firebase -- sequencepang
 
 현재 운영 Vercel deployment: `dpl_9SXX2cFXRBjCPbDCN5ZCNLf6B3AV`, 기준 Git commit `ab418d5`. 작업 브랜치는 `migration/firebase-serverless`이다. 이 기록 이후 새 production 배포가 있다면 실제 이전 deployment를 다시 확인한다.
 
-구현은 [Draft PR #37](https://github.com/CauchyRiemannEquations/sequencepang/pull/37)에 저장되었고 merge conflict가 없다. 검증한 애플리케이션 코드 commit은 `aff3d9bc6ec598157759cfb73a94bb65082fa65d`이다. 이 commit의 Vercel 자동 Preview deployment `dpl_Bgv2X4RFRxEtnpVe1Q1NqJuKXN88`은 `READY`이고 production alias를 바꾸지 않았다. Preview build 성공은 실제 Firebase 연동 성공을 의미하지 않는다. 이후 공개 환경변수를 Preview에 추가했으며 새 build 이후에도 실제 Functions 배포/연동 검증을 마쳐야 한다. Vercel 연결 도구는 보호된 Preview 페이지 접근에 403을 반환했지만 로그인된 브라우저에서 프로젝트 설정에는 접근할 수 있었다.
+구현은 [Draft PR #37](https://github.com/CauchyRiemannEquations/sequencepang/pull/37)에 저장되었고 merge conflict가 없다. 검증한 애플리케이션 코드 commit은 `aff3d9bc6ec598157759cfb73a94bb65082fa65d`이다. 확인된 기존 프로젝트와 공개 설정을 추가한 commit `b0c52f005debd3a133d187fba88a3ec62d73d902`의 Vercel Preview deployment `dpl_ErAmZ9LSqHo45um8NTRCi6pFNBgD`는 환경변수 7개가 적용된 새 build이며 `READY`이다. Production alias는 바꾸지 않았다.
+
+로그인된 브라우저에서 실제 [브랜치 Preview](https://sequencepang-git-migration-firebase-serverless-cooolguy.vercel.app/)의 기존 메인 UI와 Firebase Anonymous 로그인 성공을 확인했다. Authentication Console에 익명 테스트 계정이 생성되었고, 운영 Firestore에는 점수를 쓰지 않았다. 오늘/주간 랭킹 UI는 아직 배포되지 않은 Functions를 호출하므로 `Failed to fetch`를 표시한다. Preview build/Auth 성공만으로 점수·랭킹·멀티플레이의 실제 연동을 통과했다고 판단하지 않는다. Vercel 연결 도구의 보호 페이지 조회는 403이었지만 브라우저에서는 Preview와 설정 모두 접근할 수 있었다.
 
 1. 위 Console 확인을 마치고 기존 Rules/Indexes를 검토·병합한다. 현재 운영 API가 계속 기존 Firestore에 쓰는 동안에도 새 Functions는 같은 데이터로 검증할 수 있다.
 2. `npm ci`, `npm ci --prefix functions`; Node 22 환경에서 테스트를 실행한다. `npm run configure:firebase -- sequencepang`으로 확인된 기존 프로젝트의 공개 설정 파일을 만든다.
@@ -227,7 +229,8 @@ npm run deploy:firebase -- sequencepang
 | 점수/닉네임/세션/KST/방 unit | `npm run test:backend`: 5/5 통과 |
 | Auth + HTTP Functions + Firestore + RTDB Emulator | `npm run test:emulators`: 11/11 통과 |
 | production bundle | `npm run build` 통과; `git diff --check` 통과 |
-| Vercel 원격 Preview build | 검증한 code commit `aff3d9b`의 자동 deployment `READY`; production 전환 없음. 공개 환경변수 저장 이후에도 실제 Functions 연동 검증은 남음 |
+| Vercel 원격 Preview build | 공개 설정이 적용된 commit `b0c52f0`의 deployment `dpl_ErAmZ9LSqHo45um8NTRCi6pFNBgD`가 `READY`; production 전환 없음 |
+| 원격 Preview UI/Auth/API | 기존 메인 UI 표시 및 실제 Firebase 익명 로그인 성공. 미배포 Functions의 오늘/주간 랭킹은 `Failed to fetch`; 실제 점수/멀티플레이 연동은 대기 |
 | 확인된 공개 설정 build/배포 guard | 기존 Web Config 포함 build 통과, bundle의 legacy backend 참조 0; 설정/배포 script가 다른 프로젝트를 거부하고 로컬 설정을 보존함 |
 | 브라우저 UI/2인/모바일 | Chromium 154, 데스크톱 1440×1000 + 모바일 390×844의 독립 Auth 세션으로 7단계 모두 통과; 원격 유료 백엔드 요청 0, uncaught error 0 |
 | 실제 Firebase Console 설정 | 기존 프로젝트/Firestore/Blaze/Web Config 확인, RTDB 생성 및 운영 규칙 게시, Anonymous Auth 활성화 완료 |
@@ -235,7 +238,7 @@ npm run deploy:firebase -- sequencepang
 | 실제 Functions 배포/운영 URL 변경 | 미실행: Console 로그인 완료, 현재 실행 환경의 CLI 인증 없음; Cloud Shell/Google Cloud 관리 화면 접근 불가 |
 | production single/multi/모바일/원격 요청 제거 | 미검증: 운영 배포 이후 수행 필요 |
 
-Emulator는 가상 프로젝트 `demo-sequencepang`만 사용한다. 기존 운영 데이터는 읽거나 변경하지 않았다. API worker는 Node 22.23.3으로 실행했다. 이 실행 환경에서는 Unix socket이 차단되어 테스트 전용 loopback TCP adapter를 사용했다. 정상 개발 환경은 Node 22에서 해당 adapter 없이 실행한다. Scheduled cleanup의 callback과 점수 데이터 보존은 테스트했지만 실제 Cloud Scheduler의 정기 전달은 Emulator가 제공하지 않으므로 운영에서 따로 확인해야 한다. Emulator는 production composite index 준비 상태/IAM/billing/cold start를 입증하지 않는다.
+Emulator는 가상 프로젝트 `demo-sequencepang`만 사용하며 그 테스트에서 운영 데이터는 읽거나 변경하지 않았다. 별도 Console 점검에서 기존 문서와 인덱스를 읽기만 했고 수정·삭제·이동하지 않았다. API worker는 Node 22.23.3으로 실행했다. 이 실행 환경에서는 Unix socket이 차단되어 테스트 전용 loopback TCP adapter를 사용했다. 정상 개발 환경은 Node 22에서 해당 adapter 없이 실행한다. Scheduled cleanup의 callback과 점수 데이터 보존은 테스트했지만 실제 Cloud Scheduler의 정기 전달은 Emulator가 제공하지 않으므로 운영에서 따로 확인해야 한다. Emulator는 production composite index 준비 상태/IAM/billing/cold start를 입증하지 않는다.
 
 Emulator 통합 테스트에는 네 건 동시 제출 중 정확히 한 건만 커밋, token/UID/시간/TTL/콤보 거부와 suspicious 기록, 실패 transaction 재시도, 35개 레거시 기록과 오늘 36위/TOP 30 cutoff, 원자적 30인 정원, 중복 이름, host-only 시작/최고점 유지, 타인 쓰기·방 metadata·필드 변조·최고점 부풀리기·구 round·빈번한 쓰기 거부, Firestore 직접 접근 거부, 실제 onDisconnect/복수 탭/재접속/위임/빈 방 삭제/단기 정리 후 scores 보존을 포함한다.
 
