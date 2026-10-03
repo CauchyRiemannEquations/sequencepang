@@ -5,6 +5,7 @@ const TILE_FALL_PX = 56; // 타일 한 칸 낙하 거리 (기존 renderGravityRe
 
 export function createBoardView({ boardElement, boardWrapper, size, getDisplayValue, isBigNumberTile }) {
   let tileEls = [];
+  let pangLayer = null;
 
   function updateTileElement(tileElement, tileData) {
     tileElement.textContent = getDisplayValue(tileData);
@@ -57,13 +58,15 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
   }
 
   // 중력 리필 후 표시값이 바뀐 타일에 낙하 애니메이션 (기존 로직 유지)
-  function renderGravityRefill(boardData) {
+  function renderGravityRefill(boardData, { spawned = [] } = {}) {
+    // 같은 숫자로 리필되어도 새로 생긴 타일은 반드시 내려오게 한다.
+    const spawnedKeys = new Set(spawned.map(({ row, col }) => `${row}:${col}`));
     for (let c = 0; c < size; c++) {
       let newRowCount = 0;
 
       for (let r = 0; r < size; r++) {
         const tile = tileEls[r][c];
-        if (tile.textContent != getDisplayValue(boardData[r][c]) || tile.dataset.tileType !== boardData[r][c]?.type) newRowCount++;
+        if (spawnedKeys.has(`${r}:${c}`) || tile.textContent != getDisplayValue(boardData[r][c]) || tile.dataset.tileType !== boardData[r][c]?.type) newRowCount++;
       }
 
       let newIdx = 0;
@@ -72,7 +75,7 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
         const tileData = boardData[r][c];
         const newVal = getDisplayValue(tileData);
 
-        if (tile.textContent != newVal || tile.dataset.tileType !== tileData?.type) {
+        if (spawnedKeys.has(`${r}:${c}`) || tile.textContent != newVal || tile.dataset.tileType !== tileData?.type) {
           updateTileElement(tile, tileData);
 
           const fallPx = (newRowCount - newIdx) * TILE_FALL_PX;
@@ -97,32 +100,84 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
     }
   }
 
-  // 제거 대상만 짧게 축소한다. 중앙 타이틀·화면 전체 플래시·입자는 만들지 않는다.
-  function triggerPangBurst(cells, originCell, { tier = 'cross', durationMs, staggerMs }) {
+  // 크로스는 마지막 타일에서 십자로 퍼지고, 풀보드는 전판이 동시에 터진다.
+  function triggerPangBurst(cells, originCell, {
+    tier = 'cross', label, extraPoints = 0, durationMs, staggerMs, settleMs = 0
+  }) {
     clearPangBurst();
-    boardWrapper.classList.add('pang-cinematic');
+    const originTile = getTileEl(originCell.row, originCell.col);
+    if (!originTile) return 0;
+    const tierClass = tier === 'full' ? 'full' : 'cross';
+    const origin = tierClass === 'full'
+      ? { x: boardWrapper.clientWidth / 2, y: boardWrapper.clientHeight / 2 }
+      : getTileCenterInWrapper(originTile);
+    boardWrapper.classList.add('pang-cinematic', `pang-cinematic--${tierClass}`);
+    boardWrapper.style.setProperty('--pang-origin-x', `${origin.x}px`);
+    boardWrapper.style.setProperty('--pang-origin-y', `${origin.y}px`);
+
+    const layer = document.createElement('div');
+    layer.className = `pang-cinematic-layer pang-cinematic-layer--${tierClass}`;
+    layer.setAttribute('aria-hidden', 'true');
+    for (const name of ['flash', 'shockwave', 'core', 'ray-horizontal', 'ray-vertical']) {
+      const effect = document.createElement('span');
+      effect.className = `pang-${name}`;
+      layer.appendChild(effect);
+    }
+    const copy = document.createElement('span');
+    copy.className = 'pang-cinematic-copy';
+    const title = document.createElement('strong');
+    title.className = 'pang-cinematic-title';
+    title.textContent = label || (tierClass === 'full' ? '풀보드팡!' : '크로스팡!');
+    copy.appendChild(title);
+    if (extraPoints > 0) {
+      const bonus = document.createElement('small');
+      bonus.className = 'pang-cinematic-bonus';
+      bonus.textContent = `+${extraPoints.toLocaleString('ko-KR')}`;
+      copy.appendChild(bonus);
+    }
+    layer.appendChild(copy);
+    boardWrapper.appendChild(layer);
+    pangLayer = layer;
+
     let maxDelay = 0;
     cells.forEach(cell => {
       const tile = getTileEl(cell.row, cell.col);
       if (!tile) return;
-      const distance = Math.max(Math.abs(cell.row - originCell.row), Math.abs(cell.col - originCell.col));
-      const delay = distance * staggerMs;
+      const rowDelta = cell.row - (tierClass === 'full' ? (size - 1) / 2 : originCell.row);
+      const colDelta = cell.col - (tierClass === 'full' ? (size - 1) / 2 : originCell.col);
+      const distance = Math.max(Math.abs(rowDelta), Math.abs(colDelta));
+      const delay = tierClass === 'full' ? 0 : distance * staggerMs;
       maxDelay = Math.max(maxDelay, delay);
+      // 기존 낙하의 animationDelay가 폭발 타이밍을 덮지 않게 한다.
+      tile.style.animationDelay = '';
       tile.style.setProperty('--pang-delay', delay + 'ms');
       tile.style.setProperty('--pang-duration', durationMs + 'ms');
-      tile.classList.add('pang-burst', tier === 'full' ? 'pang-full-target' : 'pang-cross-target');
+      tile.style.setProperty('--pang-dx', `${colDelta * 14}px`);
+      tile.style.setProperty('--pang-dy', `${rowDelta * 14}px`);
+      tile.style.setProperty('--pang-rotation', `${((cell.row + cell.col) % 2 ? 1 : -1) * 18}deg`);
+      tile.classList.add('pang-burst', `pang-${tierClass}-target`);
     });
-    return durationMs + maxDelay;
+    const sceneMs = durationMs + maxDelay + settleMs;
+    boardWrapper.style.setProperty('--pang-scene-duration', `${sceneMs}ms`);
+    return sceneMs;
   }
 
   function clearPangBurst() {
-    boardWrapper.classList.remove('pang-cinematic');
+    pangLayer?.remove();
+    pangLayer = null;
+    boardWrapper.classList.remove('pang-cinematic', 'pang-cinematic--cross', 'pang-cinematic--full');
+    for (const name of ['--pang-origin-x', '--pang-origin-y', '--pang-scene-duration']) {
+      boardWrapper.style.removeProperty(name);
+    }
     for (const row of tileEls) {
       for (const tile of row) {
         tile.classList.remove('pang-burst', 'pang-cross-target', 'pang-full-target');
         tile.style.animationDelay = '';
         tile.style.removeProperty('--pang-delay');
         tile.style.removeProperty('--pang-duration');
+        tile.style.removeProperty('--pang-dx');
+        tile.style.removeProperty('--pang-dy');
+        tile.style.removeProperty('--pang-rotation');
       }
     }
   }

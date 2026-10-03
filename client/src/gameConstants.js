@@ -61,8 +61,9 @@ export const FULL_PANG_TIME_BONUS_S = 3.0;
 export const CROSS_PANG_LABEL = '크로스팡!';
 export const FULL_PANG_LABEL = '풀보드팡!';
 // 필살기 연출 시간: 판정 직후부터 리필 직전까지 게임·콤보·피버 타이머 정지
-export const PANG_BURST_MS = 280;
-export const PANG_BURST_STAGGER_MS = 18;
+export const PANG_BURST_MS = 600;
+export const PANG_BURST_STAGGER_MS = 32;
+export const PANG_BURST_SETTLE_MS = 120;
 export const PANG_BURST_LEAD_IN_MS = 40;
 export const GAME_NOTICE_DURATION_MS = 900;
 

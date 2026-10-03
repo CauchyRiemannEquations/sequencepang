@@ -38,6 +38,7 @@ import {
   FULL_PANG_LABEL,
   PANG_BURST_MS,
   PANG_BURST_STAGGER_MS,
+  PANG_BURST_SETTLE_MS,
   PANG_BURST_LEAD_IN_MS,
   GAME_NOTICE_DURATION_MS,
   TIMEOUT_GRACE_MS,
@@ -1332,7 +1333,7 @@ export function initGameApp() {
         dragController.clear();
         resetChainFeedback();
 
-        // 제거되는 타일만 짧게 팝한 뒤 즉시 리필한다. 중앙 글자/화면 덮개 없음.
+        // 팡 이름·제거 범위·타일 폭발을 같은 타임라인에 표시한 뒤 리필한다.
         const removedCells = [
           ...matchedTiles.map(t => ({ row: t.row, col: t.col })),
           ...pangExtraCells
@@ -1343,8 +1344,11 @@ export function initGameApp() {
           if (isGameOver) return;
           const cinematicMs = boardView.triggerPangBurst(removedCells, origin, {
             tier: chainTier,
+            label: chainTier === 'full' ? FULL_PANG_LABEL : CROSS_PANG_LABEL,
+            extraPoints: pangExtraPoints,
             durationMs: PANG_BURST_MS,
-            staggerMs: PANG_BURST_STAGGER_MS
+            staggerMs: PANG_BURST_STAGGER_MS,
+            settleMs: PANG_BURST_SETTLE_MS
           });
 
           setTimeout(() => {
@@ -1409,12 +1413,12 @@ export function initGameApp() {
   function eliminateAndRefill(removedCells) {
     // 유예 종료 등 게임오버 이후 예약된 타임아웃은 실행하지 않는다
     if (isGameOver) return;
-    const { board: nextBoard } = collapseAndRefill(boardData, removedCells, createNormalTileData);
+    const { board: nextBoard, spawned } = collapseAndRefill(boardData, removedCells, createNormalTileData);
     boardData = nextBoard;
 
     spawnQueuedFeverBlock();
     boardView.clearPangBurst();
-    boardView.renderGravityRefill(boardData);
+    boardView.renderGravityRefill(boardData, { spawned });
     clearSelection();
   }
 
