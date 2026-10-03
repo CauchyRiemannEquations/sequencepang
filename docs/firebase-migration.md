@@ -173,6 +173,8 @@ RTDB를 새로 추가해도 기존 Firestore 랭킹 데이터 이동은 필요 �
 
 현재 운영 Vercel deployment: `dpl_9SXX2cFXRBjCPbDCN5ZCNLf6B3AV`, 기준 Git commit `ab418d5`. 작업 브랜치는 `migration/firebase-serverless`이다. 이 기록 이후 새 production 배포가 있다면 실제 이전 deployment를 다시 확인한다.
 
+구현은 [Draft PR #37](https://github.com/CauchyRiemannEquations/sequencepang/pull/37)에 저장되었고 merge conflict가 없다. 검증한 코드 commit은 `aff3d9bc6ec598157759cfb73a94bb65082fa65d`이다. 이 commit의 Vercel 자동 Preview deployment `dpl_Bgv2X4RFRxEtnpVe1Q1NqJuKXN88`은 `READY`이고 production alias를 바꾸지 않았다. Preview build 성공은 실제 Firebase 연동 성공을 의미하지 않는다. Firebase 공개 설정과 실제 Functions 배포가 아직 필요하며, 현재 Vercel 연결은 보호된 Preview 페이지 접근에 403을 반환했다. 연동 검증 전에 해당 프로젝트/팀 접근 권한도 확인한다.
+
 1. 위 Console 확인을 마치고 기존 Rules/Indexes를 검토·병합한다. 현재 운영 API가 계속 기존 Firestore에 쓰는 동안에도 새 Functions는 같은 데이터로 검증할 수 있다.
 2. `npm ci`, `npm ci --prefix functions`; Node 22 환경에서 테스트를 실행한다. 기존 project ID로 `functions/.env.<ID>`를 만들고 위 4개 값을 채운다.
 3. `npx firebase login` 후 `npm run deploy:firebase -- <ID>`를 실행한다. script는 demo ID/누락된 설정/불일치 URL을 거부하며, 규칙 배포 대상을 `RTDB_INSTANCE`와 동일하게 지정한다. `--force`를 사용하지 않는다. 배포가 다른 리소스 삭제를 요구하면 중단하고 설정을 병합한다.
@@ -193,6 +195,7 @@ RTDB를 새로 추가해도 기존 Firestore 랭킹 데이터 이동은 필요 �
 | 점수/닉네임/세션/KST/방 unit | `npm run test:backend`: 5/5 통과 |
 | Auth + HTTP Functions + Firestore + RTDB Emulator | `npm run test:emulators`: 11/11 통과 |
 | production bundle | `npm run build` 통과; `git diff --check` 통과 |
+| Vercel 원격 Preview build | 검증한 code commit `aff3d9b`의 자동 deployment `READY`; production 전환 없음. 보호된 페이지 접근 권한과 Firebase 설정/연동 검증은 남음 |
 | 브라우저 UI/2인/모바일 | Chromium 154, 데스크톱 1440×1000 + 모바일 390×844의 독립 Auth 세션으로 7단계 모두 통과; 원격 유료 백엔드 요청 0, uncaught error 0 |
 | 실제 Firebase 배포/운영 URL 변경 | 미실행: 기존 Firebase 프로젝트 로그인/공개 설정 미확인 |
 | production single/multi/모바일/원격 요청 제거 | 미검증: 운영 배포 이후 수행 필요 |
