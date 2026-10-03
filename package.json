@@ -9,6 +9,7 @@
     "test:backend": "node --test tests/firebase/unit.test.cjs",
     "emulators": "node scripts/emulators.cjs start",
     "test:emulators": "node scripts/emulators.cjs test",
+    "configure:firebase": "node scripts/configure-firebase.cjs",
     "deploy:firebase": "node scripts/deploy-firebase.cjs",
     "test:browser": "node scripts/emulators.cjs browser"
   },

@@ -6,6 +6,11 @@ if (!projectId || projectId.startsWith('demo-') || !/^[a-z][a-z0-9-]{4,29}$/.tes
   console.error('사용법: npm run deploy:firebase -- <확인된 기존 Firebase project ID>');
   process.exit(1);
 }
+const confirmedConfig = require('../firebase.web-config.json');
+if (projectId !== confirmedConfig.projectId) {
+  console.error(`확인된 기존 프로젝트 ${confirmedConfig.projectId}에만 배포할 수 있습니다.`);
+  process.exit(1);
+}
 // Require public configuration that explicitly identifies the same existing project.
 const configPath = path.resolve(__dirname, `../functions/.env.${projectId}`);
 if (!fs.existsSync(configPath)) {

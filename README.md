@@ -72,18 +72,21 @@ npm run build
 
 ## 운영 배포
 
-새 프로젝트를 만들지 마세요. 기존 Firestore가 있는 프로젝트의 ID와 Web Config를 확인하고
-`client/.env.example`, `functions/.env.example`에 따라 설정합니다.
-`.firebaserc`는 프로젝트 ID 확인 전까지 의도적으로 빈 상태입니다.
+기존 프로젝트 `sequencepang`의 default Firestore와 Blaze를 확인했습니다.
+같은 프로젝트에 싱가포르 RTDB를 잠금 모드로 추가하고 검증한 규칙 및 Anonymous Auth를 적용했습니다.
+확인된 Web Config는 `firebase.web-config.json`의 공개 설정이며 서비스 계정 키가 아닙니다.
+아래 명령은 그 설정에서 gitignored 환경변수 파일을 생성합니다. 다른 기존 설정은 덮어쓰지 않습니다.
 
 ```sh
+npm run configure:firebase -- sequencepang
 npx firebase login
-npm run deploy:firebase -- <기존-project-id>
+npm run deploy:firebase -- sequencepang
 ```
 
 이 명령은 Functions/규칙/인덱스를 배포합니다. 기존 프로젝트의 다른 앱이 규칙/인덱스를 공유한다면
 먼저 현재 설정과 병합한 뒤 실행하세요. 랭킹 데이터 복사·삭제·초기화는 필요 없습니다.
-Vercel preview 및 production 검증을 모두 통과하기 전까지 기존 운영 백엔드를 삭제하지 마세요.
+Vercel Preview 환경변수 7개는 설정했지만 Functions 배포/연동 검증과 Production 전환은 아직 남아 있습니다.
+두 환경의 검증을 모두 통과하기 전까지 기존 운영 백엔드를 삭제하지 마세요.
 
 ## 점수 API
 

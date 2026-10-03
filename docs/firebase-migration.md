@@ -45,7 +45,7 @@ U = backend unit, E = Emulator 통합, B = 실제 브라우저. 운영 검증은
 
 세션은 서명 token만 사용하는 방식 대신 **Firestore 문서 + transaction**을 선택한다. 서명만으로는 재사용 방지를 위해 별도 사용 기록이 필요하다. 문서 방식은 token hash, UID, 시작/만료 시각과 소비 상태를 함께 저장하고 `scores` 쓰기와 원자적으로 커밋할 수 있다. 실패한 transaction은 세션을 소비하지 않는다. 런타임이 만료를 검사하므로 TTL 삭제 지연은 보안에 영향을 주지 않는다.
 
-Admin SDK는 기본 런타임 인증을 사용한다. 키 파일·private key·기존 서비스 계정 JSON은 복사하지 않는다. `.firebaserc`는 기존 프로젝트 ID 확인 전까지 빈 설정으로 둔다. 로컬 검증은 격리된 `demo-sequencepang` emulator 프로젝트만 사용하며 실제 Firebase 프로젝트를 생성하지 않는다.
+Admin SDK는 기본 런타임 인증을 사용한다. 키 파일·private key·기존 서비스 계정 JSON은 복사하지 않는다. `.firebaserc`에는 Console에서 기존 데이터와 함께 확인한 프로젝트 ID `sequencepang`을 기록했다. 로컬 검증은 격리된 `demo-sequencepang` emulator 프로젝트만 사용하며 실제 Firebase 프로젝트를 생성하지 않는다.
 
 RTDB 방/참가자/닉네임/방장/round는 Functions만 변경한다. 브라우저는 가입된 방을 읽고, 자신의 연결 presence와 현재 round의 점수/최고점/서버 timestamp만 쓸 수 있다. 점수는 정수/비음수/단조 증가/round 일치/갱신 간격을 검사한다. 실시간 숫자 자체가 게임 엔진의 정당한 결과임을 입증하는 replay 검증은 기존에도 없으므로 완전한 부정행위 방지라고 주장하지 않는다.
 
@@ -90,7 +90,7 @@ rooms/{roomId}
 
 | 파일 | 역할 |
 |---|---|
-| `firebase.json`, `.firebaserc` | Functions/Firestore/RTDB 및 Emulator 구성; 기존 프로젝트 ID는 확인 후 설정 |
+| `firebase.json`, `.firebaserc`, `firebase.web-config.json` | Emulator/배포 구성, 확인된 기존 프로젝트 ID와 공개 Web Config |
 | `database.rules.json` | 참가한 방 읽기와 본인 presence/점수만 허용 |
 | `firestore.rules`, `firestore.indexes.json` | 브라우저 직접 접근 차단, 기존 랭킹용 인덱스 |
 | `functions/package.json`, `functions/package-lock.json`, `functions/.env.example` | Node 22 runtime과 서버 의존성/공개 설정 |
@@ -103,7 +103,7 @@ rooms/{roomId}
 | `client/src/gameEngine.js` | playerId 세션 binding, 생성 flag, 대기실 재접속 연결만 수정 |
 | `client/public/service-worker.js`, `update-notes.md` | cache version 갱신과 인프라 전환 안내 |
 | `package.json`, `package-lock.json`, `vite.config.js`, `vercel.json`, `.gitignore` | legacy runtime 의존성/proxy 제거, 테스트 및 SPA 설정 |
-| `scripts/emulators.cjs`, `emulator-loopback.cjs`, `browser-check.cjs`, `deploy-firebase.cjs` | 로컬 검증과 명시된 기존 프로젝트 배포 |
+| `scripts/emulators.cjs`, `emulator-loopback.cjs`, `browser-check.cjs`, `configure-firebase.cjs`, `deploy-firebase.cjs` | 로컬 검증, 확인한 공개 환경변수 생성, 기존 프로젝트에만 배포 |
 | `tests/firebase/unit.test.cjs`, `emulator.test.cjs` | 점수·세션·레거시·방·보안·presence 회귀 테스트 |
 | `README.md`, `CLAUDE.md`, 이 문서, `docs/verification/` | 개발/배포/검증 증거 |
 | 기존 `server/` 전체 | Express 점수 정책을 Functions로 옮긴 뒤 메모리 서버/소켓 구현 제거 |
@@ -112,7 +112,7 @@ rooms/{roomId}
 
 ## Security Rules
 
-실제 규칙은 [`database.rules.json`](../database.rules.json)과 [`firestore.rules`](../firestore.rules)에 있으며 Emulator로 실행했다. **현재 운영 프로젝트에는 아직 적용하지 않았다.**
+실제 규칙은 [`database.rules.json`](../database.rules.json)과 [`firestore.rules`](../firestore.rules)에 있으며 Emulator로 실행했다. **2026-10-03에 RTDB 규칙을 기존 프로젝트의 실제 instance에 게시했다.** 기존 Firestore 규칙은 이미 전체 브라우저 접근을 `false`로 차단하고 있어 같은 권한 정책이다. 저장소의 Firestore 규칙 파일 및 Functions 배포는 CLI 인증 이후 진행한다.
 
 | 대상 | 허용 | 거부/검증 |
 |---|---|---|
@@ -131,7 +131,7 @@ API는 허용한 정확한 origin에만 CORS 응답을 준다. Firebase 인증 �
 
 ## 필요한 환경변수
 
-Vercel의 **Preview와 Production**에 각각 설정하고 새로 build/deploy해야 한다. Vite 값은 빌드 시 bundle에 포함된다.
+Vercel **Preview에는 아래 필수 공개 설정 7개를 Config 유형으로 저장했다. Production은 아직 변경하지 않았다.** 값은 [`firebase.web-config.json`](../firebase.web-config.json)에 있으며 `npm run configure:firebase -- sequencepang`으로 로컬 환경변수 파일을 생성할 수 있다. 다른 설정이 있는 기존 파일은 덮어쓰지 않는다. Vite 값은 빌드 시 bundle에 포함되므로 변경 후 새로 build/deploy해야 한다.
 
 | 변수 | 값의 출처/설명 |
 |---|---|
@@ -157,7 +157,23 @@ Functions의 `functions/.env.<기존-project-id>`에는 다음 공개 설정을 
 
 ## Firebase Console에서 직접 확인/설정할 작업
 
-현재 Firebase CLI는 미로그인이고 Console도 Google 로그인 화면이다. 연결된 Vercel 프로젝트/production URL은 확인했으나, 기존 Firebase project ID·billing·Web Config·규칙·RTDB 위치는 확인할 수 없다. 다음 정보/권한이 제공되어야 운영 전환을 진행할 수 있다.
+2026-10-03 사용자 로그인 후 아래 작업을 실제 Console에서 진행했다. Console 로그인은 이 실행 환경의 Firebase CLI 인증을 자동 제공하지 않는다. Console 내/독립 Cloud Shell과 기존 프로젝트의 Google Cloud Functions 관리 화면 모두 이 브라우저에서 `Site Unavailable / Unable to access this site`로 열려 배포 명령이나 GUI 배포를 실행할 수 없었다. CLI도 `Failed to authenticate, have you run firebase login?`를 반환했다. 남은 직접 작업은 아래 **CLI 배포**이며 새 결제 업그레이드나 서비스 계정 키는 요구하지 않는다.
+
+| 항목 | 확인/적용 결과 |
+|---|---|
+| 기존 프로젝트 | `sequencepang`, project number `147997579779`; 기존 Web app 1개 |
+| Firestore | `(default)`, `asia-northeast3`; `scores`와 `suspicious_scores` 및 기존 필드 확인. 데이터 쓰기/이동/초기화 없음 |
+| Firestore Rules/Indexes | 전체 브라우저 read/write 거부. `scores`의 시즌/일간/주간 복합 인덱스 3개가 사용 설정됨. CLI 배포 시 기존 인덱스 삭제 없이 호환 여부 확인 |
+| Billing | Blaze 이미 활성화; 결제 변경 없음 |
+| RTDB | 같은 프로젝트에 `sequencepang-default-rtdb` 생성; 싱가포르 `asia-southeast1`; 잠금 모드로 시작 후 검증한 `database.rules.json` 게시 |
+| Anonymous Auth | 실제 제공업체 사용 설정됨. 계정 자동 삭제/Identity Platform 업그레이드 없음 |
+| Web Config | 기존 앱 ID `1:147997579779:web:7050ee7d014693c3334c36`; 공개 설정 파일에 기록 |
+| Vercel | 기존 `sequencepang` 프로젝트 Preview에 필수 변수 7개 저장. 원래 환경변수 목록에는 레거시 API/소켓 변수가 없었음. Production 변경 없음 |
+| Functions/production 검증 | 아직 미실행; CLI 인증·실제 배포 필요 |
+
+실제 RTDB URL: `https://sequencepang-default-rtdb.asia-southeast1.firebasedatabase.app`. Functions도 `asia-southeast1`로 설정하여 trigger의 instance/리전을 맞춘다. OAuth 승인 도메인은 localhost 및 기본 Firebase 도메인이며 Anonymous 인증에는 OAuth redirect가 필요하지 않다. 다른 인증 제공업체를 도입할 때 해당 Vercel 도메인을 별도로 승인한다.
+
+다음 Console 체크는 배포 시점에 재확인할 항목이다. 프로젝트/Blaze/RTDB/Anonymous/Web Config 확인은 완료했다.
 
 1. [Firebase Console](https://console.firebase.google.com/)에 기존 프로젝트 소유 계정으로 로그인하고, default Firestore의 `scores`/`suspicious_scores`가 있는 **기존 프로젝트**를 선택한다. project ID를 확인한다. 기존 서버와 새 Functions 모두 default Firestore를 사용한다.
 2. 기존 Firestore의 현재 Rules/Indexes와 다른 앱 사용 여부를 확인한다. 이 저장소의 deny-all 규칙을 그대로 덮어쓰기 전에 필요한 다른 앱 규칙/인덱스를 병합한다. 기존 인덱스 삭제 질문에는 동의하지 않는다. 프로젝트에 다른 서버 Functions가 있다면 새 `sequencepang` codebase에 영향을 받지 않는지도 확인한다.
@@ -167,16 +183,32 @@ Functions의 `functions/.env.<기존-project-id>`에는 다음 공개 설정을 
 6. 프로젝트 설정 → 기존 Web app의 공개 config를 사용한다. Web app이 없으면 동일 프로젝트에 Web app만 등록한다. 새 Firebase 프로젝트/새 Firestore는 만들지 않는다.
 7. 배포 계정이 기존 프로젝트의 Functions/Firestore Rules/RTDB Rules 배포 권한을 갖는지 확인한다. CLI에 로그인하며 private key를 다운로드하거나 저장소로 복사하지 않는다.
 
-RTDB를 새로 추가해도 기존 Firestore 랭킹 데이터 이동은 필요 없다. 기존 프로젝트 정보가 확인되면 `.firebaserc.projects.default`에 공개 ID를 기록할 수 있지만, 배포 script는 항상 명시한 ID를 요구한다.
+RTDB를 새로 추가해도 기존 Firestore 랭킹 데이터 이동은 필요 없다. `.firebaserc.projects.default`는 `sequencepang`이며 배포 script는 항상 동일 ID를 명시하도록 요구하고 다른 프로젝트는 거부한다.
+
+### 남은 CLI 배포
+
+Node 22+가 있는 사용자 터미널에서 다음 명령을 실행한다. `configure:firebase`는 확인된 공개 값으로 gitignored 파일 두 개를 만들고 기존 설정이 다르면 중단한다. 로그인 때 기존 프로젝트 소유 계정을 선택한다. 인증 코드를 채팅에 붙여넣거나 키 JSON을 다운로드하지 않는다.
+
+```sh
+git clone --branch migration/firebase-serverless https://github.com/CauchyRiemannEquations/sequencepang.git sequencepang-firebase
+cd sequencepang-firebase
+npm ci
+npm ci --prefix functions
+npm run configure:firebase -- sequencepang
+npx firebase login
+npm run deploy:firebase -- sequencepang
+```
+
+이미 이 브랜치가 있는 checkout이면 clone/cd 대신 해당 디렉터리에서 이어간다. 삭제를 요구하는 CLI 질문에 동의하지 않는다. 다른 리소스와 충돌하거나 IAM 오류가 나면 해당 오류를 먼저 해결한다. 배포 후 출력되는 Function URL과 성공/오류 결과로 Preview 및 production 검증을 이어간다. Cloud Shell을 사용자가 독립적으로 이용할 수 있으면 같은 명령을 실행할 수 있지만 이 대화의 Cloud Browser에서는 이용할 수 없었다.
 
 ## 전환 및 롤백 순서
 
 현재 운영 Vercel deployment: `dpl_9SXX2cFXRBjCPbDCN5ZCNLf6B3AV`, 기준 Git commit `ab418d5`. 작업 브랜치는 `migration/firebase-serverless`이다. 이 기록 이후 새 production 배포가 있다면 실제 이전 deployment를 다시 확인한다.
 
-구현은 [Draft PR #37](https://github.com/CauchyRiemannEquations/sequencepang/pull/37)에 저장되었고 merge conflict가 없다. 검증한 코드 commit은 `aff3d9bc6ec598157759cfb73a94bb65082fa65d`이다. 이 commit의 Vercel 자동 Preview deployment `dpl_Bgv2X4RFRxEtnpVe1Q1NqJuKXN88`은 `READY`이고 production alias를 바꾸지 않았다. Preview build 성공은 실제 Firebase 연동 성공을 의미하지 않는다. Firebase 공개 설정과 실제 Functions 배포가 아직 필요하며, 현재 Vercel 연결은 보호된 Preview 페이지 접근에 403을 반환했다. 연동 검증 전에 해당 프로젝트/팀 접근 권한도 확인한다.
+구현은 [Draft PR #37](https://github.com/CauchyRiemannEquations/sequencepang/pull/37)에 저장되었고 merge conflict가 없다. 검증한 애플리케이션 코드 commit은 `aff3d9bc6ec598157759cfb73a94bb65082fa65d`이다. 이 commit의 Vercel 자동 Preview deployment `dpl_Bgv2X4RFRxEtnpVe1Q1NqJuKXN88`은 `READY`이고 production alias를 바꾸지 않았다. Preview build 성공은 실제 Firebase 연동 성공을 의미하지 않는다. 이후 공개 환경변수를 Preview에 추가했으며 새 build 이후에도 실제 Functions 배포/연동 검증을 마쳐야 한다. Vercel 연결 도구는 보호된 Preview 페이지 접근에 403을 반환했지만 로그인된 브라우저에서 프로젝트 설정에는 접근할 수 있었다.
 
 1. 위 Console 확인을 마치고 기존 Rules/Indexes를 검토·병합한다. 현재 운영 API가 계속 기존 Firestore에 쓰는 동안에도 새 Functions는 같은 데이터로 검증할 수 있다.
-2. `npm ci`, `npm ci --prefix functions`; Node 22 환경에서 테스트를 실행한다. 기존 project ID로 `functions/.env.<ID>`를 만들고 위 4개 값을 채운다.
+2. `npm ci`, `npm ci --prefix functions`; Node 22 환경에서 테스트를 실행한다. `npm run configure:firebase -- sequencepang`으로 확인된 기존 프로젝트의 공개 설정 파일을 만든다.
 3. `npx firebase login` 후 `npm run deploy:firebase -- <ID>`를 실행한다. script는 demo ID/누락된 설정/불일치 URL을 거부하며, 규칙 배포 대상을 `RTDB_INSTANCE`와 동일하게 지정한다. `--force`를 사용하지 않는다. 배포가 다른 리소스 삭제를 요구하면 중단하고 설정을 병합한다.
 4. 배포된 `api`의 `/health`, Anonymous token 포함 세션 발급/점수 제출, 일간/주간/어제 조회를 확인한다. 기존 기록이 보이는지, 인덱스가 ready인지, presence trigger와 Cloud Scheduler job이 정상 등록됐는지 확인한다.
 5. Vercel `sequencepang` 프로젝트의 Preview에 공개 config를 설정한다. 해당 preview origin을 Functions allowlist에 정확히 추가하고 필요한 경우 Auth 설정도 확인한다. SSO가 적용된 preview는 인증 후 테스트한다.
@@ -195,9 +227,12 @@ RTDB를 새로 추가해도 기존 Firestore 랭킹 데이터 이동은 필요 �
 | 점수/닉네임/세션/KST/방 unit | `npm run test:backend`: 5/5 통과 |
 | Auth + HTTP Functions + Firestore + RTDB Emulator | `npm run test:emulators`: 11/11 통과 |
 | production bundle | `npm run build` 통과; `git diff --check` 통과 |
-| Vercel 원격 Preview build | 검증한 code commit `aff3d9b`의 자동 deployment `READY`; production 전환 없음. 보호된 페이지 접근 권한과 Firebase 설정/연동 검증은 남음 |
+| Vercel 원격 Preview build | 검증한 code commit `aff3d9b`의 자동 deployment `READY`; production 전환 없음. 공개 환경변수 저장 이후에도 실제 Functions 연동 검증은 남음 |
+| 확인된 공개 설정 build/배포 guard | 기존 Web Config 포함 build 통과, bundle의 legacy backend 참조 0; 설정/배포 script가 다른 프로젝트를 거부하고 로컬 설정을 보존함 |
 | 브라우저 UI/2인/모바일 | Chromium 154, 데스크톱 1440×1000 + 모바일 390×844의 독립 Auth 세션으로 7단계 모두 통과; 원격 유료 백엔드 요청 0, uncaught error 0 |
-| 실제 Firebase 배포/운영 URL 변경 | 미실행: 기존 Firebase 프로젝트 로그인/공개 설정 미확인 |
+| 실제 Firebase Console 설정 | 기존 프로젝트/Firestore/Blaze/Web Config 확인, RTDB 생성 및 운영 규칙 게시, Anonymous Auth 활성화 완료 |
+| Vercel Preview 환경변수 | 필수 공개 값 7개 저장. 기존 Production 환경 및 alias 변경 없음 |
+| 실제 Functions 배포/운영 URL 변경 | 미실행: Console 로그인 완료, 현재 실행 환경의 CLI 인증 없음; Cloud Shell/Google Cloud 관리 화면 접근 불가 |
 | production single/multi/모바일/원격 요청 제거 | 미검증: 운영 배포 이후 수행 필요 |
 
 Emulator는 가상 프로젝트 `demo-sequencepang`만 사용한다. 기존 운영 데이터는 읽거나 변경하지 않았다. API worker는 Node 22.23.3으로 실행했다. 이 실행 환경에서는 Unix socket이 차단되어 테스트 전용 loopback TCP adapter를 사용했다. 정상 개발 환경은 Node 22에서 해당 adapter 없이 실행한다. Scheduled cleanup의 callback과 점수 데이터 보존은 테스트했지만 실제 Cloud Scheduler의 정기 전달은 Emulator가 제공하지 않으므로 운영에서 따로 확인해야 한다. Emulator는 production composite index 준비 상태/IAM/billing/cold start를 입증하지 않는다.
@@ -207,6 +242,8 @@ Emulator 통합 테스트에는 네 건 동시 제출 중 정확히 한 건만 �
 브라우저 결과: [`browser-results.json`](verification/browser-results.json). 실제 single play의 인접 타일 드래그로 점수를 얻고 종료까지 기다린 뒤 제출했다. 오늘 랭킹/내 순위와 주간 HTTP 응답을 확인했다. 두 번째 독립 브라우저로 방 입장, 대기실 reload, start 동기화, 실시간 점수 수신, 네트워크 offline/online, host 위임 유지, 명시적 퇴장 및 마지막 참가자 퇴장 후 방 삭제를 확인했다. 모바일에서는 가로 overflow가 없었다. 모바일 터치 장치/iOS 실기기 검증은 별도로 남는다.
 
 검증 화면: [데스크톱 메인](verification/firebase-desktop-home.png), [점수/랭킹](verification/firebase-single-ranking.png), [모바일 대기실](verification/firebase-mobile-lobby.png), [모바일 멀티플레이](verification/firebase-mobile-multiplayer.png). 로컬 Emulator 화면이며 production 배포 증거는 아니다.
+
+실제 Console 작업 화면: [게시한 RTDB 규칙](verification/firebase-production-rtdb-rules.jpg), [Anonymous 사용 설정](verification/firebase-production-anonymous-auth.jpg), [Vercel Preview 환경변수](verification/firebase-vercel-preview-env.jpg). Functions 배포 및 운영 게임 검증과는 구분한다.
 
 ## Render 삭제 최종 체크리스트
 
