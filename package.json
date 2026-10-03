@@ -2,29 +2,32 @@
   "name": "sequence-pang",
   "version": "1.0.0",
   "description": "수열팡(Sequence Pang) - 실시간 멀티플레이어 경쟁 모드 지원",
-  "main": "server/server.js",
   "scripts": {
-    "dev:server": "node server/server.js",
     "dev:client": "vite --host 0.0.0.0",
     "build": "vite build",
     "test": "node --test tests/engine/*.test.js",
-    "start": "node server/server.js"
+    "test:backend": "node --test tests/firebase/unit.test.cjs",
+    "emulators": "node scripts/emulators.cjs start",
+    "test:emulators": "node scripts/emulators.cjs test",
+    "deploy:firebase": "node scripts/deploy-firebase.cjs",
+    "test:browser": "node scripts/emulators.cjs browser"
   },
   "keywords": [
     "sequence-pang",
     "melon",
     "puzzle",
-    "multiplayer",
-    "socket.io"
+    "multiplayer"
   ],
   "author": "Antigravity",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.19.2",
-    "firebase-admin": "^14.1.0",
-    "socket.io": "^4.7.5"
+    "firebase": "^12.19.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "firebase-tools": "14.27.0",
+    "playwright": "^1.62.1",
     "vite": "^5.4.21"
-  }
+  },
+  "type": "module"
 }

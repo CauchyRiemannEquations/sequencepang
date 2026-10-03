@@ -48,7 +48,7 @@ import {
   REPEATED_PATH_TIME_MULTIPLIER,
   REPEATED_PATTERN_TIME_MULTIPLIER
 } from './gameConstants.js';
-import { createSocketClient } from './socketClient.js';
+import { createSocketClient, getSavedMultiplayerRoom } from './socketClient.js';
 import { createGameSession, fetchLeaderboard, fetchYesterdayTop, submitScore } from './scoreClient.js';
 import { renderGlobalLeaderboard, renderLeaderboard } from './ui.js';
 import { playSound } from './sfxManager.js';
@@ -1578,7 +1578,7 @@ export function initGameApp() {
     leaderboardPanel.style.display = 'none';
     btnSingleStart.disabled = true;
     try {
-      currentGameSession = await createGameSession(nickname);
+      currentGameSession = await createGameSession(nickname, playerId);
       singleSessionStartedAt = performance.now();
       startGamePlay('timeAttack');
     } catch (error) {
@@ -1684,6 +1684,7 @@ export function initGameApp() {
         socket = null;
       }
       lobbyOverlay.classList.add('hide');
+      welcomeOverlay.classList.remove('hide');
       isMultiplayMode = false;
       currentIsHost = false;
       updateLobbyModeControls();
@@ -1739,7 +1740,7 @@ export function initGameApp() {
     }
 
     // 서버에 방 생성 및 입장 전송
-    socket.emit('joinRoom', { roomId: generatedRoomId, nickname });
+    socket.emit('joinRoom', { roomId: generatedRoomId, nickname, create: true });
   });
 
   // 대기방 참여 버튼 클릭 (직접 코드 기입)
@@ -1889,4 +1890,12 @@ export function initGameApp() {
     }
   });
     
+  const savedRoom = getSavedMultiplayerRoom();
+  if (savedRoom) {
+    isMultiplayMode = true;
+    void initSocketConnection().then(() => socket.emit('joinRoom', savedRoom)).catch(() => {
+      isMultiplayMode = false;
+    });
+  }
+
 }

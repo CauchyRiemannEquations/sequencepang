@@ -1,0 +1,16 @@
+{
+  "name": "sequencepang-functions",
+  "private": true,
+  "main": "src/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "test": "node --test ../tests/firebase/*.test.cjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase-admin": "^14.1.0",
+    "firebase-functions": "^7.4.0"
+  }
+}
