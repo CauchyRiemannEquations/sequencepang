@@ -1,7 +1,9 @@
 {
+  "id": "/",
   "name": "시퀀스팡",
   "short_name": "시퀀스팡",
   "description": "수열을 찾아 팡팡 터뜨리는 수학 퍼즐 게임",
+  "lang": "ko",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
