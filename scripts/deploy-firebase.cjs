@@ -40,6 +40,12 @@ let result;
 try {
   fs.writeFileSync(deployConfig, JSON.stringify(firebaseConfig, null, 2));
   result = spawnSync(process.execPath, [cli, 'deploy', '--project', projectId, '--config', deployConfig,
-    '--only', 'functions:sequencepang,firestore:rules,firestore:indexes,database'], { cwd: root, stdio: 'inherit' });
+    '--only', 'functions:sequencepang,firestore:rules,firestore:indexes,database'], {
+    cwd: root, stdio: 'inherit', env: {
+      ...process.env,
+      // Allow dependency loading on slower Windows hosts; runtime timeouts stay unchanged.
+      FUNCTIONS_DISCOVERY_TIMEOUT: process.env.FUNCTIONS_DISCOVERY_TIMEOUT || '60'
+    }
+  });
 } finally { fs.rmSync(deployConfig, { force: true }); }
 process.exit(result.status ?? 1);

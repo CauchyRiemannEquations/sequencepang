@@ -2,6 +2,36 @@
 
 분석 기준: `ab418d5` (2026-10-03). 운영 프론트: https://sequencepang.vercel.app
 
+## 2026-10-06 현재 진행 상황
+
+- PR #37에 최신 main `8a7566f`를 병합했다. PWA 캐시를 v30으로 올리고 최신 출시 안내/바로가기를 유지했다. 병합 충돌은 해결됐다.
+- 사용자 PC에서 Firebase CLI 로그인 후, Windows 시스템 인증서를 사용해 기존 `sequencepang` 프로젝트에 배포했다. 서비스 계정 키나 새 프로젝트는 만들지 않았다.
+- `api`, `roomPresence`, `cleanup` 모두 Node 22 / `asia-southeast1` / 최소 인스턴스 0으로 ACTIVE다. 처음 Eventarc 권한 전파가 늦어 실패했던 presence 함수는 재배포로 해결했다.
+- RTDB/Firestore 규칙과 랭킹 인덱스 배포 완료. 랭킹 인덱스 4개가 READY이며, 매분 cleanup Scheduler가 ENABLED이고 실제 호출이 200이다. 빌드 컨테이너 보관 기간은 7일로 설정했다.
+- `/health`는 200, 미인증 API 401, 허용하지 않은 origin 403, 미인증 RTDB 401, 브라우저 Firestore 읽기 403을 확인했다. 실제 어제/오늘의 기존 랭킹도 조회된다.
+- 최신 main 기준 엔진 55/55, backend unit 5/5, Emulator 통합 11/11, desktop/mobile 브라우저 7개 흐름 통과. production build와 diff check 통과.
+- 브랜치 Preview `dpl_82J1eJK2CWwBcLdh3TuqrWHPJgMj`가 READY이며 실제 Firebase 정상 게임/오늘·주간·내 순위/2인 점수 동기화/새로고침/재접속/방장 위임/명시적 퇴장/빈 방 삭제까지 7개 흐름 모두 통과했다. 실제 기존 어제 1등 기록도 조회된다. 모바일 390×844에 가로 넘침이 없으며 Render 요청과 uncaught error는 0건이다. [원격 결과](verification/preview-browser-results.json).
+- 현재 정상 production 롤백 대상은 `dpl_BA6pawhy4JvrxPJ1DsybfhcnNqnZ` / main `8a7566f`다. Production 전환과 Render 삭제는 아직 실행하지 않았다.
+
+아래의 2026-10-03 미배포/CLI 미인증 기록은 당시 상태다. 현재 배포 상태는 이 절과 최신 원격 검증 결과를 따른다.
+
+Windows에서 `self-signed certificate in certificate chain` 오류가 나면 Node의 시스템 CA 지원을 사용한다. 인증서 검증을 비활성화하지 않는다.
+
+```powershell
+$env:NODE_OPTIONS = '--use-system-ca'
+npm run deploy:firebase -- sequencepang
+```
+
+원격 브라우저 점검은 확인된 프로젝트와 운영/브랜치 Preview만 허용한다. 테스트 점수는 실제 타일 드래그와 정상 게임 종료로 제출하며, 운영 기록을 삭제하거나 수정하지 않는다. 매 실행의 닉네임은 고유하게 생성해 기존 닉네임 중복 제거 정책과 충돌하지 않는다. 결과는 `docs/verification/preview-browser-results.json` 또는 `production-browser-results.json`과 각 접두사가 붙은 화면에 저장된다.
+
+```powershell
+$env:SEQUENCEPANG_VERIFY_PROJECT = 'sequencepang'
+$env:SEQUENCEPANG_VERIFY_URL = 'https://sequencepang-git-migration-firebase-serverless-cooolguy.vercel.app/'
+node scripts/browser-check.cjs
+```
+
+보호된 Preview는 먼저 로그인하거나 유효기간이 짧은 Vercel 공유 링크를 사용한다. 공유 토큰/로그인 정보는 저장소에 기록하지 않는다.
+
 ## 현재 구조 분석 (구현 전 작성)
 
 - `server/server.js`: Express JSON API, IP별 메모리 rate limit, 정적 파일/리다이렉트, 실시간 소켓 서버.
