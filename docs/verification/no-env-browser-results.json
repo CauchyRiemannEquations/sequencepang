@@ -1,0 +1,17 @@
+{
+  "verifiedAt": "2026-10-05T23:44:41.633Z",
+  "scenario": "Local build without dotenv files, served under the allowed Preview origin",
+  "status": "passed",
+  "apiResponses": [
+    {
+      "url": "https://asia-southeast1-sequencepang.cloudfunctions.net/api/api/yesterday-top",
+      "status": 200
+    },
+    {
+      "url": "https://asia-southeast1-sequencepang.cloudfunctions.net/api/api/leaderboard?period=daily",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "legacyRequests": 0
+}

@@ -12,7 +12,8 @@
 - 최신 main 기준 엔진 55/55, backend unit 6/6, Emulator 통합 11/11, desktop/mobile 브라우저 7개 흐름 통과. production build와 diff check 통과.
 - 브랜치 Preview `dpl_82J1eJK2CWwBcLdh3TuqrWHPJgMj`가 READY이며 실제 Firebase 정상 게임/오늘·주간·내 순위/2인 점수 동기화/새로고침/재접속/방장 위임/명시적 퇴장/빈 방 삭제까지 7개 흐름 모두 통과했다. 실제 기존 어제 1등 기록도 조회된다. 모바일 390×844에 가로 넘침이 없으며 Render 요청과 uncaught error는 0건이다. [원격 결과](verification/preview-browser-results.json).
 - 현재 정상 production 롤백 대상은 `dpl_BA6pawhy4JvrxPJ1DsybfhcnNqnZ` / main `8a7566f`다. Production 전환과 Render 삭제는 아직 실행하지 않았다.
-- 같은 저장소의 `https://sequencepang.pages.dev`도 기존 Render를 사용하는 것을 확인했다. 별도 Web SDK 환경변수가 없는 빌드는 저장소의 확인된 공개 Web Config를 사용하며, 명시한 설정이 일부만 있거나 다른 프로젝트를 가리키면 거부한다. 설정 있는 빌드와 없는 빌드의 JS 결과가 동일함을 확인했다. Cloudflare 운영 origin을 Functions의 정확한 CORS 허용 목록에도 추가했다. Cloudflare 운영 배포도 main 병합 시 전환된다.
+- 같은 저장소의 `https://sequencepang.pages.dev`도 기존 Render를 사용하는 것을 확인했다. 별도 Web SDK 환경변수가 없는 빌드는 저장소의 확인된 공개 Web Config를 사용하며, 명시한 설정이 일부만 있거나 다른 프로젝트를 가리키면 거부한다. 설정 있는/없는 빌드가 성공하며 Web Config 해석 결과가 동일함을 unit test로 확인했다. Cloudflare 운영 origin을 Functions의 정확한 CORS 허용 목록에도 추가했고 실제 preflight 204를 확인했다. Cloudflare 운영 배포도 main 병합 시 전환된다.
+- 초기화 보완 후 최신 앱 commit `4f2da72`의 Preview `dpl_AqbsFanvzAgoyJ2PBqSxS5spRG8j`가 READY이며 실제 익명 인증·어제/오늘 랭킹 API 200과 Render 요청 0건을 재확인했다. `.env.local`을 실제로 제외한 별도 정적 빌드도 허용된 Preview origin의 로컬 테스트 자산으로 제공해 실제 Firebase 익명 인증과 어제/오늘 API 200을 확인했다. 원격 Cloudflare 배포 자체의 검증으로 간주하지 않는다. [환경변수 없는 빌드 검증](verification/no-env-browser-results.json).
 
 아래의 2026-10-03 미배포/CLI 미인증 기록은 당시 상태다. 현재 배포 상태는 이 절과 최신 원격 검증 결과를 따른다.
 
