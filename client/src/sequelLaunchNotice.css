@@ -14,7 +14,7 @@
   box-shadow: 0 20px 65px #001c18aa;
 }
 .sequel-launch-notice::backdrop { background: #001b15b8; backdrop-filter: blur(5px); }
-.sequel-launch-mango { display: block; width: 104px; height: 104px; margin: 0 auto 12px; border-radius: 28px; }
+.sequel-launch-mascot { display: block; width: 104px; height: 104px; margin: 0 auto 12px; border-radius: 28px; }
 .sequel-launch-eyebrow { margin: 0 0 8px; color: #ffdc76; font-size: 11px; font-weight: 800; letter-spacing: .22em; }
 .sequel-launch-notice h2 { margin: 0 0 14px; color: #fff3bb; font-size: 28px; line-height: 1.25; }
 #sequel-launch-copy { margin: 0; font-size: 16px; line-height: 1.7; }
@@ -27,7 +27,7 @@
 .sequel-launch-footnote { margin: 12px 0 0; color: #a7c0ab; font-size: 11px; }
 @media (max-height: 620px) {
   .sequel-launch-notice { padding: 16px 20px 12px; }
-  .sequel-launch-mango { width: 64px; height: 64px; margin-bottom: 8px; border-radius: 18px; }
+  .sequel-launch-mascot { width: 64px; height: 64px; margin-bottom: 8px; border-radius: 18px; }
   .sequel-launch-notice h2 { font-size: 25px; margin-bottom: 10px; }
   .sequel-launch-detail { margin: 8px 0 14px; }
 }

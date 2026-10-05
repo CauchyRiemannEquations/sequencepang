@@ -1,7 +1,7 @@
 // Fixed campaign dates: returning later or deploying again must not extend it.
-export const LAUNCH_NOTICE_START = Date.parse('2026-09-20T08:39:00.000Z');
+export const LAUNCH_NOTICE_START = Date.parse('2026-10-05T00:00:00+09:00');
 export const LAUNCH_NOTICE_END = LAUNCH_NOTICE_START + 7 * 24 * 60 * 60 * 1000;
-const SEEN_KEY = 'sequencepang-sequel-launch-2026-09-seen-day';
+const SEEN_KEY = 'sequencepang-sequel3-launch-2026-10-seen-day';
 
 export function launchNoticeDay(now) {
   return new Date(now + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -26,12 +26,12 @@ export function initSequelLaunchNotice({ onComplete = () => {} } = {}) {
   dialog.setAttribute('aria-labelledby', 'sequel-launch-title');
   dialog.setAttribute('aria-describedby', 'sequel-launch-copy');
   dialog.innerHTML = `
-    <img class="sequel-launch-mango" src="https://sequencepang2.vercel.app/icons/icon-512.png" alt="별을 든 시퀀스팡2 망고" width="104" height="104">
+    <img class="sequel-launch-mascot" src="https://sequencepang3.vercel.app/coconut/icons/icon-512.png" alt="시퀀스팡3 코코넛" width="104" height="104">
     <p class="sequel-launch-eyebrow">NEW GAME</p>
-    <h2 id="sequel-launch-title">시퀀스팡2 출시!</h2>
-    <p id="sequel-launch-copy">이번엔 시간제한 없이,<br><strong>새로운 수열 퍼즐</strong>에 도전하세요!</p>
-    <p class="sequel-launch-detail">숫자를 이어 지우고,<br>제한된 이동 안에 모든 별을 모아요.</p>
-    <a class="sequel-launch-play" href="https://sequencepang2.vercel.app/" target="_blank" rel="noopener noreferrer">시퀀스팡2 하러 가기 <span aria-hidden="true">↗</span><span class="sequel-launch-new-tab">새 탭에서 열려요</span></a>
+    <h2 id="sequel-launch-title">시퀀스팡3 출시!</h2>
+    <p id="sequel-launch-copy">열린 패 세 개로<br><strong>등차·등비수열</strong>을 완성해요!</p>
+    <p class="sequel-launch-detail">시간제한 없이 차근차근,<br>쌓인 패를 모두 지워 보세요.</p>
+    <a class="sequel-launch-play" href="https://sequencepang3.vercel.app/" target="_blank" rel="noopener noreferrer">시퀀스팡3 하러 가기<span class="sequel-launch-new-tab">새 탭에서 열려요</span></a>
     <button class="sequel-launch-close" type="button" autofocus>닫기</button>
     <p class="sequel-launch-footnote">이 안내는 하루에 한 번만 보여요.</p>
   `;
