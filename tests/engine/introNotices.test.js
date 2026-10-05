@@ -34,7 +34,7 @@ function setup(t, { now = LAUNCH_NOTICE_START, hidden = false, storageBlocked = 
   return { dialogs, storage, clock, doc, start: () => initSequelLaunchNotice({ onComplete: initStarTimeNotice }) };
 }
 
-test('소개 순서: 시퀀스팡2 닫기 → STAR → 닫기, 이후 같은 기기에서는 STAR 생략', t => {
+test('소개 순서: 시퀀스팡3 닫기 → STAR → 닫기, 이후 같은 기기에서는 STAR 생략', t => {
   const env = setup(t);
   env.start();
   assert.deepEqual(env.dialogs.map(d => d.id), ['sequel-launch-notice']);
@@ -53,12 +53,12 @@ test('소개 순서: 시퀀스팡2 닫기 → STAR → 닫기, 이후 같은 기
 
 test('기존 소개를 오늘 이미 봤다면 STAR만 표시', t => {
   const env = setup(t);
-  env.storage.set('sequencepang-sequel-launch-2026-09-seen-day', launchNoticeDay(env.clock.now));
+  env.storage.set('sequencepang-sequel3-launch-2026-10-seen-day', launchNoticeDay(env.clock.now));
   env.start();
   assert.deepEqual(env.dialogs.map(d => d.id), ['star-time-notice']);
 });
 
-test('시퀀스팡2 소개 기간 종료 후에도 새 STAR 안내는 표시', t => {
+test('시퀀스팡3 소개 기간 종료 후에도 새 STAR 안내는 표시', t => {
   const env = setup(t, { now: LAUNCH_NOTICE_END + 1 });
   env.start();
   assert.deepEqual(env.dialogs.map(d => d.id), ['star-time-notice']);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sequencepang-v27';
+const CACHE_NAME = 'sequencepang-v30';
 
 const CORE_ASSETS = [
   '/manifest.webmanifest',
@@ -30,6 +30,21 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  const requestUrl = new URL(event.request.url);
+
+  // PWA 설치 이름/아이콘은 오래 캐시되면 이전 앱 이름이 계속 노출될 수 있다.
+  // manifest는 항상 최신 네트워크 버전을 우선하고, 오프라인일 때만 캐시를 사용한다.
+  if (
+    requestUrl.origin === self.location.origin &&
+    requestUrl.pathname === '/manifest.webmanifest'
+  ) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .catch(() => caches.match('/manifest.webmanifest'))
+    );
+    return;
+  }
 
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request, { cache: 'no-store' }));

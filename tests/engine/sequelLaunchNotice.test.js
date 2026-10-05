@@ -13,11 +13,11 @@ test('launch notice is restricted to a fixed seven-day window, including late fi
 });
 
 test('notice stays hidden on the same Korean calendar day and returns the next day', () => {
-  const beforeMidnight = Date.parse('2026-09-21T14:59:59.999Z');
+  const beforeMidnight = Date.parse('2026-10-05T14:59:59.999Z');
   const midnight = beforeMidnight + 1;
   const seenDay = launchNoticeDay(beforeMidnight);
-  assert.equal(seenDay, '2026-09-21');
-  assert.equal(launchNoticeDay(midnight), '2026-09-22');
+  assert.equal(seenDay, '2026-10-05');
+  assert.equal(launchNoticeDay(midnight), '2026-10-06');
   assert.equal(shouldShowLaunchNotice(beforeMidnight, seenDay), false);
   assert.equal(shouldShowLaunchNotice(midnight, seenDay), true);
   assert.equal(shouldShowLaunchNotice(midnight, 'invalid-storage-value'), true);
