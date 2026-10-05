@@ -1,6 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInAnonymously } from 'firebase/auth';
 import { connectDatabaseEmulator, getDatabase } from 'firebase/database';
+import confirmedConfig from '../../firebase.web-config.json';
+import { resolveFirebaseWebConfig } from './firebaseConfig.js';
 
 let services;
 let signInPromise;
@@ -12,18 +14,11 @@ export function getFirebaseServices() {
     throw new Error('운영 환경에서 개발 서버에 연결할 수 없습니다.');
   }
   // Keep local validation on the same demo namespace even with production env values present.
-  const projectId = emulator ? 'demo-sequencepang' : import.meta.env.VITE_FIREBASE_PROJECT_ID;
   const config = emulator ? {
-    apiKey: 'demo-api-key', authDomain: `${projectId}.firebaseapp.com`, projectId,
-    databaseURL: `https://${projectId}.firebaseio.com`, appId: '1:123:web:demo'
-  } : {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId,
-    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID
-  };
-  if (Object.values(config).some(value => !value)) throw new Error('게임 서버 설정이 필요합니다.');
+    apiKey: 'demo-api-key', authDomain: 'demo-sequencepang.firebaseapp.com', projectId: 'demo-sequencepang',
+    databaseURL: 'https://demo-sequencepang.firebaseio.com', appId: '1:123:web:demo'
+  } : resolveFirebaseWebConfig(confirmedConfig, import.meta.env);
+  const projectId = config.projectId;
   const app = initializeApp(config);
   const auth = getAuth(app);
   const database = getDatabase(app);
@@ -31,7 +26,7 @@ export function getFirebaseServices() {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
     connectDatabaseEmulator(database, '127.0.0.1', 9000);
   }
-  const region = emulator ? 'us-central1' : (import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || 'asia-southeast1');
+  const region = emulator ? 'us-central1' : (import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || confirmedConfig.functionsRegion);
   const apiBaseUrl = emulator ? `http://127.0.0.1:5001/${projectId}/${region}/api`
     : (import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || `https://${region}-${projectId}.cloudfunctions.net/api`).replace(/\/+$/, '');
   services = { app, auth, database, apiBaseUrl };

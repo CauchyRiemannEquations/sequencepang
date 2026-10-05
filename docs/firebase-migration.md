@@ -4,14 +4,15 @@
 
 ## 2026-10-06 현재 진행 상황
 
-- PR #37에 최신 main `8a7566f`를 병합했다. PWA 캐시를 v30으로 올리고 최신 출시 안내/바로가기를 유지했다. 병합 충돌은 해결됐다.
+- PR #37에 최신 main `8a7566f`를 병합했다. PWA 캐시를 v31로 올리고 최신 출시 안내/바로가기를 유지했다. 병합 충돌은 해결됐다.
 - 사용자 PC에서 Firebase CLI 로그인 후, Windows 시스템 인증서를 사용해 기존 `sequencepang` 프로젝트에 배포했다. 서비스 계정 키나 새 프로젝트는 만들지 않았다.
 - `api`, `roomPresence`, `cleanup` 모두 Node 22 / `asia-southeast1` / 최소 인스턴스 0으로 ACTIVE다. 처음 Eventarc 권한 전파가 늦어 실패했던 presence 함수는 재배포로 해결했다.
 - RTDB/Firestore 규칙과 랭킹 인덱스 배포 완료. 랭킹 인덱스 4개가 READY이며, 매분 cleanup Scheduler가 ENABLED이고 실제 호출이 200이다. 빌드 컨테이너 보관 기간은 7일로 설정했다.
 - `/health`는 200, 미인증 API 401, 허용하지 않은 origin 403, 미인증 RTDB 401, 브라우저 Firestore 읽기 403을 확인했다. 실제 어제/오늘의 기존 랭킹도 조회된다.
-- 최신 main 기준 엔진 55/55, backend unit 5/5, Emulator 통합 11/11, desktop/mobile 브라우저 7개 흐름 통과. production build와 diff check 통과.
+- 최신 main 기준 엔진 55/55, backend unit 6/6, Emulator 통합 11/11, desktop/mobile 브라우저 7개 흐름 통과. production build와 diff check 통과.
 - 브랜치 Preview `dpl_82J1eJK2CWwBcLdh3TuqrWHPJgMj`가 READY이며 실제 Firebase 정상 게임/오늘·주간·내 순위/2인 점수 동기화/새로고침/재접속/방장 위임/명시적 퇴장/빈 방 삭제까지 7개 흐름 모두 통과했다. 실제 기존 어제 1등 기록도 조회된다. 모바일 390×844에 가로 넘침이 없으며 Render 요청과 uncaught error는 0건이다. [원격 결과](verification/preview-browser-results.json).
 - 현재 정상 production 롤백 대상은 `dpl_BA6pawhy4JvrxPJ1DsybfhcnNqnZ` / main `8a7566f`다. Production 전환과 Render 삭제는 아직 실행하지 않았다.
+- 같은 저장소의 `https://sequencepang.pages.dev`도 기존 Render를 사용하는 것을 확인했다. 별도 Web SDK 환경변수가 없는 빌드는 저장소의 확인된 공개 Web Config를 사용하며, 명시한 설정이 일부만 있거나 다른 프로젝트를 가리키면 거부한다. 설정 있는 빌드와 없는 빌드의 JS 결과가 동일함을 확인했다. Cloudflare 운영 origin을 Functions의 정확한 CORS 허용 목록에도 추가했다. Cloudflare 운영 배포도 main 병합 시 전환된다.
 
 아래의 2026-10-03 미배포/CLI 미인증 기록은 당시 상태다. 현재 배포 상태는 이 절과 최신 원격 검증 결과를 따른다.
 
@@ -162,6 +163,8 @@ API는 허용한 정확한 origin에만 CORS 응답을 준다. Firebase 인증 �
 ## 필요한 환경변수
 
 Vercel **Preview에는 아래 필수 공개 설정 7개를 Config 유형으로 저장했다. Production은 아직 변경하지 않았다.** 값은 [`firebase.web-config.json`](../firebase.web-config.json)에 있으며 `npm run configure:firebase -- sequencepang`으로 로컬 환경변수 파일을 생성할 수 있다. 다른 설정이 있는 기존 파일은 덮어쓰지 않는다. Vite 값은 빌드 시 bundle에 포함되므로 변경 후 새로 build/deploy해야 한다.
+
+2026-10-06부터 Web SDK 변수 5개를 모두 생략한 정적 빌드는 위 공개 설정을 기본값으로 사용한다. SDK 변수를 명시하는 경우에는 5개를 모두 제공해야 하며 기존 프로젝트와 일치해야 한다. 리전과 API URL의 선택적 override 및 localhost 전용 Emulator guard는 유지한다. Vercel은 환경변수를 명시해 관리하고, Cloudflare Pages도 동일한 기존 Firebase를 사용한다.
 
 | 변수 | 값의 출처/설명 |
 |---|---|

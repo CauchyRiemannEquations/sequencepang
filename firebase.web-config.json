@@ -8,6 +8,7 @@
   "rtdbInstance": "sequencepang-default-rtdb",
   "frontendOrigins": [
     "https://sequencepang.vercel.app",
+    "https://sequencepang.pages.dev",
     "https://sequencepang-git-migration-firebase-serverless-cooolguy.vercel.app"
   ]
 }

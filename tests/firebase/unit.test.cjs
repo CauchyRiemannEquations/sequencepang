@@ -7,6 +7,22 @@ const { validateSession } = require('../../functions/src/gameSessionStore');
 const { validateRoomInput, reconcileRoom, DISCONNECT_GRACE_MS } = require('../../functions/src/roomService');
 const { getCurrentRankingDayInfo, getCurrentRankingWeekInfo } = require('../../functions/src/constants');
 
+test('설정 없는 정적 배포는 확인된 Firebase를 사용하고 불완전하거나 다른 프로젝트의 설정은 거부', async () => {
+  const { resolveFirebaseWebConfig } = await import('../../client/src/firebaseConfig.js');
+  const confirmed = require('../../firebase.web-config.json');
+  const defaults = resolveFirebaseWebConfig(confirmed, {});
+  assert.equal(defaults.projectId, 'sequencepang');
+  assert.equal(defaults.databaseURL, confirmed.databaseURL);
+  const explicit = {
+    VITE_FIREBASE_API_KEY: confirmed.apiKey, VITE_FIREBASE_AUTH_DOMAIN: confirmed.authDomain,
+    VITE_FIREBASE_PROJECT_ID: confirmed.projectId, VITE_FIREBASE_DATABASE_URL: confirmed.databaseURL,
+    VITE_FIREBASE_APP_ID: confirmed.appId
+  };
+  assert.deepEqual(resolveFirebaseWebConfig(confirmed, explicit), defaults);
+  assert.throws(() => resolveFirebaseWebConfig(confirmed, { VITE_FIREBASE_PROJECT_ID: 'sequencepang' }));
+  assert.throws(() => resolveFirebaseWebConfig(confirmed, { ...explicit, VITE_FIREBASE_PROJECT_ID: 'other-project' }));
+});
+
 test('기존 점수·콤보·분석 whitelist 검증 및 욕설 우회 차단', () => {
   const payload = { nickname: '교사', score: 100, maxCombo: 3, mode: 'timeAttack', playDurationMs: 33000, ignored: 1 };
   const result = validateScorePayload(payload);

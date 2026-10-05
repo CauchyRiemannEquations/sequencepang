@@ -75,6 +75,8 @@ npm run build
 기존 프로젝트 `sequencepang`의 default Firestore와 Blaze를 확인했습니다.
 같은 프로젝트에 싱가포르 RTDB를 잠금 모드로 추가하고 검증한 규칙 및 Anonymous Auth를 적용했습니다.
 확인된 Web Config는 `firebase.web-config.json`의 공개 설정이며 서비스 계정 키가 아닙니다.
+Web SDK 환경변수를 생략하면 이 확인된 설정을 사용하므로 Cloudflare Pages도 같은 Firebase에 연결됩니다.
+SDK 환경변수를 명시할 때는 필수 5개를 모두 제공해야 하며 다른 프로젝트 설정은 거부합니다.
 아래 명령은 그 설정에서 gitignored 환경변수 파일을 생성합니다. 다른 기존 설정은 덮어쓰지 않습니다.
 
 ```sh
