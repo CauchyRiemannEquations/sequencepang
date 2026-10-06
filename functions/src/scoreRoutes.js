@@ -1,5 +1,5 @@
 ﻿const express = require('express');
-const { FieldValue } = require('firebase-admin/firestore');
+const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { getScoreFirestore } = require('./firestore');
 const {
   ALLOWED_SCORE_MODES,
@@ -15,9 +15,7 @@ const {
 } = require('./constants');
 const {
   issueGameSession,
-  reserveGameSession,
-  completeGameSession,
-  releaseGameSession
+  commitSessionScore
 } = require('./gameSessionStore');
 const { createRateLimiter } = require('./rateLimit');
 const { isProfaneNickname } = require('./profanityFilter');
@@ -44,7 +42,7 @@ const ANALYTICS_FIELDS = [
   'fullPangCount',
   'maxChainLength'
 ];
-const leaderboardCache = new Map();
+
 
 function normalizeNickname(value) {
   if (typeof value !== 'string') return null;
@@ -206,25 +204,27 @@ function buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo) {
   ].join(':');
 }
 
-function getCachedLeaderboard(cacheKey) {
-  const cached = leaderboardCache.get(cacheKey);
-  if (!cached) return null;
-  if (Date.now() - cached.cachedAt > LEADERBOARD_CACHE_TTL_MS) {
-    leaderboardCache.delete(cacheKey);
-    return null;
+async function getCachedLeaderboard(firestore, cacheKey) {
+  try {
+    const [state, cached] = await Promise.all([
+      firestore.collection('ranking_state').doc('current').get(),
+      firestore.collection('leaderboard_cache').doc(cacheKey).get()
+    ]);
+    const revision = state.data()?.revision || 0;
+    const data = cached.data();
+    return { revision, payload: data?.revision === revision && data.expiresAt.toMillis() > Date.now() ? data.payload : null };
+  } catch (error) {
+    console.warn('랭킹 캐시 조회 실패:', error.message);
+    return { revision: null, payload: null };
   }
-  return cached.payload;
 }
 
-function setCachedLeaderboard(cacheKey, payload) {
-  leaderboardCache.set(cacheKey, {
-    cachedAt: Date.now(),
-    payload
-  });
-}
-
-function clearLeaderboardCache() {
-  leaderboardCache.clear();
+async function setCachedLeaderboard(firestore, cacheKey, payload, revision) {
+  if (revision === null) return;
+  try {
+    await firestore.collection('leaderboard_cache').doc(cacheKey).set({ revision, payload,
+      expiresAt: Timestamp.fromMillis(Date.now() + LEADERBOARD_CACHE_TTL_MS) });
+  } catch (error) { console.warn('랭킹 캐시 저장 실패:', error.message); }
 }
 
 function isFirestoreIndexError(error) {
@@ -454,12 +454,21 @@ async function recordSuspiciousScore(firestore, payload, reason) {
   }
 }
 
-scoreRouter.post('/game-session', writeRateLimiter, (req, res) => {
+scoreRouter.post('/game-session', writeRateLimiter, async (req, res) => {
   const requestedNickname = typeof req.body?.nickname === 'string' ? req.body.nickname : '';
-  if (requestedNickname && isProfaneNickname(requestedNickname)) {
+  const nickname = normalizeNickname(requestedNickname);
+  if (!nickname) return res.status(400).json({ error: '닉네임을 확인해주세요.' });
+  if (isProfaneNickname(nickname)) {
     return res.status(400).json({ error: PROFANE_NICKNAME_MESSAGE });
   }
-  return res.status(201).json(issueGameSession());
+  const playerId = typeof req.body?.playerId === 'string' && req.body.playerId.trim()
+    ? req.body.playerId.trim().slice(0, 120) : null;
+  try {
+    return res.status(201).json(await issueGameSession({ uid: req.auth.uid, nickname, playerId }));
+  } catch (error) {
+    console.error('세션 발급 실패:', error.message);
+    return res.status(503).json({ error: '게임 세션을 시작하지 못했습니다.' });
+  }
 });
 
 scoreRouter.post('/scores', writeRateLimiter, async (req, res) => {
@@ -470,16 +479,8 @@ scoreRouter.post('/scores', writeRateLimiter, async (req, res) => {
     return res.status(400).json({ error: validation.error });
   }
 
-  const sessionResult = reserveGameSession(validation.value);
-  if (sessionResult.error) {
-    const firestore = getScoreFirestore();
-    await recordSuspiciousScore(firestore, req.body, sessionResult.error);
-    return res.status(400).json({ error: SESSION_ERROR_MESSAGE });
-  }
-
   const firestore = getScoreFirestore();
   if (!firestore) {
-    releaseGameSession(validation.value.gameSessionId);
     return firestoreUnavailable(res);
   }
 
@@ -487,17 +488,20 @@ scoreRouter.post('/scores', writeRateLimiter, async (req, res) => {
     const { gameSessionId, sessionToken, ...scoreData } = validation.value;
     const dayInfo = getCurrentRankingDayInfo();
     const weekInfo = getCurrentRankingWeekInfo();
-    const document = await firestore.collection('scores').add({
+    const result = await commitSessionScore({ ...validation.value, uid: req.auth.uid }, {
       ...scoreData,
+      authUid: req.auth.uid,
       rankingSeason: getRankingSeason(),
       rankingDay: dayInfo.rankingDay,
       rankingWeek: weekInfo.rankingWeek,
       rankingWeekStart: weekInfo.rankingWeekStart,
       createdAt: FieldValue.serverTimestamp(),
       version: SCORE_VERSION
-    });
-    clearLeaderboardCache();
-    completeGameSession(gameSessionId);
+    }, firestore);
+    if (result.error) {
+      await recordSuspiciousScore(firestore, req.body, result.error);
+      return res.status(400).json({ error: SESSION_ERROR_MESSAGE });
+    }
 
     let dailyRank = null;
     try {
@@ -506,9 +510,8 @@ scoreRouter.post('/scores', writeRateLimiter, async (req, res) => {
       console.warn('일간 순위 계산 실패:', rankError.message);
     }
 
-    return res.status(201).json({ ok: true, id: document.id, dailyRank });
+    return res.status(201).json({ ok: true, id: result.id, dailyRank });
   } catch (error) {
-    releaseGameSession(validation.value.gameSessionId);
     console.error('점수 저장 실패:', error.message);
     return res.status(500).json({ error: '점수를 저장하지 못했습니다.' });
   }
@@ -539,7 +542,9 @@ scoreRouter.get('/leaderboard', async (req, res) => {
     const dayInfo = getCurrentRankingDayInfo();
     const weekInfo = getCurrentRankingWeekInfo();
     const cacheKey = buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo);
-    const cachedPayload = getCachedLeaderboard(cacheKey);
+    // The score transaction increments a shared revision, invalidating all instances.
+    const cacheState = await getCachedLeaderboard(firestore, cacheKey);
+    const cachedPayload = cacheState.payload;
 
     if (cachedPayload) {
       res.set('Cache-Control', 'no-store');
@@ -558,7 +563,7 @@ scoreRouter.get('/leaderboard', async (req, res) => {
       rankingWeekStart: weekInfo.rankingWeekStart
     };
 
-    setCachedLeaderboard(cacheKey, payload);
+    await setCachedLeaderboard(firestore, cacheKey, payload, cacheState.revision);
     res.set('Cache-Control', 'no-store');
     return res.json(payload);
   } catch (error) {
@@ -572,5 +577,5 @@ module.exports = {
   normalizeNickname,
   isValidScore,
   getRankingSeason,
-  validateScorePayload
+  validateScorePayload, buildRankedEntries, computeDailyRank, loadPeriodDocs, recordSuspiciousScore
 };

@@ -1,0 +1,44 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      ".indexOn": [
+        "cleanupAt"
+      ],
+      "$roomId": {
+        ".read": "auth != null && data.child('players').child(auth.uid).exists()",
+        "players": {
+          "$uid": {
+            ".validate": "newData.hasChildren(['nickname', 'nicknameKey', 'joinedAt', 'score', 'highestScore', 'connected', 'scoreRoundId', 'lastScoreAt']) && newData.child('highestScore').val() >= newData.child('score').val() && (newData.child('score').val() == data.child('score').val() || newData.child('lastScoreAt').val() == now) && ((newData.child('highestScore').val() == data.child('highestScore').val() && data.child('highestScore').val() >= newData.child('score').val()) || (newData.child('highestScore').val() == newData.child('score').val() && newData.child('score').val() >= data.child('highestScore').val()))",
+            "connections": {
+              "$connectionId": {
+                ".write": "auth != null && auth.uid == $uid && data.parent().parent().exists() && $connectionId.matches(/^[A-Za-z0-9_-]{1,80}$/)",
+                ".validate": "newData.val() == true"
+              }
+            },
+            "score": {
+              ".write": "auth != null && auth.uid == $uid && data.parent().child('connections').hasChildren() && root.child('rooms').child($roomId).child('isStarted').val() == true && now >= root.child('rooms').child($roomId).child('startsAt').val() && now < root.child('rooms').child($roomId).child('expiresAt').val() && data.parent().child('scoreRoundId').val() == root.child('rooms').child($roomId).child('roundId').val()",
+              ".validate": "newData.isNumber() && newData.val() >= data.val() && newData.val() >= 0 && newData.val() <= 9007199254740991 && newData.val() % 1 == 0"
+            },
+            "highestScore": {
+              ".write": "auth != null && auth.uid == $uid && data.parent().child('connections').hasChildren() && root.child('rooms').child($roomId).child('isStarted').val() == true && now >= root.child('rooms').child($roomId).child('startsAt').val() && now < root.child('rooms').child($roomId).child('expiresAt').val() && data.parent().child('scoreRoundId').val() == root.child('rooms').child($roomId).child('roundId').val()",
+              ".validate": "newData.isNumber() && newData.val() >= data.val() && newData.val() >= 0 && newData.val() <= 9007199254740991 && newData.val() % 1 == 0"
+            },
+            "lastScoreAt": {
+              ".write": "auth != null && auth.uid == $uid && data.parent().child('connections').hasChildren() && root.child('rooms').child($roomId).child('isStarted').val() == true && now >= root.child('rooms').child($roomId).child('startsAt').val() && now < root.child('rooms').child($roomId).child('expiresAt').val() && data.parent().child('scoreRoundId').val() == root.child('rooms').child($roomId).child('roundId').val()",
+              ".validate": "newData.val() == now && (data.val() == 0 || now - data.val() >= 700)"
+            },
+            "$other": {
+              ".write": false
+            },
+            "scoreRoundId": {
+              ".write": "auth != null && auth.uid == $uid && data.parent().child('connections').hasChildren() && root.child('rooms').child($roomId).child('isStarted').val() == true && now >= root.child('rooms').child($roomId).child('startsAt').val() && now < root.child('rooms').child($roomId).child('expiresAt').val() && data.parent().child('scoreRoundId').val() == root.child('rooms').child($roomId).child('roundId').val()",
+              ".validate": "newData.isString() && newData.val() == data.val() && newData.val() == root.child('rooms').child($roomId).child('roundId').val()"
+            }
+          }
+        }
+      }
+    }
+  }
+}

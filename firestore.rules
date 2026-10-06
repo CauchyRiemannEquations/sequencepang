@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Browser access is denied. Functions use the runtime Admin SDK.
+    match /scores/{document} { allow read, write: if false; }
+    match /suspicious_scores/{document} { allow read, write: if false; }
+    match /game_sessions/{document} { allow read, write: if false; }
+    match /request_limits/{document} { allow read, write: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

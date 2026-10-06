@@ -1,0 +1,14 @@
+{
+  "projectId": "sequencepang",
+  "apiKey": "AIzaSyB8YkTChUFy1uxXRPgHl8a9I6B-g2k8Q8s",
+  "authDomain": "sequencepang.firebaseapp.com",
+  "appId": "1:147997579779:web:7050ee7d014693c3334c36",
+  "databaseURL": "https://sequencepang-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "functionsRegion": "asia-southeast1",
+  "rtdbInstance": "sequencepang-default-rtdb",
+  "frontendOrigins": [
+    "https://sequencepang.vercel.app",
+    "https://sequencepang.pages.dev",
+    "https://sequencepang-git-migration-firebase-serverless-cooolguy.vercel.app"
+  ]
+}

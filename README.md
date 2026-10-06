@@ -1,4 +1,4 @@
-﻿# 시퀀스팡(Sequence Pang)
+# 시퀀스팡(Sequence Pang)
 
 시퀀스팡(구 수열팡)은 6x6 숫자 보드에서 인접한 타일을 드래그해 3개 이상의 등차수열 또는 등비수열을 만들며 점수를 얻는 실시간 수학 퍼즐 게임입니다.
 
@@ -15,252 +15,97 @@
 - 어제의 1등 도전: 메인 화면에 어제 일간 1등 기록 표시, 게임 중 돌파 시 연출
 - 오늘 내 순위: 점수 등록 후 오늘 순위와 TOP 30까지 남은 점수 안내
 - 공개 랭킹: `오늘 랭킹`, `주간 랭킹`
-- 멀티플레이: Socket.IO 기반 실시간 방/순위표 지원
+- 멀티플레이: Firebase RTDB 기반 실시간 방/순위표 지원
 
-기존 주소:
-- [https://sequencepang.onrender.com](https://sequencepang.onrender.com)
+운영 프론트: https://sequencepang.vercel.app
 
-## 프로젝트 구조
+## Firebase 백엔드
 
-```text
-client/
-  public/
-    apple-touch-icon.png
-    icon-192.png
-    icon-512.png
-    manifest.webmanifest
-    maskable-icon-512.png
-    melon.png
-    service-worker.js
-    update-notes.md
-  src/
-    engine/          # 순수 게임 로직 (DOM 금지, node --test 대상)
-      board.js
-      chainTier.js
-      rng.js
-      scoring.js
-      sequence.js
-      tiles.js
-    ui/              # 보드 DOM·히트테스트·HUD 렌더링
-      boardView.js
-      dragController.js
-      hud.js
-    gameConstants.js
-    gameEngine.js
-    haptics.js
-    main.js
-    menuBgm.js
-    rankingHome.css
-    rankingHome.js
-    rankingResetNotice.css
-    rankingResetNotice.js
-    scoreClient.js
-    sfxManager.js
-    socketClient.js
-    style.css
-    style.lovable.css
-    ui.js
-    updateNotes.css
-    updateNotes.js
-server/
-  constants.js
-  firestore.js
-  roomStore.js
-  scoreRoutes.js
-  server.js
-  socketHandlers.js
-tests/
-  engine/            # node --test — 패리티 벡터 포함
-package.json
-vite.config.js
+- Vercel: 기존 Vite 프론트.
+- Cloud Functions v2 `api`: 기존 Express 점수/랭킹 API와 인증된 방 제어 API.
+- 기존 Firestore: `scores`, `suspicious_scores`를 그대로 사용. 점수 공식·시즌·문서 필드 유지.
+- Firestore `game_sessions`: token hash, Auth UID, 시작/만료 시각, 1회 소비 transaction.
+- Realtime Database: 서버가 관리하는 방/참가자/방장/라운드와 본인 점수/presence.
+- Anonymous Auth: 사용자별 RTDB 쓰기 권한과 API 인증.
+- Presence trigger: 방장 위임. Scheduled cleanup: 연결 유예 후 빈 방/단기 문서 정리.
+
+전체 기능 대응표, 보안 규칙 설명, 환경변수, 배포·롤백 절차와 운영 상태는
+[Firebase 이전 문서](docs/firebase-migration.md)에 있습니다.
+
+## 설치와 로컬 개발
+
+```sh
+npm ci
+npm ci --prefix functions
+npm run emulators
 ```
 
-## 로컬 개발
+별도 터미널에서 `client/.env.local`에 `VITE_USE_FIREBASE_EMULATORS=true`를 넣고:
 
-설치:
-
-```powershell
-npm.cmd install
+```sh
+npm run dev:client
 ```
 
-개발 서버:
+- 프론트: http://localhost:5173
+- Emulator UI: http://127.0.0.1:4000
+- 로컬 프로젝트 `demo-sequencepang`은 Emulator용 가상 ID이며 새 Firebase 프로젝트를 생성하지 않습니다.
+- Emulator의 Functions 리전은 `us-central1`입니다. 운영 리전/RTDB URL은 기존 프로젝트에서 확인합니다.
+- Java 17+ 및 Node 22+가 필요합니다. Firebase CLI 14.27.0을 고정했으며 차후 CLI 15로 올릴 때 Java 21+도 준비합니다.
 
-```powershell
-npm.cmd run dev:server
-npm.cmd run dev:client
+## 검증
+
+```sh
+npm test
+npm run test:backend
+npm run test:emulators
+npx playwright install chromium
+npm run test:browser
+npm run build
 ```
 
-- API/Socket 서버: `http://localhost:3000`
-- Vite 개발 서버: `http://localhost:5173`
-- 로컬에서는 `VITE_API_BASE_URL`, `VITE_SOCKET_URL` 없이도 기존처럼 동작합니다.
+브라우저 테스트는 격리된 Emulator에서 실제 싱글 플레이/점수 제출과 브라우저 두 개의 방 입장,
+동시 시작, 점수 동기화, 네트워크 재접속, 방장 위임, 빈 방 정리를 확인합니다.
+기존 UI·계산 로직을 수정하지 않고 모바일 390×844 화면도 검사합니다.
 
-## 빌드
+제한된 실행 환경에서 Unix socket을 사용할 수 없는 경우에만
+`SEQUENCEPANG_EMULATOR_TCP=true`를 사용합니다. 테스트 전용 loopback adapter이며 운영 코드에는 영향을 주지 않습니다.
 
-```powershell
-npm.cmd run build
-npm.cmd start
+## 운영 배포
+
+기존 프로젝트 `sequencepang`의 default Firestore와 Blaze를 확인했습니다.
+같은 프로젝트에 싱가포르 RTDB를 잠금 모드로 추가하고 검증한 규칙 및 Anonymous Auth를 적용했습니다.
+확인된 Web Config는 `firebase.web-config.json`의 공개 설정이며 서비스 계정 키가 아닙니다.
+Web SDK 환경변수를 생략하면 이 확인된 설정을 사용하므로 Cloudflare Pages도 같은 Firebase에 연결됩니다.
+SDK 환경변수를 명시할 때는 필수 5개를 모두 제공해야 하며 다른 프로젝트 설정은 거부합니다.
+아래 명령은 그 설정에서 gitignored 환경변수 파일을 생성합니다. 다른 기존 설정은 덮어쓰지 않습니다.
+
+```sh
+npm run configure:firebase -- sequencepang
+npx firebase login
+npm run deploy:firebase -- sequencepang
 ```
 
-기본값에서는 `server/server.js`가 `client/dist`를 정적 서빙합니다.  
-즉 `FRONTEND_REDIRECT_URL`이 비어 있으면 이전 Render 단일 서버 구조로 그대로 동작합니다.
+이 명령은 Functions/규칙/인덱스를 배포합니다. 기존 프로젝트의 다른 앱이 규칙/인덱스를 공유한다면
+먼저 현재 설정과 병합한 뒤 실행하세요. 랭킹 데이터 복사·삭제·초기화는 필요 없습니다.
+2026-10-06에 기존 Firebase 프로젝트의 Functions 3개, RTDB/Firestore 규칙, 랭킹 인덱스 배포를 완료했습니다.
+실제 Firebase를 사용하는 Vercel Preview에서 점수 제출·랭킹·2인 게임·재접속·방장 위임·빈 방 삭제를 검증했습니다.
+Production 전환은 아직 실행하지 않았습니다. 전환 후 검증과 관찰을 마칠 때까지 기존 운영 백엔드를 보존합니다.
 
-## 배포 구조
+## 점수 API
 
-### 1. 정적 프론트
-권장: Vercel
+모든 `/api` 요청은 `Authorization: Bearer <Firebase ID token>`이 필요합니다.
 
-- Framework Preset: `Vite`
-- Root Directory: 저장소 루트
-- Install Command: `npm install`
-- Build Command: `npm run build`
-- Output Directory: `client/dist`
+| Method | Path | 기능 |
+|---|---|---|
+| POST | /api/game-session | 인증된 세션 발급 |
+| POST | /api/scores | 검증 및 1회성 점수 저장/오늘 내 순위 |
+| GET | /api/leaderboard?period=daily\|weekly\|season | 호환 랭킹 |
+| GET | /api/yesterday-top | 어제 1등 |
+| POST | /api/rooms/join | 원자적 방 생성/입장 |
+| POST | /api/rooms/start | 방장만 새 라운드 시작 |
+| POST | /api/rooms/leave | 퇴장/방장 위임/빈 방 삭제 |
 
-루트의 `vercel.json`은 SPA 새로고침과 직접 경로 진입 모두 `index.html`로 진입하도록 설정합니다.
-
-```json
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
-```
-
-Vercel 환경변수:
-
-```text
-VITE_API_BASE_URL=https://sequencepang.onrender.com
-VITE_SOCKET_URL=https://sequencepang.onrender.com
-```
-
-설명:
-
-- `VITE_API_BASE_URL`은 `/api/scores`, `/api/game-session`, `/api/leaderboard` 요청의 기준 주소입니다.
-- `VITE_SOCKET_URL`은 Socket.IO 연결과 `/socket.io/socket.io.js` 로딩 기준 주소입니다.
-- 값이 비어 있으면 같은 도메인 기준 상대경로를 사용합니다.
-- 두 값 모두 뒤의 슬래시는 자동 정리되어 중복 슬래시를 피합니다.
-
-### 2. Render API 서버
-
-기존 Render Web Service는 유지합니다.  
-이 서버는 이제 실질적으로 다음만 담당합니다.
-
-- `/api/*`
-- `/socket.io/*`
-
-환경변수:
-
-```text
-FIREBASE_SERVICE_ACCOUNT_JSON=기존 값 유지
-FRONTEND_REDIRECT_URL=https://새로운-vercel-주소.vercel.app
-FRONTEND_ORIGIN=https://새로운-vercel-주소.vercel.app
-```
-
-설명:
-
-- `FRONTEND_REDIRECT_URL`이 있으면 Render는 일반 페이지 요청을 새 프론트 주소로 `302` 리다이렉트합니다.
-- `/api/*`와 Socket.IO 연결은 리다이렉트하지 않습니다.
-- `FRONTEND_ORIGIN`은 새 프론트 도메인의 CORS 허용값입니다.
-- 개발 편의를 위해 `localhost:3000`, `localhost:5173`, `127.0.0.1` 계열은 함께 허용합니다.
-- 운영에서 더 엄격하게 묶고 싶으면 `FRONTEND_ORIGIN`만 필요한 도메인으로 제한하면 됩니다.
-
-여러 프론트 도메인을 허용하고 싶으면 `FRONTEND_ORIGIN`에 쉼표로 나눠 넣으면 됩니다.
-
-```text
-FRONTEND_ORIGIN=https://sequencepang.vercel.app,https://preview-sequencepang.vercel.app
-```
-
-## 서비스워커 캐시
-
-서비스워커는 새 버전 캐시 이름을 사용하고, 네비게이션 요청은 네트워크 우선으로 처리합니다.
-
-- `CACHE_NAME`을 올려 구버전 캐시를 교체합니다.
-- `/` 또는 `index.html`을 코어 캐시에 고정하지 않습니다.
-- 새 프론트 배포 후 구버전 HTML이 오래 남지 않게 합니다.
-
-## Firestore 설정
-
-브라우저는 Firestore에 직접 접근하지 않습니다.  
-서버의 Firebase Admin SDK만 점수 저장과 랭킹 조회를 수행합니다.
-
-1. Firebase Console에서 프로젝트 생성
-2. Cloud Firestore 활성화
-3. 서비스 계정 키(JSON) 발급
-4. Render 환경변수 `FIREBASE_SERVICE_ACCOUNT_JSON`에 JSON 전체를 저장
-
-로컬 개발 예시:
-
-```powershell
-$env:FIREBASE_SERVICE_ACCOUNT_JSON = Get-Content 'C:\path\to\serviceAccountKey.json' -Raw
-npm.cmd run dev:server
-```
-
-권장 Firestore 보안 규칙:
-
-```text
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
-```
-
-## API
-
-- `POST /api/game-session`
-- `POST /api/scores`
-- `GET /api/leaderboard`
-
-점수 저장/조회 정책:
-
-- 전체 랭킹은 싱글 `timeAttack` 모드만 대상입니다.
-- 멀티 점수는 방 안 실시간 순위표에만 반영됩니다.
-- 서버가 게임 세션을 발급하고 제출 전 세션 유효성을 검증합니다.
-- 공개 UI는 오늘 랭킹과 주간 랭킹만 제공합니다.
-- 시즌 필드는 내부 호환성을 위해 유지하지만 공개 UI에서는 시즌 랭킹을 숨깁니다.
-
-## 공개 랭킹 정책
-
-- 기본 공개 랭킹은 오늘 랭킹 TOP 30입니다.
-- 오늘 랭킹은 매일 `00:00 KST` 기준으로 자동 전환됩니다.
-- 주간 랭킹은 매주 월요일 `00:00 KST` 기준으로 자동 전환됩니다.
-- 점수 데이터와 `rankingSeason` 필드는 삭제하지 않습니다.
-- 같은 플레이어는 랭킹에 한 번만 표시됩니다.
-- `playerId`가 있으면 `playerId` 기준으로, 없으면 닉네임 기준으로 최고 점수 1개만 남깁니다.
-- 일간/주간 랭킹은 기능 배포 이후 저장된 점수부터 가장 정확하게 반영됩니다.
-
-## Firestore 읽기 최적화
-
-- `daily` 조회는 현재 시즌 + 오늘 날짜 + `timeAttack` 문서만 읽습니다.
-- `weekly` 조회는 현재 시즌 + 현재 주차 + `timeAttack` 문서만 읽습니다.
-- `season` API는 호환성을 위해 남겨두되, 읽기 수를 제한합니다.
-- 랭킹 응답은 `period + 날짜/주차 + 시즌` 조합 기준으로 `30초` 캐시됩니다.
-- 점수 저장이 성공하면 랭킹 캐시는 즉시 비웁니다.
-
-필요할 수 있는 Firestore 복합 인덱스 예시:
-
-```text
-scores: rankingSeason ASC, rankingDay ASC, mode ASC, score DESC
-scores: rankingSeason ASC, rankingWeek ASC, mode ASC, score DESC
-scores: rankingSeason ASC, mode ASC, score DESC
-```
-
-## 배포 확인
-
-- `https://sequencepang.onrender.com` 접속 시 Vercel 주소로 이동해야 합니다.
-- `https://sequencepang.onrender.com/api/leaderboard`는 redirect되지 않고 JSON을 반환해야 합니다.
-- Vercel 주소에서 게임 실행, 점수 저장, 랭킹 조회가 되어야 합니다.
-- 멀티플레이 버튼 클릭 시 Socket.IO 연결 오류가 없어야 합니다.
-
-
-## 시퀀스팡2 출시 안내
-
-메인화면에 2026-09-20 17:39부터 2026-09-27 17:39까지(한국 시간) 출시 팝업을 표시합니다. 기기별 localStorage를 사용해 한국 날짜 기준 하루 한 번만 표시하며, 기록·닉네임·게임 진행은 변경하지 않습니다. 저장소가 차단된 브라우저에서는 방문할 때마다 표시될 수 있습니다. 기간은 첫 방문 또는 재배포 시점에 따라 연장되지 않습니다. 열린 팝업도 종료 시각에 닫힙니다. 시퀀스팡2 링크는 새 탭으로 열립니다.
-
-시퀀스팡2 안내를 닫으면 STAR TIME 소개 팝업이 이어서 열립니다. 기존 안내를 오늘 이미 봤거나 안내 기간이 끝났으면 STAR TIME 소개부터 표시합니다. STAR TIME 안내를 닫은 기록은 기기/브라우저별로 저장하여 한 번만 안내하고, 게임 도중에는 표시하지 않습니다. 브라우저 저장소를 지우거나 저장이 차단되면 다시 표시될 수 있습니다.
+공개 랭킹은 오늘/주간 TOP 30이며 KST 자정·월요일 경계를 유지합니다.
+이전 playerId가 있는 기록은 playerId로 먼저 중복 제거하고 닉네임으로 다시 중복 제거합니다.
+옛 필드 없는 기록도 기존 보충 조회로 계속 표시합니다.
+멀티플레이 점수는 공개 Firestore 랭킹에 저장하지 않습니다.

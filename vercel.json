@@ -3,7 +3,7 @@
   "outputDirectory": "client/dist",
   "rewrites": [
     {
-      "source": "/:path((?!api/|socket.io/).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

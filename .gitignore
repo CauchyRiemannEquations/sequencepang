@@ -6,3 +6,10 @@ raid-boss-melon-king-source.png
 .env.*
 serviceAccountKey.json
 *-firebase-adminsdk-*.json
+
+!client/.env.example
+!functions/.env.example
+.firebase/
+.firebase-deploy-*.json
+.vercel/
+artifacts/

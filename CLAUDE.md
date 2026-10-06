@@ -3,19 +3,18 @@
 ## 스택·원칙
 
 - 플레인 JS ESM + Vite + 기존 CSS. TypeScript·프레임워크·번들 구조 변경 금지.
-- **새 런타임 의존성 추가 금지.** 테스트는 Node 내장 `node --test`만 사용 (Node 18+).
+- **사용자 요청 없는 런타임 의존성 추가 금지.** Firebase 이전에 필요한 modular Web SDK와 Functions/Admin SDK/Express는 허용한다. 엔진/백엔드 테스트는 Node 내장 `node --test`; 브라우저 검증은 Playwright를 사용한다.
 - 사용자 노출 문자열은 한국어. 일반 알림은 `showInfoToast`(보드 상단 얇은 토스트)를 사용.
   크로스팡·풀보드팡은 사용자 요청에 따라 큰 이름·제거 범위·블록 폭발이 함께 보이는
   짧은 필살기 연출을 유지한다. 이를 작은 토스트·단순 축소로 대체하지 않는다.
   필살기 연출에 확인 버튼이나 별도 모달은 추가하지 않는다.
-- `server/`는 원칙적으로 손대지 않음. 예외: `SCORE_VERSION` bump,
-  `ANALYTICS_FIELDS` 화이트리스트 추가(없는 필드는 저장 시 버려짐).
+- `functions/src/`는 백엔드 전용 CommonJS. 점수 검증/랭킹 호환성을 유지하며 브라우저 Firestore 직접 쓰기를 허용하지 않는다. 새 secret 파일을 만들거나 서비스 계정 키를 저장하지 않는다.
 
 ## 디렉터리 구조
 
 ```text
 client/src/
-  engine/          ← 순수 게임 로직. document/window/localStorage/타이머/소켓 import 금지
+  engine/          ← 순수 게임 로직. document/window/localStorage/타이머/네트워크 import 금지
     rng.js         createRng(seed?) — 시드 주입 시 mulberry32 재현 가능
     tiles.js       타일 풀 주입형 생성 (createTilePool/createNormalTile/createFeverTile/getDisplayValue)
     board.js       createBoard / isNeighbor(8방향) / collapseAndRefill(중력 리필)
@@ -26,7 +25,7 @@ client/src/
     boardView.js   타일 DOM 2차원 캐시, 낙하·버스트 연출, 플로팅 점수·규칙 힌트
     dragController.js  보드 지오메트리 1회 측정 → 좌표 산술 히트테스트, rAF 드래그 선
     hud.js         점수·콤보·타이머·피버 패널 표시
-  gameEngine.js    조립·타이머·피버 타이머·소켓·오버레이 (게임 규칙 로직을 새로 넣지 말 것)
+  gameEngine.js    조립·타이머·피버 타이머·멀티플레이 adapter·오버레이 (게임 규칙 로직을 새로 넣지 말 것)
   gameConstants.js 튜닝 상수 전부. 엔진 모듈은 상수를 인자로 주입받는다
   haptics.js       진동 래퍼 (vibrate 미지원이면 noop, SFX 음소거와 연동)
   sfxManager.js    Web Audio 공용 컨텍스트. playSound(name, payload) — 새 AudioContext 생성 금지
@@ -58,8 +57,8 @@ tests/engine/      node --test. parityVectors.json = 점수·판정 기대값 �
 
 1. `client/public/service-worker.js`의 `CACHE_NAME` bump (예: v15 → v16). **필수.**
 2. `client/public/update-notes.md`에 날짜 + 한 줄 설명 추가 (아래에 append, 오래된 것부터).
-3. 점수 공식·판정에 영향 주는 변경이면 `server/constants.js` `SCORE_VERSION` bump.
-4. 새 분석 필드는 `server/scoreRoutes.js` `ANALYTICS_FIELDS`에 추가해야 저장된다.
+3. 점수 공식·판정에 영향 주는 변경이면 `functions/src/constants.js` `SCORE_VERSION` bump.
+4. 새 분석 필드는 `functions/src/scoreRoutes.js` `ANALYTICS_FIELDS`에 추가해야 저장된다.
 5. `npm run build` + `npm test` 통과 확인.
 
 ## 음수 피버 확장 지점 (다음 업데이트 예정)

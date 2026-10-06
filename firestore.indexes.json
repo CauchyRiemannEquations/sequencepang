@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    { "collectionGroup": "scores", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "rankingSeason", "order": "ASCENDING" }, { "fieldPath": "rankingDay", "order": "ASCENDING" },
+      { "fieldPath": "mode", "order": "ASCENDING" }, { "fieldPath": "score", "order": "DESCENDING" }
+    ] },
+    { "collectionGroup": "scores", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "rankingSeason", "order": "ASCENDING" }, { "fieldPath": "rankingWeek", "order": "ASCENDING" },
+      { "fieldPath": "mode", "order": "ASCENDING" }, { "fieldPath": "score", "order": "DESCENDING" }
+    ] },
+    { "collectionGroup": "scores", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "rankingSeason", "order": "ASCENDING" }, { "fieldPath": "mode", "order": "ASCENDING" },
+      { "fieldPath": "score", "order": "DESCENDING" }
+    ] },
+    { "collectionGroup": "scores", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "mode", "order": "ASCENDING" }, { "fieldPath": "score", "order": "DESCENDING" }
+    ] }
+  ],
+  "fieldOverrides": []
+}
