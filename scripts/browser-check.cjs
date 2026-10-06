@@ -10,9 +10,11 @@ const base = process.env.SEQUENCEPANG_VERIFY_URL || 'http://127.0.0.1:5173';
 const origin = new URL(base).origin;
 if (remote && (process.env.SEQUENCEPANG_VERIFY_PROJECT !== 'sequencepang' || ![
   'https://sequencepang.vercel.app',
+  'https://sequencepang.pages.dev',
   'https://sequencepang-git-migration-firebase-serverless-cooolguy.vercel.app'
 ].includes(origin))) throw new Error('원격 검증은 확인된 sequencepang 프로젝트와 운영/브랜치 Preview에서만 실행합니다.');
-const prefix = remote ? (origin === 'https://sequencepang.vercel.app' ? 'production-' : 'preview-') : '';
+const prefix = remote ? (origin === 'https://sequencepang.vercel.app' ? 'production-'
+  : origin === 'https://sequencepang.pages.dev' ? 'cloudflare-production-' : 'preview-') : '';
 const playerPrefix = remote ? `검증${require('node:crypto').randomBytes(3).toString('hex')}` : '브라우저';
 const playerA = `${playerPrefix}A`;
 const playerB = `${playerPrefix}B`;
@@ -168,11 +170,22 @@ async function dragSequence(page) {
     await waitFor(async () => await a.locator('#btn-lobby-play').isEnabled(), 'host leaves');
     await a.locator('#btn-lobby-exit').click();
     if (remote) {
-      const { stdout } = await promisify(execFile)(process.execPath, [
-        path.resolve('node_modules/firebase-tools/lib/bin/firebase.js'), 'database:get', `/rooms/${roomId}`,
-        '--project', 'sequencepang', '--instance', 'sequencepang-default-rtdb', '--non-interactive'
-      ], { timeout: 30000 });
-      assert.equal(JSON.parse(stdout.trim()), null, 'The verified Firebase instance contains no empty test room');
+      let room;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const { stdout } = await promisify(execFile)(process.execPath, [
+            path.resolve('node_modules/firebase-tools/lib/bin/firebase.js'), 'database:get', `/rooms/${roomId}`,
+            '--project', 'sequencepang', '--instance', 'sequencepang-default-rtdb', '--non-interactive'
+          ], { timeout: 30000 });
+          room = JSON.parse(stdout.trim());
+          break;
+        } catch (error) {
+          if (attempt === 1) throw error;
+          console.warn('Firebase CLI 읽기 확인에 실패해 한 번 다시 조회합니다.');
+          await pause(1000);
+        }
+      }
+      assert.equal(room, null, 'The verified Firebase instance contains no empty test room');
     } else {
       const database = getRoomDatabase();
       await waitFor(async () => !(await database.ref(`rooms/${roomId}`).once('value')).exists(), 'empty room deletion');

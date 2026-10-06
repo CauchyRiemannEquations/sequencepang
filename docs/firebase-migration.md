@@ -11,9 +11,13 @@
 - `/health`는 200, 미인증 API 401, 허용하지 않은 origin 403, 미인증 RTDB 401, 브라우저 Firestore 읽기 403을 확인했다. 실제 어제/오늘의 기존 랭킹도 조회된다.
 - 최신 main 기준 엔진 55/55, backend unit 6/6, Emulator 통합 11/11, desktop/mobile 브라우저 7개 흐름 통과. production build와 diff check 통과.
 - 브랜치 Preview `dpl_82J1eJK2CWwBcLdh3TuqrWHPJgMj`가 READY이며 실제 Firebase 정상 게임/오늘·주간·내 순위/2인 점수 동기화/새로고침/재접속/방장 위임/명시적 퇴장/빈 방 삭제까지 7개 흐름 모두 통과했다. 실제 기존 어제 1등 기록도 조회된다. 모바일 390×844에 가로 넘침이 없으며 Render 요청과 uncaught error는 0건이다. [원격 결과](verification/preview-browser-results.json).
-- 현재 정상 production 롤백 대상은 `dpl_BA6pawhy4JvrxPJ1DsybfhcnNqnZ` / main `8a7566f`다. Production 전환과 Render 삭제는 아직 실행하지 않았다.
-- 같은 저장소의 `https://sequencepang.pages.dev`도 기존 Render를 사용하는 것을 확인했다. 별도 Web SDK 환경변수가 없는 빌드는 저장소의 확인된 공개 Web Config를 사용하며, 명시한 설정이 일부만 있거나 다른 프로젝트를 가리키면 거부한다. 설정 있는/없는 빌드가 성공하며 Web Config 해석 결과가 동일함을 unit test로 확인했다. Cloudflare 운영 origin을 Functions의 정확한 CORS 허용 목록에도 추가했고 실제 preflight 204를 확인했다. Cloudflare 운영 배포도 main 병합 시 전환된다.
+- 사용자 승인 후 2026-10-06 09:17:48 KST에 PR #37을 병합했다. merge commit은 `dd6fbebf7e652074f253abf0e15a062cdd5ee8c1`이다. Vercel Production 환경변수 7개를 기존 Preview 값과 대조해 적용했고 Emulator flag는 false다. 운영 배포 `dpl_jWutC6o7tuni5zkKdVfE9hSfp7pt`가 READY다. Vercel 및 Cloudflare Pages 운영 주소 모두 새 Firebase 코드와 PWA cache v31을 제공한다.
+- production 롤백 대상은 `dpl_BA6pawhy4JvrxPJ1DsybfhcnNqnZ` / main `8a7566f`다. 기존 Render `/health`도 200이며 롤백용으로 보존했다. Render 삭제는 이번 전환에 포함하지 않았다.
+- 같은 저장소의 `https://sequencepang.pages.dev`도 함께 Firebase로 전환했다. 별도 Web SDK 환경변수가 없는 빌드는 저장소의 확인된 공개 Web Config를 사용하며, 명시한 설정이 일부만 있거나 다른 프로젝트를 가리키면 거부한다. 설정 있는/없는 빌드가 성공하며 Web Config 해석 결과가 동일함을 unit test로 확인했다. Cloudflare 운영 origin을 Functions의 정확한 CORS 허용 목록에도 추가했고 실제 preflight 204를 확인했다.
 - 초기화 보완 후 최신 앱 commit `4f2da72`의 Preview `dpl_AqbsFanvzAgoyJ2PBqSxS5spRG8j`가 READY이며 실제 익명 인증·어제/오늘 랭킹 API 200과 Render 요청 0건을 재확인했다. `.env.local`을 실제로 제외한 별도 정적 빌드도 허용된 Preview origin의 로컬 테스트 자산으로 제공해 실제 Firebase 익명 인증과 어제/오늘 API 200을 확인했다. 원격 Cloudflare 배포 자체의 검증으로 간주하지 않는다. [환경변수 없는 빌드 검증](verification/no-env-browser-results.json).
+- 실제 Vercel Production 및 Cloudflare Pages 각각 desktop/mobile 7개 흐름을 모두 통과했다. 점수 제출·오늘/주간/내 순위·2인 입장·reload·동시 시작·실시간 점수·offline/online·방장 위임·퇴장·빈 방 삭제를 확인했고 가로 넘침, Render 요청, uncaught error는 모두 0건이다. [Vercel 결과](verification/production-browser-results.json), [Cloudflare 결과](verification/cloudflare-production-browser-results.json). 정상 게임으로 제출한 검증 기록과 기존 랭킹 문서는 삭제하거나 수정하지 않았다.
+- Cloudflare 첫 점검은 CLI가 빈 방 조회 결과 `null`을 출력한 뒤 비정상 종료해 검증 도구가 실패로 판정했다. 독립 조회가 정상 종료하며 `null`을 반환한 것을 확인했고, 읽기 확인에 한 번의 재시도를 추가한 뒤 Cloudflare 전체 점검을 다시 통과했다. 검증 도구 변경이며 운영 게임 코드는 바꾸지 않았다.
+- 운영 Firebase health 200, 미인증 API 401, 차단 origin 403, 미인증 RTDB 401, 브라우저 Firestore 403을 재확인했다. Runtime에서 api/presence/cleanup 및 Scheduler 200을 확인했다. 미인증/차단 origin 검사로 생성된 401/403 로그는 정상 거부 결과다.
 
 아래의 2026-10-03 미배포/CLI 미인증 기록은 당시 상태다. 현재 배포 상태는 이 절과 최신 원격 검증 결과를 따른다.
 
@@ -163,7 +167,7 @@ API는 허용한 정확한 origin에만 CORS 응답을 준다. Firebase 인증 �
 
 ## 필요한 환경변수
 
-Vercel **Preview에는 아래 필수 공개 설정 7개를 Config 유형으로 저장했다. Production은 아직 변경하지 않았다.** 값은 [`firebase.web-config.json`](../firebase.web-config.json)에 있으며 `npm run configure:firebase -- sequencepang`으로 로컬 환경변수 파일을 생성할 수 있다. 다른 설정이 있는 기존 파일은 덮어쓰지 않는다. Vite 값은 빌드 시 bundle에 포함되므로 변경 후 새로 build/deploy해야 한다.
+Vercel **Preview와 Production에 아래 공개 설정 7개를 적용했다.** 값은 [`firebase.web-config.json`](../firebase.web-config.json)에 있으며 `npm run configure:firebase -- sequencepang`으로 로컬 환경변수 파일을 생성할 수 있다. 다른 설정이 있는 기존 파일은 덮어쓰지 않는다. Vite 값은 빌드 시 bundle에 포함되므로 변경 후 새로 build/deploy해야 한다.
 
 2026-10-06부터 Web SDK 변수 5개를 모두 생략한 정적 빌드는 위 공개 설정을 기본값으로 사용한다. SDK 변수를 명시하는 경우에는 5개를 모두 제공해야 하며 기존 프로젝트와 일치해야 한다. 리전과 API URL의 선택적 override 및 localhost 전용 Emulator guard는 유지한다. Vercel은 환경변수를 명시해 관리하고, Cloudflare Pages도 동일한 기존 Firebase를 사용한다.
 
@@ -235,7 +239,7 @@ npm run deploy:firebase -- sequencepang
 
 이미 이 브랜치가 있는 checkout이면 clone/cd 대신 해당 디렉터리에서 이어간다. 삭제를 요구하는 CLI 질문에 동의하지 않는다. 다른 리소스와 충돌하거나 IAM 오류가 나면 해당 오류를 먼저 해결한다. 배포 후 출력되는 Function URL과 성공/오류 결과로 Preview 및 production 검증을 이어간다. Cloud Shell을 사용자가 독립적으로 이용할 수 있으면 같은 명령을 실행할 수 있지만 이 대화의 Cloud Browser에서는 이용할 수 없었다.
 
-## 전환 및 롤백 순서
+## 전환 및 롤백 순서 (2026-10-03 준비 기록)
 
 현재 운영 Vercel deployment: `dpl_9SXX2cFXRBjCPbDCN5ZCNLf6B3AV`, 기준 Git commit `ab418d5`. 작업 브랜치는 `migration/firebase-serverless`이다. 이 기록 이후 새 production 배포가 있다면 실제 이전 deployment를 다시 확인한다.
 
@@ -255,7 +259,7 @@ npm run deploy:firebase -- sequencepang
 
 문제 발생 시 Vercel에서 직전 정상 production deployment를 다시 production으로 promote한다. 기존 백엔드는 그대로 남아 있어 바로 롤백할 수 있다. 새 점수도 같은 `scores`의 호환 schema이므로 데이터를 되돌리거나 migration을 실행할 필요가 없다. 새 Functions/RTDB는 프론트 롤백 후 사용자가 빠져나갈 시간을 두고 관리한다. 변경한 규칙이 다른 앱을 막았다면 보관한 기존 규칙을 복원한다.
 
-## 검증 결과와 한계
+## 검증 결과와 한계 (2026-10-03 기초 검증 기록)
 
 | 검증 | 결과 |
 |---|---|
@@ -282,19 +286,19 @@ Emulator 통합 테스트에는 네 건 동시 제출 중 정확히 한 건만 �
 
 실제 Console 작업 화면: [게시한 RTDB 규칙](verification/firebase-production-rtdb-rules.jpg), [Anonymous 사용 설정](verification/firebase-production-anonymous-auth.jpg), [Vercel Preview 환경변수](verification/firebase-vercel-preview-env.jpg). Functions 배포 및 운영 게임 검증과는 구분한다.
 
-## Render 삭제 최종 체크리스트
+## Render 정리 조건
 
-**현재는 삭제하면 안 된다.** 코드/로컬 검증과 운영 전환 완료는 별개다. 다음을 실제 production에서 모두 확인한 후 삭제한다.
+2026-10-06 운영 전환과 브라우저 검증은 완료했지만, Render 서비스와 이전 Vercel 배포는 롤백용으로 보존한다. 오래 열린 구 버전 탭은 새로고침 전까지 이전 JS를 사용할 수 있다. 비용·사용량과 사용자 트래픽 관찰은 별도 운영 단계이며, 서비스 삭제나 키 폐기는 이번 작업에서 실행하지 않았다.
 
-- [ ] 확인된 기존 Firebase 프로젝트의 default Firestore를 사용하며 기존 오늘/주간/어제 랭킹 기록이 계속 보인다.
-- [ ] Functions `api`, `roomPresence`, `cleanup` 배포 성공; RTDB instance/URL/리전과 규칙 배포 대상 일치; 인덱스 ready.
-- [ ] Anonymous Auth 활성화; 미인증·타인 점수·방 전체 쓰기·Firestore 직접 점수 제출이 운영 규칙에서도 거부된다.
-- [ ] Production Vercel 환경변수와 새 deployment가 적용되었고 Emulator flag는 false이다.
-- [ ] 실제 single game session 발급 → 시간/token 검증 → 점수 1회 제출 → 오늘/주간/내 순위/cutoff까지 정상이다.
-- [ ] 두 개 이상의 별도 브라우저로 방 생성/입장/중복 닉네임/정원/host 시작/실시간 순위가 정상이다.
-- [ ] 재접속/새로고침/명시적 퇴장/host 위임/최고점 유지/빈 방 자동 삭제가 정상이다.
-- [ ] 모바일 게임·대기실·랭킹에 가로 overflow/동작 regression이 없다.
-- [ ] production DevTools Network에서 single/multi/재접속 모두 기존 백엔드 domain 요청이 0건이다. 오래 열린 탭/PWA도 새 코드로 갱신되었다.
-- [ ] Functions 로그에 지속되는 401/403/5xx, rules permission errors, trigger/Scheduler 실패가 없으며 비용/사용량을 확인했다.
-- [ ] 정상 이전 Vercel deployment와 rollback 절차를 보존했고 전환 관찰을 마쳤다.
-- [ ] 그 후 유료 Web Service, legacy Vercel 환경변수, 불필요한 서비스 계정 키 등 운영 설정에서 남은 의존성을 정리한다.
+- [x] 기존 Firebase 프로젝트/default Firestore와 기존 랭킹 유지.
+- [x] Functions 3개 ACTIVE, 동일 RTDB instance/URL/리전 및 테스트한 규칙, 인덱스 READY, Scheduler 200.
+- [x] Anonymous Auth 활성화, 운영 미인증/차단 origin/Firestore 접근 거부 확인. 타인 쓰기·metadata 변조·정원·재사용/TTL 거부는 동일한 규칙/서버 코드의 Emulator 통합 검증으로 확인.
+- [x] Production 공개 환경변수 및 새 배포 적용, Emulator flag false.
+- [x] 두 운영 주소에서 정상 게임의 세션 발급/점수 제출/일간·주간·내 순위 확인.
+- [x] 독립 브라우저의 입장/host 시작/실시간 점수/재접속/reload/위임/퇴장/빈 방 삭제 확인.
+- [x] 데스크톱과 390×844 모바일 viewport에서 가로 넘침 없음.
+- [x] 새 운영 페이지의 single/multi/재접속에서 Render 요청 0건, PWA v31 적용.
+- [x] 정상 이전 Vercel 배포와 Render health 200을 보존.
+- [ ] 오래 열린 구 버전 탭/PWA 사용자가 새 코드로 갱신된 것을 운영 트래픽에서 확인.
+- [ ] 지속적인 오류율과 비용/사용량 관찰을 완료.
+- [ ] 그 후 서비스 삭제/불필요한 키 폐기 등 남은 운영 설정 정리.

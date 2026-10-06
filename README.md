@@ -88,8 +88,9 @@ npm run deploy:firebase -- sequencepang
 이 명령은 Functions/규칙/인덱스를 배포합니다. 기존 프로젝트의 다른 앱이 규칙/인덱스를 공유한다면
 먼저 현재 설정과 병합한 뒤 실행하세요. 랭킹 데이터 복사·삭제·초기화는 필요 없습니다.
 2026-10-06에 기존 Firebase 프로젝트의 Functions 3개, RTDB/Firestore 규칙, 랭킹 인덱스 배포를 완료했습니다.
-실제 Firebase를 사용하는 Vercel Preview에서 점수 제출·랭킹·2인 게임·재접속·방장 위임·빈 방 삭제를 검증했습니다.
-Production 전환은 아직 실행하지 않았습니다. 전환 후 검증과 관찰을 마칠 때까지 기존 운영 백엔드를 보존합니다.
+PR #37을 main에 병합하고 Vercel Production과 Cloudflare Pages 운영 주소를 Firebase로 전환했습니다.
+두 운영 주소에서 점수 제출·랭킹·2인 게임·재접속·방장 위임·빈 방 삭제를 모두 검증했습니다.
+기존 Render 서비스와 이전 Vercel 배포는 롤백용으로 보존합니다.
 
 ## 점수 API
 
