@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Bagel+Fat+One&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script type="module" src="/src/main.js"></script>
   <link rel="manifest" href="/manifest.webmanifest?v=29">
-<meta name="theme-color" content="#84cc16">
+<meta name="theme-color" content="#0b3a2b">
 
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="시퀀스팡">
@@ -29,13 +29,7 @@
       <!-- 웰컴 오버레이 (메인 화면) -->
       <div class="welcome-overlay" id="welcome-overlay">
 
-        <!-- 배경 파티클 -->
-        <span class="melon-particle particle-welcome-1">🍈</span>
-        <span class="melon-particle particle-welcome-2">🍈</span>
-        <span class="melon-particle particle-welcome-3">🍈</span>
-        <span class="melon-particle particle-welcome-4">🍈</span>
-        <span class="melon-particle particle-welcome-5">🍈</span>
-        <span class="melon-particle particle-welcome-6">🍈</span>
+        <div class="brand-confetti" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
         <!-- 반짝이 -->  
         <span class="sparkle sparkle-1"></span>
@@ -45,57 +39,16 @@
         <span class="sparkle sparkle-5"></span>
 
         <div class="welcome-card">
-          <!-- 타이틀 -->
           <div class="welcome-title-grp">
-            <div class="welcome-mascot-row">
-              <div class="welcome-icon-wrap">
-                <img class="welcome-icon" src="melon.png" alt="melon">
-              </div>
-              <nav class="sequel-links" aria-label="다른 시퀀스팡 게임">
-                <a class="sequel-link sequel-link--burst" href="https://sequencepang2.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="시퀀스팡2 하러 가기 (새 탭)">시퀀스팡2</a>
-                <a class="sequel-link sequel-link--oval" href="https://sequencepang3.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="시퀀스팡3 하러 가기 (새 탭)">시퀀스팡3</a>
-              </nav>
-            </div>
-            <div class="welcome-title-row">
-              <h1 class="welcome-logo" aria-label="시퀀스팡">
-                <svg viewBox="0 0 560 170" role="img" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="logo-lime" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#b8ff4d"/>
-                      <stop offset="100%" stop-color="#72cf0a"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M100 92 L212 84 L322 92 L446 82" stroke="rgba(148,242,13,0.5)" stroke-width="16" fill="none" stroke-linecap="round"/>
-                  <g font-family="'Bagel Fat One', 'Jua', sans-serif" font-size="56" text-anchor="middle">
-                    <g transform="translate(100,88) rotate(-6)">
-                      <rect x="-46" y="-46" width="92" height="92" rx="18" fill="#fffbea" stroke="#0b3a2b" stroke-width="5"/>
-                      <text y="20" fill="#14532d">시</text>
-                      <text x="32" y="-24" font-family="Outfit, sans-serif" font-weight="800" font-size="17" fill="#72cf0a">1</text>
-                    </g>
-                    <g transform="translate(212,82) rotate(4)">
-                      <rect x="-46" y="-46" width="92" height="92" rx="18" fill="#fffbea" stroke="#0b3a2b" stroke-width="5"/>
-                      <text y="20" fill="#14532d">퀀</text>
-                      <text x="32" y="-24" font-family="Outfit, sans-serif" font-weight="800" font-size="17" fill="#72cf0a">2</text>
-                    </g>
-                    <g transform="translate(322,90) rotate(-4)">
-                      <rect x="-46" y="-46" width="92" height="92" rx="18" fill="#fffbea" stroke="#0b3a2b" stroke-width="5"/>
-                      <text y="20" fill="#14532d">스</text>
-                      <text x="32" y="-24" font-family="Outfit, sans-serif" font-weight="800" font-size="17" fill="#72cf0a">4</text>
-                    </g>
-                    <g transform="translate(446,80) rotate(7)">
-                      <path fill="#ffd84d" opacity="0.9" transform="scale(1.35)" d="M0-58 L11-25 L41-41 L24-12 L58-6 L25 5 L41 36 L11 20 L3 57 L-9 24 L-39 38 L-24 9 L-57 1 L-25-9 L-38-39 L-11-22 Z"/>
-                      <rect x="-50" y="-50" width="100" height="100" rx="20" fill="url(#logo-lime)" stroke="#0b3a2b" stroke-width="6"/>
-                      <text y="22" font-size="60" fill="#06291f">팡</text>
-                      <text x="36" y="-26" font-family="Outfit, sans-serif" font-weight="800" font-size="18" fill="#14532d">8</text>
-                    </g>
-                  </g>
-                </svg>
-              </h1>
-            </div>
+            <h1 class="welcome-logo">
+              <img class="brand-logo" src="/sequencepang-logo.png" alt="시퀀스팡 · Sequencepang" width="1774" height="887" fetchpriority="high" decoding="async">
+            </h1>
+            <p class="welcome-brand-tagline">숫자를 잇고, 시원하게 팡!</p>
           </div>
 
           <!-- 베스트 스코어 -->
           <div class="welcome-best">
+            <span class="welcome-record-star" aria-hidden="true">★</span>
             <span class="welcome-best-label">최고 기록</span>
             <span id="welcome-best-val">0</span>
             <span class="welcome-best-unit">점</span>
@@ -120,6 +73,11 @@
               <button class="btn-start btn-sub-action btn-ranking-open" id="btn-show-ranking" type="button">랭킹 보기</button>
             </div>
           </div>
+
+          <nav class="sequel-links" aria-label="다른 시퀀스팡 게임">
+            <a class="sequel-link sequel-link--burst" href="https://sequencepang2.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="시퀀스팡2 하러 가기 (새 탭)">시퀀스팡2 <span aria-hidden="true">↗</span></a>
+            <a class="sequel-link sequel-link--oval" href="https://sequencepang3.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="시퀀스팡3 하러 가기 (새 탭)">시퀀스팡3 <span aria-hidden="true">↗</span></a>
+          </nav>
 
           <!-- 멀티플레이 전용 로비 대기실 (기본 숨김) -->
           <div id="multi-lobby-card" class="multi-lobby-card is-initially-hidden">
@@ -148,13 +106,10 @@
 
       <!-- 실시간 대기방 오버레이 (방 참여 후 진입) -->
       <div id="lobby-overlay" class="lobby-overlay hide">
-        <!-- 배경 파티클 -->
-        <span class="melon-particle particle-lobby-1">🍈</span>
-        <span class="melon-particle particle-lobby-2">🍈</span>
-        <span class="melon-particle particle-lobby-3">🍈</span>
-        <span class="melon-particle particle-lobby-4">🍈</span>
+        <div class="brand-confetti" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
         <div class="lobby-overlay-card">
+          <img class="lobby-brand-logo" src="/sequencepang-logo.png" alt="시퀀스팡" width="1774" height="887">
           <h2 class="lobby-header-title">실시간 대기실</h2>
           <span id="lobby-room-badge" class="lobby-room-badge is-copyable" title="클릭해서 복사">방 코드: LOADING</span>
           
@@ -178,6 +133,11 @@
       <!-- 게임 시작 전 3, 2, 1 카운트다운 오버레이 -->
       <div id="countdown-overlay" class="countdown-overlay">
         <div id="countdown-text" class="countdown-text">3</div>
+      </div>
+
+      <div class="game-brand-header">
+        <img src="/sequencepang-logo.png" alt="시퀀스팡" width="1774" height="887">
+        <span>3개 이상 이어서 <strong>팡!</strong></span>
       </div>
 
       <!-- HUD 영역 (점수, 콤보 등) -->

@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-07",
+  "origin": "http://127.0.0.1:5173",
+  "backend": "Firebase Emulator demo-sequencepang",
+  "status": "passed",
+  "checks": [
+    "Supplied transparent logo renders on home, game and waiting room",
+    "Separate old mascot and update notes controls are absent",
+    "390x844 home and game have no horizontal overflow",
+    "320x568 home has no horizontal overflow and supports vertical scrolling",
+    "1440x1000 game container fits: top 22.45, bottom 977.55, height 955.10, width 670",
+    "Native mouse drag of 7,4,1 yields 300 points and refills the board",
+    "Game ends and reports successful daily rank 1 in the local emulator",
+    "Ranking modal displays the registered 300 point record",
+    "Waiting room creation, host presentation and explicit exit succeed",
+    "No browser console errors in final local verification"
+  ],
+  "engineTests": { "passed": 55, "failed": 0 },
+  "productionBuild": "passed",
+  "diffCheck": "passed",
+  "productionDeployment": "not performed",
+  "screenshots": ["brand-mobile-home.jpg", "brand-mobile-game.jpg", "brand-mobile-lobby.jpg"]
+}
