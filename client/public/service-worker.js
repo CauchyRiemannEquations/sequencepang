@@ -1,11 +1,13 @@
-const CACHE_NAME = 'sequencepang-v32';
+const CACHE_NAME = 'sequencepang-v33';
 
 const CORE_ASSETS = [
   '/manifest.webmanifest',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/maskable-icon-512.png',
-  '/apple-touch-icon.png'
+  '/icon-192.png?v=melon-1',
+  '/icon-512.png?v=melon-1',
+  '/maskable-icon-512.png?v=melon-1',
+  '/apple-touch-icon.png?v=melon-1',
+  '/favicon-32.png?v=melon-1',
+  '/favicon.ico?v=melon-1'
 ];
 
 self.addEventListener('install', event => {
