@@ -994,14 +994,18 @@ export function initGameApp() {
 
   async function loadGlobalLeaderboard(period = currentGameOverRankingPeriod) {
     currentGameOverRankingPeriod = period === 'weekly' ? 'weekly' : 'daily';
+    const requestedPeriod = currentGameOverRankingPeriod;
+    const requestId = ++gameOverRankingRequestId;
     updateGameOverRankingHeader();
 
     try {
-      const response = await fetchLeaderboard(currentGameOverRankingPeriod);
+      const response = await fetchLeaderboard(requestedPeriod);
+      if (requestId !== gameOverRankingRequestId) return;
       updateGameOverRankingHeader(response);
       const { leaders = [] } = response;
       renderGlobalLeaderboard(globalRankingList, leaders);
     } catch (error) {
+      if (requestId !== gameOverRankingRequestId) return;
       globalRankingList.innerHTML = '';
       const errorItem = document.createElement('li');
       errorItem.className = 'global-rank-empty';
@@ -1476,6 +1480,7 @@ export function initGameApp() {
   let currentIsHost = false;
   let currentGameMode = 'timeAttack';
   let currentGameOverRankingPeriod = 'daily';
+  let gameOverRankingRequestId = 0;
   const playerId = getOrCreatePlayerId();
   updateLobbyModeControls();
   setupGameOverRankingControls();
