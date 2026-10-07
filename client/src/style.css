@@ -552,7 +552,7 @@
     /* 과일 타일 스타일 (멜론-숫자 크기 밸런스 튜닝) */
     .tile {
       background-color: transparent; /* 뒷바탕 상자 제거하여 메론 형상만 오롯이 노출 */
-      background-image: url('/melon.png');
+      background-image: none;
       background-size: 88% 88%; /* 메론을 더 탐스럽게 키움 */
       background-repeat: no-repeat;
       background-position: center;
@@ -1164,7 +1164,7 @@
       height: auto;
     }
 
-    /* 하단 유틸 링크 행: 플레이 방법 · 업데이트 내역 · Contact */
+    /* 하단 유틸 링크 행: 플레이 방법 · Contact */
     .welcome-links-row {
       display: flex;
       justify-content: center;
