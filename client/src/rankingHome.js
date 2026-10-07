@@ -2,6 +2,7 @@
 import { renderGlobalLeaderboard } from './ui.js';
 
 let currentRankingPeriod = 'daily';
+let rankingRequestId = 0;
 
 function makeEmptyRankItem(message) {
   const item = document.createElement('li');
@@ -100,15 +101,19 @@ async function loadMainRanking(period = currentRankingPeriod) {
   if (!list) return;
 
   currentRankingPeriod = period === 'weekly' ? 'weekly' : 'daily';
+  const requestedPeriod = currentRankingPeriod;
+  const requestId = ++rankingRequestId;
   updateRankingHeader(currentRankingPeriod);
   list.innerHTML = '';
   list.appendChild(makeEmptyRankItem('랭킹을 불러오는 중...'));
 
   try {
-    const response = await fetchLeaderboard(currentRankingPeriod);
-    updateRankingHeader(currentRankingPeriod, response);
+    const response = await fetchLeaderboard(requestedPeriod);
+    if (requestId !== rankingRequestId) return;
+    updateRankingHeader(requestedPeriod, response);
     renderGlobalLeaderboard(list, response.leaders || []);
   } catch (error) {
+    if (requestId !== rankingRequestId) return;
     list.innerHTML = '';
     list.appendChild(makeEmptyRankItem(error.message || '랭킹을 불러오지 못했습니다.'));
   }
