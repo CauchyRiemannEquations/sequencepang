@@ -12,6 +12,7 @@ const { initializeTestEnvironment, assertFails, assertSucceeds } = require('@fir
 const { issueGameSession, commitSessionScore } = require('../../functions/src/gameSessionStore');
 const { joinRoom, leaveRoom, startRoom, cleanupExpiredState, reconcilePresence } = require('../../functions/src/roomService');
 const { getCurrentRankingDayInfo, getCurrentRankingWeekInfo, RANKING_SEASON_ID } = require('../../functions/src/constants');
+const { createCombinedRateLimiter } = require('../../functions/src/rateLimit');
 const PROJECT = 'demo-sequencepang';
 const API = `http://127.0.0.1:5001/${PROJECT}/us-central1/api`;
 let firestore, database, rules;
@@ -29,7 +30,7 @@ async function api(actor, route, body) {
   const response = await fetch(`${API}${route}`, { method: body === undefined ? 'GET' : 'POST',
     headers: { Authorization: `Bearer ${actor.token}`, 'Content-Type': 'application/json' },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
-  return { status: response.status, data: await response.json() };
+  return { status: response.status, data: await response.json(), timing: response.headers.get('Server-Timing') };
 }
 async function waitFor(check, label, timeout = 12000) {
   const until = Date.now() + timeout;
@@ -81,7 +82,34 @@ test('HTTP Function authenticates Anonymous Auth and issues a persistent hashed 
   assert.equal((await fetch(`${API}/api/leaderboard`)).status, 401);
   const preflight = await fetch(`${API}/api/scores`, { method: 'OPTIONS', headers: { Origin: 'http://localhost:5173' } });
   assert.equal(preflight.status, 204); assert.match(preflight.headers.get('access-control-allow-headers'), /Authorization/);
+  assert.equal(preflight.headers.get('access-control-max-age'), '600');
+  assert.match(preflight.headers.get('access-control-expose-headers'), /Server-Timing/);
   assert.equal((await fetch(`${API}/health`, { headers: { Origin: 'https://attacker.example' } })).status, 403);
+});
+
+test('랭킹 미적중·서버 캐시 적중을 계측하고 새 점수 revision은 다른 사용자에게도 반영한다', async () => {
+  const actor = await user();
+  const other = await user();
+  // Start with an empty cache without touching scores or ranking revision.
+  const cached = await firestore.collection('leaderboard_cache').get();
+  await Promise.all(cached.docs.map(doc => doc.ref.delete()));
+  const first = await api(actor, '/api/leaderboard?period=daily');
+  assert.equal(first.status, 200);
+  assert.match(first.timing, /leaderboard_cache;desc="miss"/);
+  assert.match(first.timing, /auth_verify;dur=/);
+  assert.match(first.timing, /firestore_rate_limit;dur=/);
+  assert.match(first.timing, /firestore_scores;dur=/);
+  assert.match(first.timing, /firestore_legacy;dur=/);
+  const repeat = await api(other, '/api/leaderboard?period=daily');
+  assert.deepEqual(repeat.data, first.data);
+  assert.match(repeat.timing, /leaderboard_cache;desc="firestore-hit"/);
+  assert.ok(!repeat.timing.includes('firestore_scores;'));
+  const session = await sessionFor(actor);
+  const submitted = await api(actor, '/api/scores', { ...payload(session), score: 1234 });
+  assert.equal(submitted.status, 201);
+  const fresh = await api(other, '/api/leaderboard?period=daily');
+  assert.match(fresh.timing, /leaderboard_cache;desc="miss"/);
+  assert.equal(fresh.data.leaders[0].score, 1234);
 });
 
 test('cross-process session consumption: four simultaneous submissions create exactly one score', async () => {
@@ -93,6 +121,27 @@ test('cross-process session consumption: four simultaneous submissions create ex
   assert.ok(stored.exists); assert.equal(stored.data().version, '1.4.0');
   assert.equal(stored.data().playerId, 'legacy-browser-id');
   assert.equal((await firestore.collection('game_sessions').doc(session.gameSessionId).get()).data().status, 'used');
+});
+
+test('통합 요청 제한은 동시 트랜잭션과 다른 인스턴스에서도 IP·UID 한도를 유지한다', async () => {
+  const time = Date.now();
+  const limits = [
+    { windowMs: 60000, max: 3, keyPrefix: `test-ip-${time}`, subjectType: 'ip' },
+    { windowMs: 60000, max: 2, keyPrefix: `test-uid-${time}` }
+  ];
+  const firstInstance = createCombinedRateLimiter(limits, { getFirestore: () => firestore, now: () => time });
+  const otherInstance = createCombinedRateLimiter(limits, { getFirestore: () => firestore, now: () => time });
+  async function invoke(limiter, uid) {
+    let status = 200;
+    const response = { status(code) { status = code; return this; }, json() {} };
+    await limiter({ ip: 'test-ip', auth: { uid } }, response, error => assert.ifError(error));
+    return status;
+  }
+  assert.deepEqual(await Promise.all([invoke(firstInstance, 'alice'), invoke(otherInstance, 'alice')]), [200, 200]);
+  assert.equal(await invoke(otherInstance, 'alice'), 429);
+  assert.equal(await invoke(firstInstance, 'bob'), 429, 'UID-rejected retry has consumed the final IP allowance');
+  const counters = (await firestore.collection('request_limits').get()).docs.filter(doc => doc.id.startsWith(`test-ip-${time}_`) || doc.id.startsWith(`test-uid-${time}_`));
+  assert.deepEqual(counters.map(doc => doc.data().count).sort(), [2, 3]);
 });
 
 test('invalid token, owner, elapsed time, expiry and combo are rejected and logged', async () => {

@@ -1,0 +1,135 @@
+{
+  "baselineCommit": "d8a62981c7089845d15f6fc0e4f48c9215282125",
+  "productionBaseline": {
+    "measuredAt": "2026-10-08T14:06:10Z",
+    "kind": "production REST probe via workspace proxy, not browser/Korean device",
+    "auth": {
+      "durationMs": 12035.7,
+      "serverTiming": null,
+      "status": 200
+    },
+    "requests": [
+      {
+        "period": "daily",
+        "leaders": 2,
+        "durationMs": 14119.1,
+        "serverTiming": null,
+        "status": 200
+      },
+      {
+        "period": "daily",
+        "leaders": 2,
+        "durationMs": 12694.5,
+        "serverTiming": null,
+        "status": 200
+      },
+      {
+        "period": "weekly",
+        "leaders": 9,
+        "durationMs": 12464.9,
+        "serverTiming": null,
+        "status": 200
+      },
+      {
+        "period": "weekly",
+        "leaders": 9,
+        "durationMs": 11631.2,
+        "serverTiming": null,
+        "status": 200
+      }
+    ]
+  },
+  "controlledComparison": {
+    "current": {
+      "injectedFirestoreRpcMs": 25,
+      "firstMs": 154.5,
+      "repeatClientMs": 0,
+      "repeatServerMs": 80.9,
+      "firstCounts": {
+        "documentReads": 64,
+        "documentWrites": 3,
+        "scoreQueries": 2,
+        "transactions": 1
+      },
+      "serverHitCounts": {
+        "documentReads": 4,
+        "documentWrites": 2,
+        "scoreQueries": 0,
+        "transactions": 1
+      },
+      "threeConcurrentMissScoreQueries": 2
+    },
+    "baseline": {
+      "injectedFirestoreRpcMs": 25,
+      "firstMs": 227.6,
+      "repeatClientMs": 0,
+      "repeatServerMs": 130.5,
+      "firstCounts": {
+        "documentReads": 64,
+        "documentWrites": 3,
+        "scoreQueries": 2,
+        "transactions": 2
+      },
+      "serverHitCounts": {
+        "documentReads": 4,
+        "documentWrites": 2,
+        "scoreQueries": 0,
+        "transactions": 2
+      },
+      "threeConcurrentMissScoreQueries": 6
+    }
+  },
+  "localBrowser": {
+    "kind": "mobile browser with local Auth/Functions/Firestore emulators; not production speed",
+    "firstUiMs": 2105.3,
+    "repeatUiMs": 36.3,
+    "leaderboardHttpRequests": 2,
+    "samples": [
+      {
+        "kind": "api",
+        "period": "daily",
+        "authReadyMs": 0,
+        "tokenMs": 0,
+        "httpMs": 1654.3999999999069,
+        "decodeMs": 0.40000000037252903,
+        "serverTiming": "auth_verify;dur=20.4, firestore_rate_limit;dur=261.4, firestore_cache_read;dur=15.9, firestore_scores;dur=27.1, firestore_legacy;dur=27.0, firestore_cache_write;dur=25.5, leaderboard_rebuild_wait;dur=55.0, server_total;dur=358.1, instance_first_request;desc=\"false\", module_load;dur=65.7, leaderboard_cache;desc=\"miss\"",
+        "status": 200,
+        "totalMs": 1654.8000000002794
+      },
+      {
+        "kind": "client-miss",
+        "period": "daily",
+        "totalMs": 1656
+      },
+      {
+        "kind": "client-hit",
+        "period": "daily",
+        "totalMs": 0
+      },
+      {
+        "kind": "api",
+        "period": "weekly",
+        "authReadyMs": 0,
+        "tokenMs": 0,
+        "httpMs": 104.39999999990687,
+        "decodeMs": 0.39999999990686774,
+        "serverTiming": "auth_verify;dur=10.5, firestore_rate_limit;dur=39.5, firestore_cache_read;dur=9.9, firestore_legacy;dur=8.0, firestore_scores;dur=14.8, firestore_cache_write;dur=16.4, leaderboard_rebuild_wait;dur=31.7, server_total;dur=92.6, instance_first_request;desc=\"false\", module_load;dur=63.6, leaderboard_cache;desc=\"miss\"",
+        "status": 200,
+        "totalMs": 104.89999999990687
+      },
+      {
+        "kind": "client-miss",
+        "period": "weekly",
+        "totalMs": 106
+      },
+      {
+        "kind": "client-hit",
+        "period": "daily",
+        "totalMs": 0
+      }
+    ],
+    "errors": []
+  },
+  "productionAfterDeployment": null,
+  "limitation": "Firebase deployment credentials and private operational logs unavailable. Local/controlled results are not a production improvement percentage."
+}

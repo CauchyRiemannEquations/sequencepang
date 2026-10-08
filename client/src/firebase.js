@@ -3,6 +3,7 @@ import { connectAuthEmulator, getAuth, signInAnonymously } from 'firebase/auth';
 import { connectDatabaseEmulator, getDatabase } from 'firebase/database';
 import confirmedConfig from '../../firebase.web-config.json';
 import { resolveFirebaseWebConfig } from './firebaseConfig.js';
+import { createApiRequest } from './apiTiming.js';
 
 let services;
 let signInPromise;
@@ -43,15 +44,7 @@ export async function ensureAnonymousUser() {
   return signInPromise;
 }
 
-export async function requestFirebaseApi(path, { body, method = body === undefined ? 'GET' : 'POST', keepalive = false } = {}) {
-  const user = await ensureAnonymousUser();
-  const token = await user.getIdToken();
-  const { apiBaseUrl } = getFirebaseServices();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method, keepalive, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) })
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || '게임 서버 요청에 실패했습니다.');
-  return result;
-}
+export const requestFirebaseApi = createApiRequest({
+  ensureUser: ensureAnonymousUser,
+  getBaseUrl: () => getFirebaseServices().apiBaseUrl
+});

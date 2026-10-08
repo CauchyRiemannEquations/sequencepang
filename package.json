@@ -6,12 +6,13 @@
     "dev:client": "vite --host 0.0.0.0",
     "build": "vite build",
     "test": "node --test tests/engine/*.test.js",
-    "test:backend": "node --test tests/firebase/unit.test.cjs",
+    "test:backend": "node --test tests/firebase/unit.test.cjs tests/firebase/rankingPerformance.test.cjs",
     "emulators": "node scripts/emulators.cjs start",
     "test:emulators": "node scripts/emulators.cjs test",
     "configure:firebase": "node scripts/configure-firebase.cjs",
     "deploy:firebase": "node scripts/deploy-firebase.cjs",
-    "test:browser": "node scripts/emulators.cjs browser"
+    "test:browser": "node scripts/emulators.cjs browser",
+    "test:ranking-browser": "node scripts/emulators.cjs ranking-browser"
   },
   "keywords": [
     "sequence-pang",

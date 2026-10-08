@@ -19,6 +19,9 @@ const {
 } = require('./gameSessionStore');
 const { createRateLimiter } = require('./rateLimit');
 const { isProfaneNickname } = require('./profanityFilter');
+const { measure } = require('./requestTiming');
+const { createSingleFlight } = require('./singleFlight');
+const leaderboardRequests = createSingleFlight();
 
 const PROFANE_NICKNAME_MESSAGE = '사용할 수 없는 닉네임입니다.';
 
@@ -237,7 +240,7 @@ function filterLeaderboardDocsByPeriod(documents, period, rankingSeason, dayInfo
   return documents.filter(document => matchesPeriodRecord(document.data(), period, rankingSeason, dayInfo, weekInfo));
 }
 
-async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo) {
+async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing) {
   try {
     if (period === 'daily') {
       return await scoresCollection
@@ -279,6 +282,7 @@ async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason,
     }
 
     console.warn('랭킹 인덱스 쿼리 실패, fallback 조회로 전환:', error.message);
+    timing?.set('indexFallback', true);
 
     const fallbackSnapshot = await scoresCollection
       .orderBy('score', 'desc')
@@ -295,16 +299,20 @@ async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason,
 }
 
 // 기간별 랭킹 대상 문서 전체 로딩 (기본 쿼리 + 레거시 보충 병합)
-async function loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, weekInfo) {
-  const snapshot = await fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
+async function loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing) {
+  // The compatibility supplement is independent of the indexed query. Keep its
+  // exact 1200-document coverage and merge rules, but overlap the round trips.
+  const [snapshot, supplementSnapshot] = await Promise.all([
+    measure(timing, 'firestore_scores', () => fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing)),
+    period === 'daily' || period === 'weekly'
+      ? measure(timing, 'firestore_legacy', () => scoresCollection.orderBy('score', 'desc').limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT).get())
+      : null
+  ]);
+  timing?.set('scoreDocumentsReturned', snapshot.docs.length);
+  timing?.set('legacyDocumentsReturned', supplementSnapshot?.docs.length || 0);
   let leaderboardDocs = [...snapshot.docs];
 
-  if (period === 'daily' || period === 'weekly') {
-    const supplementSnapshot = await scoresCollection
-      .orderBy('score', 'desc')
-      .limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT)
-      .get();
-
+  if (supplementSnapshot) {
     const mergedDocs = new Map();
     for (const document of leaderboardDocs) {
       mergedDocs.set(document.id, document);
@@ -543,27 +551,30 @@ scoreRouter.get('/leaderboard', async (req, res) => {
     const weekInfo = getCurrentRankingWeekInfo();
     const cacheKey = buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo);
     // The score transaction increments a shared revision, invalidating all instances.
-    const cacheState = await getCachedLeaderboard(firestore, cacheKey);
+    const cacheState = await measure(req.timing, 'firestore_cache_read', () => getCachedLeaderboard(firestore, cacheKey));
     const cachedPayload = cacheState.payload;
 
     if (cachedPayload) {
+      req.timing?.set('cache', 'firestore-hit');
       res.set('Cache-Control', 'no-store');
       return res.json(cachedPayload);
     }
 
-    const scoresCollection = firestore.collection('scores');
-    const leaderboardDocs = await loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, weekInfo);
-    const leaders = buildLeadersFromDocs(leaderboardDocs);
-    const payload = {
-      leaders,
-      period,
-      rankingSeason,
-      rankingDay: dayInfo.rankingDay,
-      rankingWeek: weekInfo.rankingWeek,
-      rankingWeekStart: weekInfo.rankingWeekStart
-    };
-
-    await setCachedLeaderboard(firestore, cacheKey, payload, cacheState.revision);
+    // Revision is part of the key: a post-submit request must not join work
+    // started before that score was saved, even on a different instance.
+    const flightKey = cacheState.revision === null ? Symbol(cacheKey) : `${cacheKey}:${cacheState.revision}`;
+    const flight = leaderboardRequests.run(flightKey, async () => {
+      const leaderboardDocs = await loadPeriodDocs(firestore.collection('scores'), period, rankingSeason, dayInfo, weekInfo, req.timing);
+      const payload = {
+        leaders: buildLeadersFromDocs(leaderboardDocs), period, rankingSeason,
+        rankingDay: dayInfo.rankingDay, rankingWeek: weekInfo.rankingWeek,
+        rankingWeekStart: weekInfo.rankingWeekStart
+      };
+      await measure(req.timing, 'firestore_cache_write', () => setCachedLeaderboard(firestore, cacheKey, payload, cacheState.revision));
+      return payload;
+    });
+    req.timing?.set('cache', flight.shared ? 'shared-miss' : 'miss');
+    const payload = await measure(req.timing, 'leaderboard_rebuild_wait', () => flight.promise);
     res.set('Cache-Control', 'no-store');
     return res.json(payload);
   } catch (error) {

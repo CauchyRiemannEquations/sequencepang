@@ -8,10 +8,12 @@ if (!fs.existsSync(demoEnv)) fs.writeFileSync(demoEnv,
 const cli = path.resolve(__dirname, '../node_modules/firebase-tools/lib/bin/firebase.js');
 const testing = process.argv[2] === 'test';
 const browserTesting = process.argv[2] === 'browser';
-const args = [cli, testing || browserTesting ? 'emulators:exec' : 'emulators:start', '--project', 'demo-sequencepang',
+const rankingBrowserTesting = process.argv[2] === 'ranking-browser';
+const args = [cli, testing || browserTesting || rankingBrowserTesting ? 'emulators:exec' : 'emulators:start', '--project', 'demo-sequencepang',
   '--only', 'auth,firestore,database,functions'];
 if (testing) args.push('node --test --test-concurrency=1 tests/firebase/emulator.test.cjs');
 if (browserTesting) args.push('node scripts/browser-check.cjs');
+if (rankingBrowserTesting) args.push('node scripts/ranking-browser-check.cjs');
 const task = spawn(process.execPath, args, { stdio: 'inherit', env: {
   ...process.env, RTDB_INSTANCE: 'demo-sequencepang', DEPLOY_REGION: 'us-central1',
   ...(process.env.SEQUENCEPANG_EMULATOR_TCP === 'true' ? {
