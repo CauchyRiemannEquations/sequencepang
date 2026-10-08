@@ -2,6 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createLeaderboardCache } from '../../client/src/leaderboardCache.js';
 
+test('15초보다 느린 첫 응답도 도착 후 15초 동안 재사용한다', async () => {
+  let time = Date.parse('2026-10-08T12:00:00Z');
+  let calls = 0;
+  const cache = createLeaderboardCache(async () => { calls += 1; time += 20000; return { id: calls }; }, { now: () => time });
+  const first = await cache.fetch();
+  time += 14999;
+  assert.equal(await cache.fetch(), first);
+  assert.equal(calls, 1);
+  time += 1;
+  assert.notEqual(await cache.fetch(), first);
+  assert.equal(calls, 2);
+});
+
 test('반복 조회는 재사용하고 기간별로 분리하며 15초 뒤 갱신한다', async () => {
   let time = Date.parse('2026-10-07T12:00:00Z');
   const calls = [];

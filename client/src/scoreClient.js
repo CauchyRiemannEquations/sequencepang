@@ -1,10 +1,11 @@
 import { requestFirebaseApi } from './firebase.js';
 import { createLeaderboardCache } from './leaderboardCache.js';
+import { recordApiTiming } from './apiTiming.js';
 
 const leaderboardCache = createLeaderboardCache(period => {
   const params = new URLSearchParams({ period });
   return requestFirebaseApi(`/api/leaderboard?${params}`);
-});
+}, { onTiming: recordApiTiming });
 
 export async function submitScore(scoreData) {
   leaderboardCache.invalidate();

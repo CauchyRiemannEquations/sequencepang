@@ -1,13 +1,15 @@
 const express = require('express');
 const { getAuth } = require('firebase-admin/auth');
 const { getScoreFirestore } = require('./firestore');
-const { createRateLimiter } = require('./rateLimit');
+const { createCombinedRateLimiter } = require('./rateLimit');
+const { createRequestTiming, measure } = require('./requestTiming');
 const { scoreRouter } = require('./scoreRoutes');
 const { roomRouter } = require('./roomRoutes');
 
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+app.use(createRequestTiming());
 
 function allowedOrigin(origin) {
   if (!origin) return true;
@@ -22,6 +24,10 @@ app.use((req, res, next) => {
   if (origin) { res.set('Access-Control-Allow-Origin', origin); res.vary('Origin'); }
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.set('Access-Control-Expose-Headers', 'Server-Timing');
+  // Reuse the same auth/CORS preflight for subsequent API requests.
+  res.set('Access-Control-Max-Age', '600');
+  if (origin) res.set('Timing-Allow-Origin', origin);
   res.set('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   return next();
@@ -33,12 +39,14 @@ app.use('/api', async (req, res, next) => {
   if (!token) return res.status(401).json({ error: '인증이 필요합니다.' });
   try {
     getScoreFirestore(); // Initializes the default Admin app.
-    req.auth = await getAuth().verifyIdToken(token);
+    req.auth = await measure(req.timing, 'auth_verify', () => getAuth().verifyIdToken(token));
     return next();
   } catch { return res.status(401).json({ error: '인증을 확인하지 못했습니다. 다시 연결해주세요.' }); }
 });
-app.use('/api', createRateLimiter({ windowMs: 60000, max: 600, keyPrefix: 'api-ip', subjectType: 'ip' }));
-app.use('/api', createRateLimiter({ windowMs: 60000, max: 120, keyPrefix: 'api' }));
+app.use('/api', createCombinedRateLimiter([
+  { windowMs: 60000, max: 600, keyPrefix: 'api-ip', subjectType: 'ip' },
+  { windowMs: 60000, max: 120, keyPrefix: 'api' }
+]));
 app.use('/api', scoreRouter);
 app.use('/api', roomRouter);
 app.use((_req, res) => res.status(404).json({ error: '요청을 찾을 수 없습니다.' }));
