@@ -667,23 +667,8 @@ body {
 }
 
 
-.game-container.fever-active .hud-item:first-child .hud-value::after {
-  display: inline-block;
-  margin-left: 7px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--lv-coral);
-  color: #fff;
-  content: '×1.5';
-  font-size: 12px;
-  box-shadow: 0 0 14px rgba(255, 107, 107, .46);
-}
-
-.game-container.super-fever-active .hud-item:first-child .hud-value::after {
-  background: #7c3aed;
-  content: '×2';
-  box-shadow: 0 0 14px rgba(147, 51, 234, .5);
-}
+/* 피버 배율은 고정 높이의 피버 패널에 표시한다.
+   점수 옆에 배지를 추가하면 좁은 화면에서 줄바꿈되어 보드가 밀린다. */
 
 .game-toast {
   background: rgba(6, 41, 31, 0.92);
