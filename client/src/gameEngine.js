@@ -1563,6 +1563,40 @@ export function initGameApp() {
     globalRanking.insertBefore(meta, globalRankingList);
   }
 
+  function setNicknameError(input, message = '') {
+    document.getElementById(`${input.id}-error`).textContent = message;
+    if (message) {
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+    } else {
+      input.removeAttribute('aria-invalid');
+    }
+  }
+
+  function validateNickname(input, noSpaces = false) {
+    const nickname = input.value.trim();
+    if (Array.from(nickname).length < 1 || Array.from(nickname).length > 10) {
+      setNicknameError(input, '닉네임을 1~10자로 입력해 주세요.');
+      return false;
+    }
+    if (noSpaces && /\s/.test(nickname)) {
+      setNicknameError(input, '닉네임에는 공백을 사용할 수 없어요.');
+      return false;
+    }
+    setNicknameError(input);
+    return true;
+  }
+
+  for (const input of [playerNicknameInput, lobbyNicknameInput]) {
+    input.addEventListener('input', () => setNicknameError(input));
+  }
+  playerNicknameInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.isComposing && !btnSingleStart.disabled) {
+      event.preventDefault();
+      btnSingleStart.click();
+    }
+  });
+
   function rememberNickname(nickname) {
     currentNickname = nickname;
     playerNicknameInput.value = nickname;
@@ -1573,15 +1607,15 @@ export function initGameApp() {
   // 싱글 플레이 시작
   btnSingleStart.addEventListener('click', async () => {
     const nickname = playerNicknameInput.value.trim();
-    if (Array.from(nickname).length < 1 || Array.from(nickname).length > 10) {
-      alert('랭킹에 사용할 닉네임을 1~10자로 입력해주세요!');
-      playerNicknameInput.focus();
-      return;
-    }
+    if (!validateNickname(playerNicknameInput)) return;
+    const startError = document.getElementById('single-start-error');
+    startError.hidden = true;
     rememberNickname(nickname);
     isMultiplayMode = false;
     leaderboardPanel.style.display = 'none';
     btnSingleStart.disabled = true;
+    btnSingleStart.setAttribute('aria-busy', 'true');
+    btnSingleStart.textContent = '준비 중…';
     try {
       currentGameSession = await createGameSession(nickname, playerId);
       singleSessionStartedAt = performance.now();
@@ -1589,11 +1623,16 @@ export function initGameApp() {
     } catch (error) {
       currentGameSession = null;
       singleSessionStartedAt = 0;
-      alert(error?.message?.includes('닉네임')
-        ? error.message
-        : '게임 세션을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      if (error?.message?.includes('닉네임')) {
+        setNicknameError(playerNicknameInput, error.message);
+      } else {
+        startError.textContent = '게임을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.';
+        startError.hidden = false;
+      }
     } finally {
       btnSingleStart.disabled = false;
+      btnSingleStart.removeAttribute('aria-busy');
+      btnSingleStart.textContent = '혼자서 팡!';
     }
   });
 
@@ -1714,16 +1753,7 @@ export function initGameApp() {
   // 대기방 새로 만들기 클릭
   btnCreateRoom.addEventListener('click', async () => {
     const nickname = lobbyNicknameInput.value.trim();
-    if (!nickname) {
-      alert("닉네임을 입력해주세요!");
-      lobbyNicknameInput.focus();
-      return;
-    }
-    if (/\s/.test(nickname)) {
-      alert("닉네임에 공백은 사용할 수 없습니다!");
-      lobbyNicknameInput.focus();
-      return;
-    }
+    if (!validateNickname(lobbyNicknameInput, true)) return;
     rememberNickname(nickname);
     
     // 무작위 6자리 방 코드 생성 (알파벳 대문자만)
@@ -1753,16 +1783,7 @@ export function initGameApp() {
     const nickname = lobbyNicknameInput.value.trim();
     const roomId = lobbyRoomIdInput.value.trim().toUpperCase();
 
-    if (!nickname) {
-      alert("닉네임을 입력해주세요!");
-      lobbyNicknameInput.focus();
-      return;
-    }
-    if (/\s/.test(nickname)) {
-      alert("닉네임에 공백은 사용할 수 없습니다!");
-      lobbyNicknameInput.focus();
-      return;
-    }
+    if (!validateNickname(lobbyNicknameInput, true)) return;
     rememberNickname(nickname);
     if (!roomId) {
       alert("방 코드를 입력해주세요!");

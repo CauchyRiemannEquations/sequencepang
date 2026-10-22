@@ -31,15 +31,6 @@
       <!-- 웰컴 오버레이 (메인 화면) -->
       <div class="welcome-overlay" id="welcome-overlay">
 
-        <div class="brand-confetti" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-
-        <!-- 반짝이 -->  
-        <span class="sparkle sparkle-1"></span>
-        <span class="sparkle sparkle-2"></span>
-        <span class="sparkle sparkle-3"></span>
-        <span class="sparkle sparkle-4"></span>
-        <span class="sparkle sparkle-5"></span>
-
         <div class="welcome-card">
           <div class="welcome-title-grp">
             <h1 class="welcome-logo">
@@ -66,7 +57,8 @@
           <!-- 플레이 모드 선택 버튼 -->
           <div class="lobby-input-grp welcome-nickname-grp">
             <label for="player-nickname" class="lobby-lbl">랭킹 닉네임</label>
-            <input type="text" id="player-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자)" maxlength="10" autocomplete="nickname">
+            <input type="text" id="player-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자)" maxlength="10" autocomplete="nickname" aria-describedby="player-nickname-error" enterkeyhint="go">
+            <p id="player-nickname-error" class="input-error" role="alert"></p>
           </div>
           <div id="mode-selection" class="mode-select-box">
             <button class="btn-start btn-primary" id="btn-single-start">혼자서 팡!</button>
@@ -74,6 +66,7 @@
               <button class="btn-start btn-accent btn-sub-action" id="btn-multi-lobby">다함께 팡!</button>
               <button class="btn-start btn-sub-action btn-ranking-open" id="btn-show-ranking" type="button">랭킹 보기</button>
             </div>
+            <p id="single-start-error" class="start-error" role="alert" hidden></p>
           </div>
 
           <nav class="sequel-links" aria-label="다른 시퀀스팡 게임">
@@ -85,7 +78,8 @@
           <div id="multi-lobby-card" class="multi-lobby-card is-initially-hidden">
             <div class="lobby-input-grp">
               <label for="lobby-nickname" class="lobby-lbl">내 닉네임</label>
-              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자, 공백 불가)" maxlength="10" autocomplete="nickname">
+              <input type="text" id="lobby-nickname" class="lobby-input" placeholder="닉네임 입력 (최대 10자, 공백 불가)" maxlength="10" autocomplete="nickname" aria-describedby="lobby-nickname-error">
+              <p id="lobby-nickname-error" class="input-error" role="alert"></p>
             </div>
             
             <div class="lobby-action-box">
@@ -108,8 +102,6 @@
 
       <!-- 실시간 대기방 오버레이 (방 참여 후 진입) -->
       <div id="lobby-overlay" class="lobby-overlay hide">
-        <div class="brand-confetti" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-
         <div class="lobby-overlay-card">
           <img class="lobby-brand-logo" src="/sequencepang-logo.png?v=melon-2" alt="시퀀스팡" width="1672" height="941">
           <h2 class="lobby-header-title">실시간 대기실</h2>

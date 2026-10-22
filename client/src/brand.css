@@ -49,23 +49,6 @@ body {
 }
 .welcome-brand-tagline { color: #d7edbc; font-size: 14px; letter-spacing: .02em; }
 
-/* Small geometric pieces echo the logo, without a separate mascot. */
-.brand-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.brand-confetti i {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border: 2px solid #d9ff9366;
-  border-radius: 7px;
-  background: #92ed3822;
-  transform: rotate(24deg);
-}
-.brand-confetti i:nth-child(1) { top: 9%; left: 6%; }
-.brand-confetti i:nth-child(2) { top: 36%; right: 4%; width: 16px; height: 16px; border-color: #6dceff55; background: #6dceff22; transform: rotate(-18deg); }
-.brand-confetti i:nth-child(3) { bottom: 19%; left: 4%; width: 15px; height: 15px; border-color: #ffdb5255; background: #ffdb5222; }
-.brand-confetti i:nth-child(4) { bottom: 8%; right: 9%; border-color: #ff649044; background: #ff649022; transform: rotate(-26deg); }
-.sparkle { background: #fff2a5; box-shadow: 0 0 12px #ffdb5255; opacity: .5; }
-
 .welcome-best {
   align-self: center;
   width: auto;
@@ -89,7 +72,7 @@ body {
   border-radius: 14px;
   background: #f5f8e9;
   color: #153d2b;
-  font-size: 15px;
+  font-size: 16px;
   box-shadow: inset 0 2px 4px #0b332711;
 }
 .lobby-input::placeholder { color: #617b68; }
@@ -123,6 +106,9 @@ body {
 }
 .btn-start:active, .btn-retry:active, .lobby-btn.btn-join:active { transform: translateY(3px); }
 button:focus-visible, a:focus-visible { outline: 3px solid #fff2a5; outline-offset: 4px; }
+.input-error { min-height: 17px; margin: 0; color: #ffd2df; font: 12px/17px 'Jua', sans-serif; }
+.start-error { margin: 0; color: #ffd2df; font: 13px/1.5 'Jua', sans-serif; }
+.lobby-input[aria-invalid="true"] { border-color: #ff92b3; box-shadow: 0 0 0 2px #ff649033; }
 .sequel-links {
   order: 1;
   position: static;
@@ -138,7 +124,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #fff2a5; outline-offs
   gap: 5px;
   width: auto;
   height: auto;
-  min-height: 32px;
+  min-height: 44px;
   padding: 7px 4px;
   color: #bdd5b0;
   font-size: 12px;
@@ -148,18 +134,22 @@ button:focus-visible, a:focus-visible { outline: 3px solid #fff2a5; outline-offs
 }
 .sequel-link::before, .sequel-link::after { display: none; }
 .sequel-link:hover, .sequel-link:active { color: #fff2a5; transform: none; }
-.welcome-links-row { order: 2; margin-top: 0; gap: 12px; }
+.welcome-links-row { order: 2; margin-top: 0; gap: 4px; flex-wrap: wrap; }
 /* The existing lobby toggle reveals its own nickname input. */
 .welcome-card:has(#multi-lobby-card[style*="flex"]) .welcome-nickname-grp { display: none; }
 .welcome-card:has(#multi-lobby-card[style*="flex"]) .welcome-logo { max-width: 240px; }
 .welcome-links-row > button, .welcome-links-row > a {
-  min-height: 34px;
-  padding: 8px 15px;
+  min-height: 44px;
+  padding: 10px 9px;
   color: #c3d9b9;
   background: #06291f44;
   border-color: #b2d89a33;
   font-family: 'Jua', sans-serif;
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 .lobby-brand-logo { display: block; width: min(100%, 260px); height: auto; align-self: center; }
 .lobby-header-title { color: #fff2a5; text-shadow: 0 2px 0 #001e1644; }

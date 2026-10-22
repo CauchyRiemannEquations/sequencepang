@@ -50,9 +50,8 @@ function updateMuteButton() {
   const button = document.getElementById('btn-bgm-toggle');
   if (!button) return;
 
-  button.textContent = isMuted ? '🔇' : '🔊';
-  button.title = isMuted ? '소리 켜기' : '소리 끄기';
-  button.setAttribute('aria-label', isMuted ? '소리 켜기' : '소리 끄기');
+  const master = document.getElementById('sound-master');
+  if (master) master.checked = !isMuted;
 }
 
 function setMuted(value) {
@@ -70,27 +69,42 @@ function setMuted(value) {
   updateMuteButton();
 }
 
-function toggleMuted() {
-  setMuted(!isMuted);
-}
-
 function createMuteButton() {
   if (document.getElementById('btn-bgm-toggle')) return;
 
-  const gameContainer = document.getElementById('game-container');
-  if (!gameContainer) return;
+  const links = document.getElementById('welcome-links-row');
+  if (!links) return;
 
   const button = document.createElement('button');
   button.type = 'button';
   button.id = 'btn-bgm-toggle';
   button.className = 'bgm-toggle-button';
+  button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 5-6 4H2v6h3l6 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.08M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>소리 설정';
+  button.setAttribute('aria-haspopup', 'dialog');
+  button.setAttribute('aria-controls', 'sound-settings');
+
+  const dialog = document.createElement('dialog');
+  dialog.id = 'sound-settings';
+  dialog.className = 'sound-dialog';
+  dialog.setAttribute('aria-labelledby', 'sound-title');
+  dialog.innerHTML = '<h2 id="sound-title">소리 설정</h2><label class="sound-toggle"><span>소리 켜기</span><input id="sound-master" type="checkbox"></label><p>배경음악과 게임 효과음을 함께 켜거나 꺼요.</p><button class="sound-done" type="button">완료</button>';
+  dialog.querySelector('#sound-master').addEventListener('change', event => setMuted(!event.target.checked));
+  dialog.querySelector('.sound-done').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => button.focus());
+  dialog.addEventListener('click', event => {
+    if (event.target !== dialog) return;
+    const box = dialog.getBoundingClientRect();
+    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close();
+  });
+  document.body.appendChild(dialog);
 
   button.addEventListener('click', event => {
     event.stopPropagation();
-    toggleMuted();
+    updateMuteButton();
+    dialog.showModal();
   });
 
-  gameContainer.appendChild(button);
+  links.appendChild(button);
   updateMuteButton();
 }
 
@@ -100,34 +114,14 @@ function injectBgmStyle() {
   const style = document.createElement('style');
   style.id = 'bgm-style';
   style.textContent = `
-    .bgm-toggle-button {
-      position: absolute;
-      top: auto;
-      right: auto;
-      left: 12px;
-      bottom: max(12px, env(safe-area-inset-bottom));
-      z-index: 700;
-      width: 38px;
-      height: 38px;
-      border: 1px solid rgba(163, 230, 53, 0.28);
-      border-radius: 999px;
-      background: rgba(15, 36, 23, 0.5);
-      color: #ecfccb;
-      font-size: 17px;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-      transition: transform 0.15s ease, background 0.15s ease;
-    }
-
-    .bgm-toggle-button:hover {
-      transform: translateY(-1px);
-      background: rgba(22, 101, 52, 0.65);
-    }
-
-    .game-container.game-active .bgm-toggle-button {
-      display: none;
-    }
+    .sound-dialog { box-sizing: border-box; width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow: auto; padding: 24px; border: 1px solid #dbe8c8; border-radius: 24px; background: #fff8e6; color: #244c3b; font-family: 'Jua', sans-serif; }
+    .sound-dialog::backdrop { background: #012b2cbb; }
+    .sound-dialog h2 { margin: 0 0 16px; font-size: 27px; font-weight: normal; }
+    .sound-dialog p { margin: 16px 0; font-size: 14px; line-height: 1.6; color: #53674e; }
+    .sound-toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 8px 12px; border-radius: 14px; background: #e1f1d8; font-size: 19px; cursor: pointer; }
+    .sound-toggle input { width: 26px; height: 26px; accent-color: #197f62; }
+    .sound-done { width: 100%; min-height: 44px; border: 0; border-radius: 14px; color: #fff8dc; background: #16775f; font: 18px 'Jua', sans-serif; cursor: pointer; }
+    .sound-dialog :focus-visible { outline: 3px solid #197f62; outline-offset: 3px; }
   `;
 
   document.head.appendChild(style);

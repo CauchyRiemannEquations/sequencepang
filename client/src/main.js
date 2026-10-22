@@ -38,8 +38,8 @@ function initContactLink() {
   const contactLink = document.createElement('a');
   contactLink.id = 'contact-link';
   contactLink.className = 'contact-link';
-  contactLink.href = 'mailto:crequationsmath@gmail.com';
-  contactLink.textContent = 'Contact';
+  contactLink.href = 'mailto:cremationmath@gmail.com';
+  contactLink.textContent = '문의하기';
   contactLink.title = '문의사항은 이메일로 보내주세요';
   linksRow.appendChild(contactLink);
 }
