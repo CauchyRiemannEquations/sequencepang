@@ -1,3 +1,7 @@
+import { createElapsedClock, splitFeverElapsed } from './engine/elapsedClock.js';
+import { formatWeekRange } from './rankingDates.js';
+import { safeStorage } from './safeStorage.js';
+import { bindDragInput } from './ui/dragInput.js';
 import {
   BOARD_SIZE,
   MAX_TIME,
@@ -167,13 +171,19 @@ export function initGameApp() {
   let isGameActive = false;
 
   let score = 0;
-  let bestScore = parseInt(localStorage.getItem('seq_pang_best') || '0');
+  let bestScore = (Number.parseInt(safeStorage.getItem('seq_pang_best'), 10) || 0);
   let combo = 0;
   let maxCombo = 0;
   let timeLeft = MAX_TIME;
   let comboTimeLeft = 5.0; // 콤보 제한 시간 (5초) 추적 변수
   let gameTimer = null;
-  let scoreSubmitted = false;
+  const timerClock = createElapsedClock(() => performance.now());
+  let starComboPausedUntil = 0;
+  function syncTimerRunning() {
+    timerClock.setRunning(isGameActive && !isGameOver && !hyperPangPaused
+      && !pangCinematicActive && !timeoutGraceActive);
+  }
+  let scoreSubmission = null;
   let currentGameSession = null;
   let singleSessionStartedAt = 0;
   let pendingFeverSpawn = null; // null | 'normal' | 'super'
@@ -326,7 +336,7 @@ export function initGameApp() {
   window.addEventListener('scroll', () => dragController.invalidate(), { passive: true });
 
   hud.setBestScore(bestScore);
-  const savedNickname = localStorage.getItem('seq_pang_nickname') || '';
+  const savedNickname = safeStorage.getItem('seq_pang_nickname') || '';
   playerNicknameInput.value = savedNickname;
   lobbyNicknameInput.value = savedNickname;
 
@@ -386,6 +396,7 @@ export function initGameApp() {
     hyperPangTriggered = true;
     hyperPangPaused = true;
     isGameActive = false; // 타이머·조작 정지 (모달 + 카운트다운 동안)
+    syncTimerRunning();
     isDragging = false;
     clearSelection();
     showHyperPangModal();
@@ -441,6 +452,7 @@ export function initGameApp() {
     startCountdownSequence(() => {
       hyperPangPaused = false;
       isGameActive = true;
+      syncTimerRunning();
     });
   }
 
@@ -579,6 +591,7 @@ export function initGameApp() {
   }
 
   function startFeverMode(type, amount, label, tier = 'normal') {
+    tickTimer();
     if (fever.active || fever.ending || isGameOver || !isGameActive || pangCinematicActive) return;
 
     if (fever.rollbackTimer) {
@@ -604,16 +617,6 @@ export function initGameApp() {
     renderBoard();
     updateFeverUI();
 
-    if (fever.timer) clearInterval(fever.timer);
-    fever.timer = setInterval(() => {
-      if (hyperPangPaused || pangCinematicActive) return; // 하이퍼팡 안내·팡 필살기 연출 중 피버 시간 정지
-      fever.timeLeftMs -= 100;
-      if (fever.timeLeftMs <= 0) {
-        finishFeverMode();
-        return;
-      }
-      updateFeverUI();
-    }, 100);
   }
 
   function finishFeverMode() {
@@ -710,6 +713,8 @@ export function initGameApp() {
 
   // 1. 플레이 시작 (보드 생성 후 카운트다운 진입)
   function startGamePlay(mode = 'timeAttack') {
+    timerClock.reset();
+    starComboPausedUntil = 0;
     currentGameMode = mode;
     scoreLabel.textContent = '현재 점수';
     welcomeOverlay.classList.add('hide');
@@ -718,7 +723,8 @@ export function initGameApp() {
     score = 0;
     combo = 0;
     maxCombo = 0;
-    scoreSubmitted = false;
+    scoreSubmission = { session: currentGameSession, status: 'idle', payload: null };
+    gameOverRankingRequestId++;
     timeLeft = MAX_TIME;
     comboTimeLeft = 5.0; // 콤보 타임아웃 초기화
     recentSuccessfulSequences = [];
@@ -773,6 +779,7 @@ export function initGameApp() {
     pauseMenuBgm();
     startCountdownSequence(() => {
       isGameActive = true;
+      syncTimerRunning();
       gameTimer = setInterval(tickTimer, 100);
     });
   }
@@ -811,13 +818,21 @@ export function initGameApp() {
 
   function tickTimer() {
     if (isGameOver || !isGameActive) return;
-    // 별 시간은 실제 경과 시간 사용. 피버·팡 연출의 기존 타이머 정지와 독립적이다.
+    // Hidden/throttled tabs still consume elapsed active time. Only explicit
+    // gameplay pauses (hyper-pang, cinematics, grace) stop this clock.
     updateStarTime();
-    if (fever.active || fever.ending) return;
-    if (pangCinematicActive) return; // 필살기 연출 중 메인·콤보 타이머 완전 정지
-    if (timeoutGraceActive) return; // 유예 중 메인·콤보 타이머 모두 정지 (표시 0.0 고정)
-
-    timeLeft -= 0.1;
+    if (pangCinematicActive || timeoutGraceActive) return;
+    const { elapsedMs, eligibleMs } = timerClock.takeFrame(starComboPausedUntil);
+    let mainElapsedMs = elapsedMs;
+    if (fever.active) {
+      const elapsed = splitFeverElapsed(elapsedMs, fever.timeLeftMs);
+      fever.timeLeftMs -= elapsed.feverElapsedMs;
+      mainElapsedMs = elapsed.mainElapsedMs;
+      if (fever.timeLeftMs <= 0) finishFeverMode();
+      else updateFeverUI();
+    }
+    if (fever.ending || mainElapsedMs <= 0) return;
+    timeLeft -= mainElapsedMs / 1000;
     if (timeLeft <= 0) {
       timeLeft = 0;
       // 3타일 이상 드래그 중이면 즉시 종료 대신 최대 1초 유예
@@ -830,12 +845,14 @@ export function initGameApp() {
     }
     updateTimerUI();
 
-    tickComboTimer();
+    const comboElapsedMs = Math.min(mainElapsedMs, eligibleMs);
+    tickComboTimer(comboElapsedMs / 1000);
   }
 
   // ── 0초 드래그 유예 ──────────────────────────────────────
   function enterTimeoutGrace() {
     timeoutGraceActive = true;
+    syncTimerRunning();
     timerContainer.classList.add('grace');
     timerText.classList.add('grace');
     timeoutGraceTimer = setTimeout(() => {
@@ -866,13 +883,13 @@ export function initGameApp() {
     timerText.classList.remove('grace');
   }
 
-  function tickComboTimer() {
+  function tickComboTimer(elapsedSeconds) {
     if (isGameOver || !isGameActive) return;
     // 성공/실패 규칙은 유지하고 STAR TIME 동안 콤보 만료만 잠시 보류한다.
     if (starTime.state.isStarTime) return;
 
     if (combo > 0) {
-      comboTimeLeft -= 0.1;
+      comboTimeLeft -= elapsedSeconds;
       if (comboTimeLeft <= 0) {
         combo = 0;
         hud.clearCombo();
@@ -912,6 +929,7 @@ export function initGameApp() {
   function triggerGameOver() {
       clearTimeoutGrace();
       isGameOver = true;
+      syncTimerRunning();
       pangCinematicActive = false;
       gameOverAfterPang = false;
       boardView.clearPangBurst();
@@ -1016,6 +1034,10 @@ export function initGameApp() {
 
   async function saveFinalScoreAndLoadLeaderboard() {
     if (isMultiplayMode) return;
+    const submission = scoreSubmission;
+    if (!submission || submission.status === 'pending') return;
+    const isCurrent = () => submission === scoreSubmission
+      && gameOverOverlay.classList.contains('show');
 
     globalRanking.hidden = false;
     scoreSubmitRetry.hidden = true;
@@ -1028,7 +1050,7 @@ export function initGameApp() {
       return;
     }
 
-    if (scoreSubmitted) {
+    if (submission.status === 'submitted') {
       await loadGlobalLeaderboard();
       return;
     }
@@ -1041,14 +1063,16 @@ export function initGameApp() {
 
     setScoreSubmitStatus('점수 등록 중...', 'loading');
     try {
-      const submitResult = await submitScore({
+      submission.status = 'pending';
+      // Retries preserve the finished run, including its duration and credentials.
+      submission.payload ||= {
         nickname,
         playerId,
         score,
         maxCombo,
         mode: 'timeAttack',
-        gameSessionId: currentGameSession.gameSessionId,
-        sessionToken: currentGameSession.sessionToken,
+        gameSessionId: submission.session.gameSessionId,
+        sessionToken: submission.session.sessionToken,
         playDurationMs: Math.max(1, Math.round(performance.now() - singleSessionStartedAt)),
         clearCount,
         feverClearCount,
@@ -1057,10 +1081,14 @@ export function initGameApp() {
         crossPangCount,
         fullPangCount,
         maxChainLength
-      });
-      scoreSubmitted = true;
+      };
+      const submitResult = await submitScore(submission.payload);
+      submission.status = 'submitted';
+      if (!isCurrent()) return;
       setScoreSubmitStatus(buildRankResultMessage(submitResult?.dailyRank), 'success');
     } catch (error) {
+      submission.status = 'failed';
+      if (!isCurrent()) return;
       setScoreSubmitStatus(error.message, 'error');
       scoreSubmitRetry.hidden = false;
     }
@@ -1068,6 +1096,7 @@ export function initGameApp() {
   }
 
   function handleStart(clientX, clientY) {
+    tickTimer();
     if (isGameOver || !isGameActive || fever.ending || pangCinematicActive) return;
     if (timeoutGraceActive) return; // 유예 중 새 드래그 금지 (진행 중 드래그만 허용)
     const cell = dragController.getCellAtPoint(clientX, clientY);
@@ -1124,6 +1153,7 @@ export function initGameApp() {
   }
 
   function handleEnd() {
+    tickTimer();
     if (!isDragging) return;
     isDragging = false;
     dragController.clearPointer();
@@ -1218,6 +1248,8 @@ export function initGameApp() {
       // 리필 애니메이션 전에 같은 타일을 다시 입력해도 이미 얻은 별은 중복 지급하지 않는다.
       selectedTiles.forEach(t => { boardData[t.row][t.col].isStar = false; });
       updateStarTime();
+      starComboPausedUntil = starTime.state.isStarTime
+        ? performance.now() + starTime.state.starTimeRemaining * 1000 : 0;
       const starMultiplier = starTime.state.isStarTime ? STAR_SCORE_MULTIPLIER : 1;
       if (starEvent?.type === 'started') starTimeView.notify('STAR TIME!');
       else if (starEvent?.type === 'extended') {
@@ -1245,6 +1277,7 @@ export function initGameApp() {
       const matchedTiles = selectedTiles.slice();
       if (chainTier === 'cross' || chainTier === 'full') {
         pangCinematicActive = true;
+        syncTimerRunning();
         isDragging = false;
         dragController.clearPointer();
       }
@@ -1291,7 +1324,7 @@ export function initGameApp() {
 
       if (score > bestScore) {
         bestScore = score;
-        localStorage.setItem('seq_pang_best', bestScore);
+        safeStorage.setItem('seq_pang_best', bestScore);
         hud.setBestScore(bestScore);
       }
 
@@ -1359,6 +1392,7 @@ export function initGameApp() {
             if (isGameOver) return;
             eliminateAndRefill(removedCells);
             pangCinematicActive = false;
+            syncTimerRunning();
 
             if (gameOverAfterPang) {
               gameOverAfterPang = false;
@@ -1438,36 +1472,13 @@ export function initGameApp() {
   // ----------------------------------------------------
   // 5. 이벤트 바인딩
   // ----------------------------------------------------
-  boardWrapper.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    handleStart(e.clientX, e.clientY);
-  });
-
-  window.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    handleMove(e.clientX, e.clientY);
-  });
-
-  window.addEventListener('mouseup', (e) => {
-    handleEnd();
-  });
-
-  boardWrapper.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    handleStart(touch.clientX, touch.clientY);
-  }, { passive: false });
-
-  window.addEventListener('touchmove', (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    handleMove(touch.clientX, touch.clientY);
-  }, { passive: false });
-
-  window.addEventListener('touchend', (e) => {
-    handleEnd();
+  bindDragInput({
+    boardWrapper, eventTarget: window,
+    start: handleStart, move: handleMove, end: handleEnd,
+    cancel() {
+      isDragging = false;
+      clearSelection(); // Cancellation never evaluates or scores a chain.
+    }
   });
 
   // ----------------------------------------------------
@@ -1489,33 +1500,17 @@ export function initGameApp() {
 
   function getOrCreatePlayerId() {
     const storageKey = 'seq_pang_player_id';
-    const savedPlayerId = localStorage.getItem(storageKey);
+    const savedPlayerId = safeStorage.getItem(storageKey);
     if (savedPlayerId) return savedPlayerId;
 
     const nextPlayerId = `player_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(storageKey, nextPlayerId);
+    safeStorage.setItem(storageKey, nextPlayerId);
     return nextPlayerId;
   }
 
   function getGameOverRankingTitle(period = currentGameOverRankingPeriod) {
     if (period === 'weekly') return '주간 랭킹 TOP 30';
     return '오늘 랭킹 TOP 30';
-  }
-
-  function formatWeekRange(weekStart) {
-    if (!weekStart) return '';
-
-    const startDate = new Date(`${weekStart}T00:00:00+09:00`);
-    if (Number.isNaN(startDate.getTime())) return weekStart;
-
-    const endDate = new Date(startDate.getTime());
-    endDate.setDate(endDate.getDate() + 6);
-
-    const endYear = endDate.getFullYear();
-    const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-    const endDay = String(endDate.getDate()).padStart(2, '0');
-
-    return `${weekStart} ~ ${endYear}-${endMonth}-${endDay}`;
   }
 
   function getGameOverRankingMeta(response = null, period = currentGameOverRankingPeriod) {
@@ -1601,7 +1596,7 @@ export function initGameApp() {
     currentNickname = nickname;
     playerNicknameInput.value = nickname;
     lobbyNicknameInput.value = nickname;
-    localStorage.setItem('seq_pang_nickname', nickname);
+    safeStorage.setItem('seq_pang_nickname', nickname);
   }
 
   // 싱글 플레이 시작
@@ -1872,7 +1867,9 @@ export function initGameApp() {
   }
 
   btnRetry.addEventListener('click', () => {
+    gameOverRankingRequestId++;
     isGameActive = false;
+    syncTimerRunning();
     void resumeMenuBgm();
     gameOverOverlay.classList.remove('show');
 

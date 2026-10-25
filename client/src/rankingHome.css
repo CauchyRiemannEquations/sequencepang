@@ -20,10 +20,24 @@
   max-width: 420px;
 }
 
-.ranking-overlay {
+dialog.ranking-overlay {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  max-width: none;
+  max-height: none;
+  color: inherit;
   z-index: 500;
   position: fixed;
   inset: 0;
+}
+
+dialog.ranking-overlay:not([open]) {
+  display: none;
+}
+
+dialog.ranking-overlay::backdrop {
+  background: transparent;
 }
 
 /* 랭킹이 열려 있는 동안 뒤 화면 스크롤 잠금 */

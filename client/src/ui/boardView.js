@@ -6,6 +6,7 @@ const TILE_FALL_PX = 56; // 타일 한 칸 낙하 거리 (기존 renderGravityRe
 export function createBoardView({ boardElement, boardWrapper, size, getDisplayValue, isBigNumberTile }) {
   let tileEls = [];
   let pangLayer = null;
+  let fallRuns = new WeakMap();
 
   function updateTileElement(tileElement, tileData) {
     tileElement.textContent = getDisplayValue(tileData);
@@ -23,6 +24,7 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
   }
 
   function build(boardData) {
+    fallRuns = new WeakMap();
     boardElement.innerHTML = '';
     tileEls = [];
     for (let r = 0; r < size; r++) {
@@ -61,6 +63,7 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
   function renderGravityRefill(boardData, { spawned = [] } = {}) {
     // 같은 숫자로 리필되어도 새로 생긴 타일은 반드시 내려오게 한다.
     const spawnedKeys = new Set(spawned.map(({ row, col }) => `${row}:${col}`));
+    const fallingTiles = [];
     for (let c = 0; c < size; c++) {
       let newRowCount = 0;
 
@@ -82,12 +85,9 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
           tile.style.setProperty('--fall-from', `-${fallPx}px`);
           tile.style.animationDelay = `${newIdx * 30}ms`;
           tile.classList.remove('falling');
-          tile.offsetHeight; // reflow로 애니메이션 재시동
-          tile.classList.add('falling');
-          setTimeout(() => {
-            tile.classList.remove('falling');
-            tile.style.animationDelay = '';
-          }, 380 + newIdx * 30);
+          const run = {};
+          fallRuns.set(tile, run);
+          fallingTiles.push({ tile, run, delay: newIdx * 30 });
           newIdx++;
         } else {
           // 같은 숫자/타입이 내려와도 별 메타데이터는 반드시 갱신한다.
@@ -96,6 +96,19 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
         tile.classList.remove('selected', 'last-selected', 'matched', 'sequence-invalid', 'pang-burst');
         tile.classList.toggle('fever-tile', tileData?.type === 'fever');
         tile.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
+      }
+    }
+    // Finish all writes before one shared layout flush, then restart together.
+    if (fallingTiles.length) {
+      void boardElement.offsetHeight;
+      for (const { tile, run, delay } of fallingTiles) {
+        tile.classList.add('falling');
+        setTimeout(() => {
+          if (fallRuns.get(tile) !== run) return;
+          tile.classList.remove('falling');
+          tile.style.animationDelay = '';
+          fallRuns.delete(tile);
+        }, 380 + delay);
       }
     }
   }

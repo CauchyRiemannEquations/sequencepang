@@ -1,8 +1,10 @@
-﻿import { fetchLeaderboard } from './scoreClient.js';
+import { fetchLeaderboard } from './scoreClient.js';
 import { renderGlobalLeaderboard } from './ui.js';
+import { formatWeekRange } from './rankingDates.js';
 
 let currentRankingPeriod = 'daily';
 let rankingRequestId = 0;
+let rankingOpener = null;
 
 function makeEmptyRankItem(message) {
   const item = document.createElement('li');
@@ -23,22 +25,6 @@ function getRankingDescription(period) {
   return '오늘 기록된 최고 점수만 모아 보여줍니다.';
 }
 
-function formatWeekRange(weekStart) {
-  if (!weekStart) return '';
-
-  const startDate = new Date(`${weekStart}T00:00:00+09:00`);
-  if (Number.isNaN(startDate.getTime())) return weekStart;
-
-  const endDate = new Date(startDate.getTime());
-  endDate.setDate(endDate.getDate() + 6);
-
-  const endYear = endDate.getFullYear();
-  const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-  const endDay = String(endDate.getDate()).padStart(2, '0');
-
-  return `${weekStart} ~ ${endYear}-${endMonth}-${endDay}`;
-}
-
 function getRankingMetaText(response) {
   if (response?.period === 'weekly') {
     return response?.rankingWeekStart ? formatWeekRange(response.rankingWeekStart) : '';
@@ -57,26 +43,40 @@ function updateRankingHeader(period, response = null) {
   if (title) title.textContent = getRankingTitle(period);
   if (desc) desc.textContent = getRankingDescription(period);
   if (meta) meta.textContent = getRankingMetaText(response);
-  if (dailyTab) dailyTab.dataset.active = String(period === 'daily');
-  if (weeklyTab) weeklyTab.dataset.active = String(period === 'weekly');
+  for (const button of [dailyTab, weeklyTab]) {
+    if (!button) continue;
+    const active = button.dataset.period === period;
+    button.dataset.active = String(active);
+    button.setAttribute('aria-pressed', String(active));
+  }
 }
 
 function createRankingOverlay() {
   const existing = document.getElementById('ranking-overlay');
   if (existing) return existing;
 
-  const overlay = document.createElement('div');
+  const overlay = document.createElement('dialog');
   overlay.className = 'overlay ranking-overlay';
   overlay.id = 'ranking-overlay';
+  overlay.setAttribute('aria-labelledby', 'ranking-title');
+  overlay.setAttribute('aria-describedby', 'ranking-desc');
+  overlay.addEventListener('close', () => {
+    // A queued close event must not hide a dialog that was already reopened.
+    if (overlay.open) return;
+    overlay.classList.remove('show');
+    rankingRequestId++;
+    if (rankingOpener?.isConnected) rankingOpener.focus();
+    rankingOpener = null;
+  });
 
   overlay.innerHTML = `
-    <div class="ranking-card" role="dialog" aria-modal="true" aria-labelledby="ranking-title">
+    <div class="ranking-card">
       <div class="ranking-card-header">
         <h2 class="ranking-title" id="ranking-title">오늘 랭킹 TOP 30</h2>
         <p class="ranking-desc" id="ranking-desc">오늘 기록된 최고 점수만 모아 보여줍니다.</p>
-        <div class="ranking-period-tabs" role="tablist" aria-label="랭킹 기간 선택">
-          <button type="button" class="ranking-period-tab" id="btn-ranking-daily" data-period="daily" data-active="true">오늘 랭킹</button>
-          <button type="button" class="ranking-period-tab" id="btn-ranking-weekly" data-period="weekly" data-active="false">주간 랭킹</button>
+        <div class="ranking-period-tabs" role="group" aria-label="랭킹 기간 선택">
+          <button type="button" class="ranking-period-tab" id="btn-ranking-daily" data-period="daily" data-active="true" aria-pressed="true">오늘 랭킹</button>
+          <button type="button" class="ranking-period-tab" id="btn-ranking-weekly" data-period="weekly" data-active="false" aria-pressed="false">주간 랭킹</button>
         </div>
         <p class="ranking-period-meta" id="ranking-period-meta"></p>
       </div>
@@ -85,7 +85,7 @@ function createRankingOverlay() {
         <li class="global-rank-empty">랭킹을 불러오는 중...</li>
       </ol>
 
-      <button type="button" class="btn-retry" id="btn-ranking-close">닫기</button>
+      <button type="button" class="btn-retry" id="btn-ranking-close" autofocus>닫기</button>
     </div>
   `;
 
@@ -121,15 +121,20 @@ async function loadMainRanking(period = currentRankingPeriod) {
 
 function openRankingOverlay() {
   const overlay = createRankingOverlay();
-  if (!overlay) return;
+  if (!overlay || overlay.open) return;
 
+  rankingOpener = document.activeElement;
+  overlay.showModal();
   overlay.classList.add('show');
   loadMainRanking();
 }
 
 function closeRankingOverlay() {
   const overlay = document.getElementById('ranking-overlay');
-  if (overlay) overlay.classList.remove('show');
+  if (overlay?.open) {
+    overlay.classList.remove('show');
+    overlay.close();
+  }
 }
 
 function setupMainButtons() {
@@ -154,7 +159,7 @@ function setupRankingOverlayEvents() {
       closeRankingOverlay();
     }
 
-    if (event.target?.dataset?.period) {
+    if (event.target?.closest?.('#ranking-overlay .ranking-period-tab')) {
       loadMainRanking(event.target.dataset.period);
     }
 
@@ -163,11 +168,6 @@ function setupRankingOverlayEvents() {
     }
   });
 
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      closeRankingOverlay();
-    }
-  });
 }
 
 export function initHomeRankingUI() {
