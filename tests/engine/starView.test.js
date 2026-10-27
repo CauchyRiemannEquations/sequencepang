@@ -106,7 +106,7 @@ test('크로스팡은 십자 대상만 순서대로, 풀보드팡은 전판을 �
     assert.equal(wrapper.children.length, 1);
     const copy = wrapper.children[0].children.at(-1);
     assert.equal(copy.children[0].textContent, tier === 'full' ? '풀보드팡!' : '크로스팡!');
-    assert.equal(view.getTileEl(5, 2).style.getPropertyValue('--pang-delay'), tier === 'cross' ? '96ms' : '0ms');
+    assert.equal(view.getTileEl(5, 2).style.getPropertyValue('--pang-delay'), tier === 'cross' ? `${3 * PANG_BURST_STAGGER_MS}ms` : '0ms');
     assert.equal(view.getTileEl(5, 5).classList.contains('pang-burst'), tier === 'full');
     view.clearPangBurst();
     assert.equal(wrapper.classList.contains('pang-cinematic'), false);
