@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createCombinedRateLimiter } = require('../../functions/src/rateLimit');
 const { createSingleFlight } = require('../../functions/src/singleFlight');
-const { loadPeriodDocs } = require('../../functions/src/scoreRoutes');
+const { loadPeriodDocs, buildRankedEntries } = require('../../functions/src/scoreRoutes');
 const { getCurrentRankingDayInfo, getCurrentRankingWeekInfo, RANKING_SEASON_ID } = require('../../functions/src/constants');
 const { createRequestTiming } = require('../../functions/src/requestTiming');
 const { EventEmitter } = require('node:events');
@@ -56,7 +56,7 @@ test('일간·주간의 기본/레거시 쿼리를 병렬 시작하고 기존 �
   for (const period of ['daily', 'weekly']) {
     const resolvers = [];
     function query() {
-      return { where: () => query(), orderBy: () => query(), limit: () => query(),
+      return { where: () => query(), orderBy: () => query(), limit: () => query(), select: () => query(),
         get: () => new Promise(resolve => resolvers.push(resolve)) };
     }
     const loading = loadPeriodDocs(query(), period, RANKING_SEASON_ID, day, week);
@@ -92,11 +92,41 @@ test('인덱스가 없으면 기존 fallback·레거시 병합을 유지하고 �
     createdAt: new Date(day.dayStartUtcMs + 1000) }) };
   const details = {};
   function query(indexed = false) {
-    return { where: () => query(true), orderBy: () => query(indexed), limit: () => query(indexed),
+    return { where: () => query(true), orderBy: () => query(indexed), limit: () => query(indexed), select: () => query(indexed),
       get: async () => { if (indexed) throw Object.assign(Error('missing index'), { code: 9 }); return { docs: [doc] }; } };
   }
   const timing = { measure: (_name, task) => task(), set: (key, value) => { details[key] = value; } };
   const result = await loadPeriodDocs(query(), 'daily', RANKING_SEASON_ID, day, week, timing);
   assert.deepEqual(result.map(value => value.id), ['legacy']);
   assert.equal(details.indexFallback, true);
+});
+
+test('레거시 필드 축소 후에도 기간 필터·동점·중복 제거·TOP 30 결과가 같다', async () => {
+  const now = Date.parse('2026-10-27T03:00:00Z');
+  const day = getCurrentRankingDayInfo(now); const week = getCurrentRankingWeekInfo(now);
+  const rows = Array.from({ length: 80 }, (_, i) => ({ id: String(i), value: {
+    nickname: `학생${Math.floor(i / 2)}`, playerId: `player-${i % 67}`, score: 1000 - Math.floor(i / 3),
+    maxCombo: i, mode: 'timeAttack', createdAt: new Date(day.dayStartUtcMs + i * 1000),
+    ...(i % 2 ? {} : { rankingSeason: RANKING_SEASON_ID, rankingDay: day.rankingDay, rankingWeek: week.rankingWeek }),
+    unusedAnalytics: 'x'.repeat(10000)
+  } }));
+  rows.push({ id: 'yesterday', value: { nickname: '어제', score: 9999, mode: 'timeAttack', createdAt: new Date(day.dayStartUtcMs - 1000) } });
+  const doc = (row, fields) => ({ id: row.id, data: () => fields
+    ? Object.fromEntries(Object.entries(row.value).filter(([key]) => fields.includes(key))) : row.value });
+  function query(filters = [], fields) {
+    return { where: (key, _op, value) => query([...filters, [key, value]], fields),
+      orderBy: () => query(filters, fields), limit: () => query(filters, fields),
+      select: (...selected) => query(filters, selected),
+      get: async () => ({ docs: rows.filter(row => filters.every(([key, value]) => row.value[key] === value)).map(row => doc(row, fields)) }) };
+  }
+  for (const period of ['daily', 'weekly']) {
+    const projected = await loadPeriodDocs(query(), period, RANKING_SEASON_ID, day, week);
+    const expectedRows = rows.filter(row => period === 'weekly' || row.id !== 'yesterday');
+    const expected = buildRankedEntries(expectedRows.map(row => doc(row))).slice(0, 30)
+      .map(({ unusedAnalytics, ...value }) => value);
+    const actual = buildRankedEntries(projected).slice(0, 30).map(({ unusedAnalytics, ...value }) => value);
+    assert.equal(actual.length, 30);
+    assert.deepEqual(actual, expected);
+    assert.ok(projected.some(row => row.id === '1' && !('unusedAnalytics' in row.data())));
+  }
 });

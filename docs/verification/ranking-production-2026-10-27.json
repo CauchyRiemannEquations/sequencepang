@@ -1,0 +1,875 @@
+{
+  "dateKst": "2026-10-27",
+  "sourceMain": "4a3ad6b",
+  "functionsRegion": "asia-southeast1",
+  "firestoreRegion": "asia-northeast3",
+  "finalRevision": "api-00005-jur",
+  "tests": {
+    "clientEngine": 83,
+    "backendUnit": 12,
+    "emulator": 13,
+    "rankingBrowser": "passed",
+    "build": "passed",
+    "diffCheck": "passed"
+  },
+  "limits": [
+    "Few sequential samples, no p95 or improvement percentage",
+    "Fresh auth and first DB use differ from auth-ready requests",
+    "Pre-deploy server cache state cannot be confirmed",
+    "Not a controlled scale-from-zero cold-start or representative Korean user-device study",
+    "Projection reduces transferred fields; independent latency improvement is not established"
+  ],
+  "deployments": [
+    {
+      "label": "before",
+      "name": "projects/sequencepang/locations/asia-southeast1/functions/api",
+      "updatedAt": "2026-10-05T23:38:45.980365642Z",
+      "state": "ACTIVE",
+      "runtime": "nodejs22",
+      "revision": "api-00002-joq",
+      "hash": "2e47f5683ad46691a00dac78abdc1538c452d189",
+      "source": {
+        "bucket": "gcf-v2-sources-147997579779-asia-southeast1",
+        "object": "api/function-source.zip",
+        "generation": "1791243486167069"
+      },
+      "minInstances": 0,
+      "maxInstances": 5,
+      "memory": "256Mi"
+    },
+    {
+      "label": "after-pr40",
+      "name": "projects/sequencepang/locations/asia-southeast1/functions/api",
+      "updatedAt": "2026-10-27T01:22:54.423422877Z",
+      "state": "ACTIVE",
+      "runtime": "nodejs22",
+      "revision": "api-00003-vat",
+      "hash": "706aa2db3572ef963a4b5737310a687384edc208",
+      "source": {
+        "bucket": "gcf-v2-sources-147997579779-asia-southeast1",
+        "object": "api/function-source.zip",
+        "generation": "1793064124883569"
+      },
+      "minInstances": 0,
+      "maxInstances": 5,
+      "memory": "256Mi"
+    },
+    {
+      "label": "after-rest",
+      "name": "projects/sequencepang/locations/asia-southeast1/functions/api",
+      "updatedAt": "2026-10-27T01:26:53.823844298Z",
+      "state": "ACTIVE",
+      "runtime": "nodejs22",
+      "revision": "api-00004-deg",
+      "hash": "ff313a44f1ecc2bc91a99b80f6e76005006413c5",
+      "source": {
+        "bucket": "gcf-v2-sources-147997579779-asia-southeast1",
+        "object": "api/function-source.zip",
+        "generation": "1793064373201260"
+      },
+      "minInstances": 0,
+      "maxInstances": 5,
+      "memory": "256Mi"
+    },
+    {
+      "label": "after-projection",
+      "name": "projects/sequencepang/locations/asia-southeast1/functions/api",
+      "updatedAt": "2026-10-27T01:31:45.827977415Z",
+      "state": "ACTIVE",
+      "runtime": "nodejs22",
+      "revision": "api-00005-jur",
+      "hash": "f036286fd6949fc4f8563fe6c9bed5256077e8c4",
+      "source": {
+        "bucket": "gcf-v2-sources-147997579779-asia-southeast1",
+        "object": "api/function-source.zip",
+        "generation": "1793064657392933"
+      },
+      "minInstances": 0,
+      "maxInstances": 5,
+      "memory": "256Mi"
+    }
+  ],
+  "otherFunctions": [
+    {
+      "id": "cleanup",
+      "hash": "2e47f5683ad46691a00dac78abdc1538c452d189",
+      "source": {
+        "bucket": "gcf-v2-sources-147997579779-asia-southeast1",
+        "object": "cleanup/function-source.zip",
+        "generation": "1791243526594311"
+      }
+    },
+    {
+      "id": "roomPresence",
+      "hash": "1c2b943ade8520d1f396ee44d723ac077d99c92a",
+      "source": {
+        "bucket": "gcf-v2-sources-147997579779-asia-southeast1",
+        "object": "roomPresence/function-source.zip",
+        "generation": "1791242904599548"
+      }
+    }
+  ],
+  "measurements": [
+    {
+      "label": "before",
+      "at": "2026-10-27T01:19:20.193Z",
+      "environment": "local Windows headless Chromium; mobile viewport 390x844; actual production; no score submission; fresh browser context",
+      "ui": [
+        {
+          "condition": "fresh-context-first",
+          "uiMs": 5447.700000001118,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 1290.300000000745,
+            "tokenMs": 0.6999999992549419,
+            "httpMs": 3862.7000000011176,
+            "decodeMs": 0.599999999627471,
+            "serverTiming": null,
+            "status": 200,
+            "totalMs": 5154.300000000745
+          }
+        },
+        {
+          "condition": "within-15s",
+          "uiMs": 9.699999999254942,
+          "newHttpRequests": 0,
+          "clientTiming": {
+            "kind": "client-hit",
+            "period": "daily",
+            "totalMs": 0
+          }
+        },
+        {
+          "condition": "auth-ready-expired-1",
+          "uiMs": 1347.5999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.19999999925494194,
+            "tokenMs": 0,
+            "httpMs": 1336.9000000003725,
+            "decodeMs": 0.599999999627471,
+            "serverTiming": null,
+            "status": 200,
+            "totalMs": 1337.699999999255
+          }
+        },
+        {
+          "condition": "auth-ready-expired-2",
+          "uiMs": 1347.199999999255,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.2000000011175871,
+            "tokenMs": 0,
+            "httpMs": 1337,
+            "decodeMs": 0.2999999988824129,
+            "serverTiming": null,
+            "status": 200,
+            "totalMs": 1337.5
+          }
+        },
+        {
+          "condition": "auth-ready-expired-3",
+          "uiMs": 1415.6000000014901,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.09999999962747097,
+            "tokenMs": 0,
+            "httpMs": 1408.199999999255,
+            "decodeMs": 0.40000000037252903,
+            "serverTiming": null,
+            "status": 200,
+            "totalMs": 1408.699999999255
+          }
+        }
+      ],
+      "responses": [
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "weekly",
+          "status": 200,
+          "leaders": 2,
+          "payloadSha256": "e1fcd3badd1b5cebad4b20fc16f554a2403bff1ae42ad60f7040c73bfc87c8d9",
+          "serverTiming": null
+        }
+      ],
+      "errors": []
+    },
+    {
+      "label": "after-pr40",
+      "at": "2026-10-27T01:24:31.546Z",
+      "environment": "local Windows headless Chromium; mobile viewport 390x844; actual production; no score submission; fresh browser context",
+      "ui": [
+        {
+          "condition": "fresh-context-first",
+          "uiMs": 5461.799999998882,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 1442.4000000003725,
+            "tokenMs": 0.5,
+            "httpMs": 3897.300000000745,
+            "decodeMs": 0.40000000037252903,
+            "serverTiming": "auth_verify;dur=56.7, firestore_rate_limit;dur=2592.8, firestore_cache_read;dur=99.4, firestore_scores;dur=89.5, firestore_legacy;dur=648.2, firestore_cache_write;dur=92.8, leaderboard_rebuild_wait;dur=752.4, server_total;dur=3508.0, instance_first_request;desc=\"false\", module_load;dur=1597.4, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 5340.60000000149
+          }
+        },
+        {
+          "condition": "within-15s",
+          "uiMs": 10.099999999627471,
+          "newHttpRequests": 0,
+          "clientTiming": {
+            "kind": "client-hit",
+            "period": "daily",
+            "totalMs": 0
+          }
+        },
+        {
+          "condition": "auth-ready-expired-1",
+          "uiMs": 703.0999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.2000000011175871,
+            "tokenMs": 0,
+            "httpMs": 681.7999999988824,
+            "decodeMs": 0.7000000011175871,
+            "serverTiming": "auth_verify;dur=1.3, firestore_rate_limit;dur=177.7, firestore_cache_read;dur=356.7, server_total;dur=536.9, instance_first_request;desc=\"false\", module_load;dur=1597.4, leaderboard_cache;desc=\"firestore-hit\"",
+            "status": 200,
+            "totalMs": 682.7000000011176
+          }
+        },
+        {
+          "condition": "auth-ready-expired-2",
+          "uiMs": 1305.0999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.19999999925494194,
+            "tokenMs": 0,
+            "httpMs": 1275.300000000745,
+            "decodeMs": 0.3999999985098839,
+            "serverTiming": "auth_verify;dur=1.0, firestore_rate_limit;dur=211.6, firestore_cache_read;dur=152.0, firestore_scores;dur=126.6, firestore_legacy;dur=648.0, firestore_cache_write;dur=101.2, leaderboard_rebuild_wait;dur=775.1, server_total;dur=1140.5, instance_first_request;desc=\"false\", module_load;dur=1597.4, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1275.8999999985099
+          }
+        },
+        {
+          "condition": "auth-ready-expired-3",
+          "uiMs": 1115.0999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.10000000149011612,
+            "tokenMs": 0,
+            "httpMs": 1103,
+            "decodeMs": 0.3999999985098839,
+            "serverTiming": "auth_verify;dur=1.0, firestore_rate_limit;dur=180.3, firestore_cache_read;dur=99.0, firestore_scores;dur=96.1, firestore_legacy;dur=599.7, firestore_cache_write;dur=94.0, leaderboard_rebuild_wait;dur=699.3, server_total;dur=980.4, instance_first_request;desc=\"false\", module_load;dur=1597.4, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1103.5
+          }
+        }
+      ],
+      "responses": [
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "weekly",
+          "status": 200,
+          "leaders": 2,
+          "payloadSha256": "e1fcd3badd1b5cebad4b20fc16f554a2403bff1ae42ad60f7040c73bfc87c8d9",
+          "serverTiming": "auth_verify;dur=1.1, firestore_rate_limit;dur=176.2, firestore_cache_read;dur=87.0, firestore_scores;dur=106.7, firestore_legacy;dur=476.8, firestore_cache_write;dur=92.6, leaderboard_rebuild_wait;dur=576.2, server_total;dur=841.1, instance_first_request;desc=\"false\", module_load;dur=1597.4, leaderboard_cache;desc=\"miss\""
+        }
+      ],
+      "errors": []
+    },
+    {
+      "label": "after-rest",
+      "at": "2026-10-27T01:28:31.455Z",
+      "environment": "local Windows headless Chromium; mobile viewport 390x844; actual production; no score submission; fresh browser context",
+      "ui": [
+        {
+          "condition": "fresh-context-first",
+          "uiMs": 5614.300000000745,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 1399.699999999255,
+            "tokenMs": 0.599999999627471,
+            "httpMs": 4087.9000000003725,
+            "decodeMs": 0.40000000037252903,
+            "serverTiming": "auth_verify;dur=53.6, firestore_rate_limit;dur=1403.6, firestore_cache_read;dur=450.1, firestore_scores;dur=463.1, firestore_legacy;dur=1651.5, firestore_cache_write;dur=131.6, leaderboard_rebuild_wait;dur=1799.5, server_total;dur=3713.5, instance_first_request;desc=\"false\", module_load;dur=1667.5, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 5488.799999998882
+          }
+        },
+        {
+          "condition": "within-15s",
+          "uiMs": 31.299999998882413,
+          "newHttpRequests": 0,
+          "clientTiming": {
+            "kind": "client-hit",
+            "period": "daily",
+            "totalMs": 0
+          }
+        },
+        {
+          "condition": "auth-ready-expired-1",
+          "uiMs": 432.1000000014901,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.09999999962747097,
+            "tokenMs": 0,
+            "httpMs": 422.30000000074506,
+            "decodeMs": 0.5,
+            "serverTiming": "auth_verify;dur=1.3, firestore_rate_limit;dur=199.6, firestore_cache_read;dur=91.6, server_total;dur=293.8, instance_first_request;desc=\"false\", module_load;dur=1667.5, leaderboard_cache;desc=\"firestore-hit\"",
+            "status": 200,
+            "totalMs": 422.90000000037253
+          }
+        },
+        {
+          "condition": "auth-ready-expired-2",
+          "uiMs": 1453.9000000003725,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.09999999962747097,
+            "tokenMs": 0,
+            "httpMs": 1446.0999999996275,
+            "decodeMs": 0.30000000074505806,
+            "serverTiming": "auth_verify;dur=1.5, firestore_rate_limit;dur=179.8, firestore_cache_read;dur=89.1, firestore_scores;dur=353.9, firestore_legacy;dur=905.9, firestore_cache_write;dur=93.3, leaderboard_rebuild_wait;dur=1038.4, server_total;dur=1309.6, instance_first_request;desc=\"false\", module_load;dur=1667.5, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1446.5
+          }
+        },
+        {
+          "condition": "auth-ready-expired-3",
+          "uiMs": 1303.9000000003725,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.2000000011175871,
+            "tokenMs": 0,
+            "httpMs": 1286.699999999255,
+            "decodeMs": 0.30000000074505806,
+            "serverTiming": "auth_verify;dur=1.0, firestore_rate_limit;dur=182.7, firestore_cache_read;dur=94.7, firestore_scores;dur=91.9, firestore_legacy;dur=778.0, firestore_cache_write;dur=89.5, leaderboard_rebuild_wait;dur=876.0, server_total;dur=1155.5, instance_first_request;desc=\"false\", module_load;dur=1667.5, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1287.2000000011176
+          }
+        }
+      ],
+      "responses": [
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "weekly",
+          "status": 200,
+          "leaders": 2,
+          "payloadSha256": "e1fcd3badd1b5cebad4b20fc16f554a2403bff1ae42ad60f7040c73bfc87c8d9",
+          "serverTiming": "auth_verify;dur=1.1, firestore_rate_limit;dur=178.9, firestore_cache_read;dur=86.0, firestore_scores;dur=169.2, firestore_legacy;dur=613.7, firestore_cache_write;dur=94.3, leaderboard_rebuild_wait;dur=715.4, server_total;dur=982.1, instance_first_request;desc=\"false\", module_load;dur=1667.5, leaderboard_cache;desc=\"miss\""
+        }
+      ],
+      "errors": []
+    },
+    {
+      "label": "after-projection",
+      "at": "2026-10-27T01:33:31.923Z",
+      "environment": "local Windows headless Chromium; mobile viewport 390x844; actual production; no score submission; fresh browser context; not a representative Korean end-user device or controlled scale-from-zero test",
+      "browserVersion": "151.0.7922.34",
+      "ui": [
+        {
+          "condition": "fresh-context-first",
+          "uiMs": 5283.0999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 1401.0999999996275,
+            "tokenMs": 0.30000000074505806,
+            "httpMs": 3733.199999999255,
+            "decodeMs": 0.19999999925494194,
+            "serverTiming": "auth_verify;dur=55.2, firestore_rate_limit;dur=2468.0, firestore_cache_read;dur=108.1, firestore_scores;dur=97.9, firestore_legacy;dur=581.7, firestore_cache_write;dur=103.3, leaderboard_rebuild_wait;dur=692.7, server_total;dur=3330.1, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 5134.799999998882
+          }
+        },
+        {
+          "condition": "within-15s",
+          "uiMs": 4.099999999627471,
+          "newHttpRequests": 0,
+          "clientTiming": {
+            "kind": "client-hit",
+            "period": "daily",
+            "totalMs": 0
+          }
+        },
+        {
+          "condition": "auth-ready-expired-1",
+          "uiMs": 441.59999999962747,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.09999999962747097,
+            "tokenMs": 0.10000000149011612,
+            "httpMs": 434.3999999985099,
+            "decodeMs": 0.40000000037252903,
+            "serverTiming": "auth_verify;dur=1.2, firestore_rate_limit;dur=205.9, firestore_cache_read;dur=90.6, server_total;dur=299.0, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"firestore-hit\"",
+            "status": 200,
+            "totalMs": 435
+          }
+        },
+        {
+          "condition": "auth-ready-expired-2",
+          "uiMs": 1247.5999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.2000000011175871,
+            "tokenMs": 0,
+            "httpMs": 1229.699999999255,
+            "decodeMs": 0.5,
+            "serverTiming": "auth_verify;dur=1.1, firestore_rate_limit;dur=197.2, firestore_cache_read;dur=96.1, firestore_scores;dur=92.2, firestore_legacy;dur=662.5, firestore_cache_write;dur=141.8, leaderboard_rebuild_wait;dur=814.7, server_total;dur=1110.1, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1230.4000000003725
+          }
+        },
+        {
+          "condition": "auth-ready-expired-3",
+          "uiMs": 1292.0999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.19999999925494194,
+            "tokenMs": 0,
+            "httpMs": 1282.1000000014901,
+            "decodeMs": 0.2999999988824129,
+            "serverTiming": "auth_verify;dur=0.9, firestore_rate_limit;dur=193.8, firestore_cache_read;dur=98.4, firestore_scores;dur=88.8, firestore_legacy;dur=751.5, firestore_cache_write;dur=100.2, leaderboard_rebuild_wait;dur=856.7, server_total;dur=1150.7, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1282.5999999996275
+          }
+        }
+      ],
+      "responses": [
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "weekly",
+          "status": 200,
+          "leaders": 2,
+          "payloadSha256": "e1fcd3badd1b5cebad4b20fc16f554a2403bff1ae42ad60f7040c73bfc87c8d9",
+          "serverTiming": "auth_verify;dur=1.2, firestore_rate_limit;dur=171.6, firestore_cache_read;dur=98.0, firestore_scores;dur=104.3, firestore_legacy;dur=405.1, firestore_cache_write;dur=92.0, leaderboard_rebuild_wait;dur=502.4, server_total;dur=774.0, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\""
+        }
+      ],
+      "errors": []
+    },
+    {
+      "label": "final-warm",
+      "at": "2026-10-27T01:38:25.498Z",
+      "environment": "local Windows headless Chromium; mobile viewport 390x844; actual production; no score submission; fresh browser context; not a representative Korean end-user device or controlled scale-from-zero test",
+      "browserVersion": "151.0.7922.34",
+      "ui": [
+        {
+          "condition": "fresh-context-first",
+          "uiMs": 2785.5999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 1471.4000000003725,
+            "tokenMs": 0.3999999985098839,
+            "httpMs": 1213.9000000003725,
+            "decodeMs": 0.900000000372529,
+            "serverTiming": "auth_verify;dur=1.1, firestore_rate_limit;dur=190.3, firestore_cache_read;dur=151.1, firestore_scores;dur=93.7, firestore_legacy;dur=433.5, firestore_cache_write;dur=91.1, leaderboard_rebuild_wait;dur=527.6, server_total;dur=870.8, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 2686.5999999996275
+          }
+        },
+        {
+          "condition": "within-15s",
+          "uiMs": 12.199999999254942,
+          "newHttpRequests": 0,
+          "clientTiming": {
+            "kind": "client-hit",
+            "period": "daily",
+            "totalMs": 0
+          }
+        },
+        {
+          "condition": "auth-ready-expired-1",
+          "uiMs": 493.59999999962747,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.30000000074505806,
+            "tokenMs": 0,
+            "httpMs": 474.09999999962747,
+            "decodeMs": 0.8000000007450581,
+            "serverTiming": "auth_verify;dur=1.3, firestore_rate_limit;dur=193.4, firestore_cache_read;dur=147.5, server_total;dur=343.1, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"firestore-hit\"",
+            "status": 200,
+            "totalMs": 475.2000000011176
+          }
+        },
+        {
+          "condition": "auth-ready-expired-2",
+          "uiMs": 1021.3000000007451,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.09999999962747097,
+            "tokenMs": 0.09999999962747097,
+            "httpMs": 1008.2000000011176,
+            "decodeMs": 0.5,
+            "serverTiming": "auth_verify;dur=0.9, firestore_rate_limit;dur=183.7, firestore_cache_read;dur=94.4, firestore_scores;dur=83.7, firestore_legacy;dur=506.0, firestore_cache_write;dur=98.3, leaderboard_rebuild_wait;dur=608.7, server_total;dur=888.5, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1008.9000000003725
+          }
+        },
+        {
+          "condition": "auth-ready-expired-3",
+          "uiMs": 1236.0999999996275,
+          "newHttpRequests": 1,
+          "api": {
+            "kind": "api",
+            "period": "daily",
+            "authReadyMs": 0.19999999925494194,
+            "tokenMs": 0.09999999962747097,
+            "httpMs": 1228,
+            "decodeMs": 0.599999999627471,
+            "serverTiming": "auth_verify;dur=1.5, firestore_rate_limit;dur=258.2, firestore_cache_read;dur=101.8, firestore_scores;dur=123.4, firestore_legacy;dur=622.8, firestore_cache_write;dur=105.3, leaderboard_rebuild_wait;dur=733.7, server_total;dur=1096.2, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\"",
+            "status": 200,
+            "totalMs": 1228.8999999985099
+          }
+        }
+      ],
+      "responses": [
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "daily",
+          "status": 200,
+          "leaders": 0,
+          "payloadSha256": "f6993eac25c85172fe67a69d58eb4713596312d7db8024c49e8bf2041a74bfb7"
+        },
+        {
+          "period": "weekly",
+          "status": 200,
+          "leaders": 2,
+          "payloadSha256": "e1fcd3badd1b5cebad4b20fc16f554a2403bff1ae42ad60f7040c73bfc87c8d9",
+          "serverTiming": "auth_verify;dur=0.8, firestore_rate_limit;dur=165.1, firestore_cache_read;dur=87.7, firestore_scores;dur=102.8, firestore_legacy;dur=446.7, firestore_cache_write;dur=90.7, leaderboard_rebuild_wait;dur=542.0, server_total;dur=796.4, instance_first_request;desc=\"false\", module_load;dur=2666.6, leaderboard_cache;desc=\"miss\""
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "logs": [
+    {
+      "at": "2026-10-27T01:37:50.924353Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "message": "ranking_timing",
+        "moduleLoadMs": 2666.648925,
+        "instanceFirstRequest": false,
+        "scoreDocumentsReturned": 0,
+        "cache": "miss",
+        "durations": {
+          "firestore_cache_write": 98.331296999997,
+          "auth_verify": 0.9259650000021793,
+          "firestore_legacy": 506.00481499999296,
+          "firestore_cache_read": 94.3528149999911,
+          "server_total": 888.5290580000146,
+          "leaderboard_rebuild_wait": 608.6649430000107,
+          "firestore_rate_limit": 183.74818600004073,
+          "firestore_scores": 83.68761399999494
+        },
+        "status": 200,
+        "legacyDocumentsReturned": 1200
+      }
+    },
+    {
+      "at": "2026-10-27T01:37:33.812663Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "durations": {
+          "auth_verify": 1.3353669999632984,
+          "firestore_cache_read": 147.46822700003395,
+          "server_total": 343.0855429999647,
+          "firestore_rate_limit": 193.42945200001122
+        },
+        "moduleLoadMs": 2666.648925,
+        "status": 200,
+        "message": "ranking_timing",
+        "instanceFirstRequest": false,
+        "cache": "firestore-hit"
+      }
+    },
+    {
+      "at": "2026-10-27T01:37:16.819974Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "message": "ranking_timing",
+        "cache": "miss",
+        "legacyDocumentsReturned": 1200,
+        "instanceFirstRequest": false,
+        "moduleLoadMs": 2666.648925,
+        "durations": {
+          "auth_verify": 1.0863590000080876,
+          "leaderboard_rebuild_wait": 527.6049350000103,
+          "firestore_scores": 93.66852700000163,
+          "firestore_cache_read": 151.09828999999445,
+          "firestore_cache_write": 91.10532999999123,
+          "firestore_rate_limit": 190.3264490000438,
+          "server_total": 870.8003249999601,
+          "firestore_legacy": 433.4658230000059
+        },
+        "scoreDocumentsReturned": 0,
+        "status": 200
+      }
+    },
+    {
+      "at": "2026-10-27T01:33:30.813277Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "scoreDocumentsReturned": 29,
+        "legacyDocumentsReturned": 1200,
+        "moduleLoadMs": 2666.648925,
+        "cache": "miss",
+        "message": "ranking_timing",
+        "instanceFirstRequest": false,
+        "status": 200,
+        "durations": {
+          "firestore_cache_read": 98.0050029999984,
+          "firestore_rate_limit": 171.5782130000007,
+          "firestore_scores": 104.31173700001091,
+          "leaderboard_rebuild_wait": 502.4290330000076,
+          "firestore_legacy": 405.073218000005,
+          "firestore_cache_write": 91.98799100000178,
+          "server_total": 773.9544850000093,
+          "auth_verify": 1.1747669999895152
+        }
+      }
+    },
+    {
+      "at": "2026-10-27T01:33:29.635096Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "message": "ranking_timing",
+        "instanceFirstRequest": false,
+        "durations": {
+          "firestore_cache_write": 100.23744899999292,
+          "server_total": 1150.6573990000034,
+          "leaderboard_rebuild_wait": 856.6586079999979,
+          "auth_verify": 0.9163799999951152,
+          "firestore_legacy": 751.5206590000016,
+          "firestore_scores": 88.82282600000326,
+          "firestore_cache_read": 98.42873499999405,
+          "firestore_rate_limit": 193.76938100000552
+        },
+        "moduleLoadMs": 2666.648925,
+        "legacyDocumentsReturned": 1200,
+        "scoreDocumentsReturned": 0,
+        "cache": "miss",
+        "status": 200
+      }
+    },
+    {
+      "at": "2026-10-27T01:32:57.282537Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "message": "ranking_timing",
+        "durations": {
+          "leaderboard_rebuild_wait": 814.6910859999916,
+          "firestore_cache_read": 96.08292800000345,
+          "firestore_legacy": 662.5272070000065,
+          "firestore_rate_limit": 197.24282299999322,
+          "firestore_scores": 92.19251399999484,
+          "auth_verify": 1.0902340000029653,
+          "firestore_cache_write": 141.78206100000534,
+          "server_total": 1110.086645999996
+        },
+        "cache": "miss",
+        "legacyDocumentsReturned": 1200,
+        "scoreDocumentsReturned": 0,
+        "instanceFirstRequest": false,
+        "moduleLoadMs": 2666.648925,
+        "status": 200
+      }
+    },
+    {
+      "at": "2026-10-27T01:32:39.991186Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "instanceFirstRequest": false,
+        "status": 200,
+        "moduleLoadMs": 2666.648925,
+        "cache": "firestore-hit",
+        "message": "ranking_timing",
+        "durations": {
+          "firestore_cache_read": 90.5882500000007,
+          "server_total": 298.99227199999586,
+          "auth_verify": 1.1577550000001793,
+          "firestore_rate_limit": 205.90180200000032
+        }
+      }
+    },
+    {
+      "at": "2026-10-27T01:32:23.139561Z",
+      "revision": "api-00005-jur",
+      "timing": {
+        "legacyDocumentsReturned": 1200,
+        "durations": {
+          "leaderboard_rebuild_wait": 692.7221470000004,
+          "firestore_cache_read": 108.09910499999387,
+          "firestore_legacy": 581.7171549999985,
+          "firestore_cache_write": 103.31938100000116,
+          "server_total": 3330.076685,
+          "firestore_rate_limit": 2468.008544000004,
+          "auth_verify": 55.17310400000133,
+          "firestore_scores": 97.865383999997
+        },
+        "status": 200,
+        "moduleLoadMs": 2666.648925,
+        "message": "ranking_timing",
+        "instanceFirstRequest": false,
+        "scoreDocumentsReturned": 0,
+        "cache": "miss"
+      }
+    },
+    {
+      "at": "2026-10-27T01:31:44.031171Z",
+      "revision": "api-00005-jur",
+      "text": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080."
+    },
+    {
+      "at": "2026-10-27T01:31:39.641705Z",
+      "revision": "api-00005-jur",
+      "text": "Starting new instance. Reason: DEPLOYMENT_ROLLOUT - Instance started due to traffic shifting between revisions due to deployment, traffic split adjustment, or deployment health check."
+    }
+  ]
+}
