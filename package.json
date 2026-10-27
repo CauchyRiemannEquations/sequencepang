@@ -12,7 +12,8 @@
     "configure:firebase": "node scripts/configure-firebase.cjs",
     "deploy:firebase": "node scripts/deploy-firebase.cjs",
     "test:browser": "node scripts/emulators.cjs browser",
-    "test:ranking-browser": "node scripts/emulators.cjs ranking-browser"
+    "test:ranking-browser": "node scripts/emulators.cjs ranking-browser",
+    "test:ranking-production": "node scripts/ranking-production-check.cjs"
   },
   "keywords": [
     "sequence-pang",

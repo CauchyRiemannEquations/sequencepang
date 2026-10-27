@@ -36,6 +36,10 @@ const LEADERBOARD_RESPONSE_LIMIT = 30;
 const LEADERBOARD_CACHE_TTL_MS = 30 * 1000;
 const LEADERBOARD_FALLBACK_LIMIT = 1200;
 const LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT = 1200;
+// Preserve the full compatibility scan while excluding unused session/analytics
+// fields from transfer and decoding. These cover filtering, sorting and dedupe.
+const LEADERBOARD_FIELDS = ['nickname', 'score', 'maxCombo', 'mode', 'playerId',
+  'createdAt', 'rankingSeason', 'rankingDay', 'rankingWeek'];
 const ANALYTICS_FIELDS = [
   'clearCount',
   'feverClearCount',
@@ -305,7 +309,8 @@ async function loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, 
   const [snapshot, supplementSnapshot] = await Promise.all([
     measure(timing, 'firestore_scores', () => fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing)),
     period === 'daily' || period === 'weekly'
-      ? measure(timing, 'firestore_legacy', () => scoresCollection.orderBy('score', 'desc').limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT).get())
+      ? measure(timing, 'firestore_legacy', () => scoresCollection.orderBy('score', 'desc')
+        .limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT).select(...LEADERBOARD_FIELDS).get())
       : null
   ]);
   timing?.set('scoreDocumentsReturned', snapshot.docs.length);

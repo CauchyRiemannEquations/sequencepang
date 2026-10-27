@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
 const { createRequire } = require('node:module');
+const { pathToFileURL } = require('node:url');
 const { spawnSync } = require('node:child_process');
 const { performance } = require('node:perf_hooks');
 
@@ -24,16 +25,18 @@ async function probe(root) {
   function snapshot(key) { return { exists: rows.has(key), data: () => rows.get(key) }; }
   const firestore = {
     collection(name) {
-      function query(filters = [], limit = Infinity) {
+      function query(filters = [], limit = Infinity, fields) {
         return { doc(id) { const key = `${name}/${id}`;
           return { key, get: async () => { await sleep(); counts.documentReads += 1; return snapshot(key); },
             set: async data => { await sleep(); counts.documentWrites += 1; rows.set(key, data); } }; },
-          where(field, op, value) { assert.equal(op, '=='); return query([...filters, [field, value]], limit); },
-          orderBy() { return query(filters, limit); }, limit(value) { return query(filters, value); },
+          where(field, op, value) { assert.equal(op, '=='); return query([...filters, [field, value]], limit, fields); },
+          orderBy() { return query(filters, limit, fields); }, limit(value) { return query(filters, value, fields); },
+          select(...selected) { return query(filters, limit, selected); },
           async get() {
             await sleep(); counts.scoreQueries += 1;
             const docs = [...rows].filter(([key, data]) => key.startsWith(`${name}/`) && filters.every(([field, value]) => data[field] === value))
-              .sort((a, b) => b[1].score - a[1].score).slice(0, limit).map(([key, data]) => ({ id: key.split('/')[1], data: () => data }));
+              .sort((a, b) => b[1].score - a[1].score).slice(0, limit).map(([key, data]) => ({ id: key.split('/')[1],
+                data: () => fields ? Object.fromEntries(Object.entries(data).filter(([field]) => fields.includes(field))) : data }));
             counts.documentReads += Math.max(docs.length, 1); return { docs };
           } };
       }
@@ -60,7 +63,7 @@ async function probe(root) {
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.on('listening', resolve));
   const url = `http://127.0.0.1:${server.address().port}/api/leaderboard?period=daily`;
-  const { createLeaderboardCache } = await import(path.resolve(root, 'client/src/leaderboardCache.js'));
+  const { createLeaderboardCache } = await import(pathToFileURL(path.resolve(root, 'client/src/leaderboardCache.js')).href);
   let httpRequests = 0;
   async function request() {
     httpRequests += 1;
