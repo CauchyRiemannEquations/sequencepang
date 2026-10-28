@@ -1,4 +1,4 @@
-import { fetchLeaderboard } from './scoreClient.js';
+import { fetchLeaderboard, peekLeaderboard } from './scoreClient.js';
 import { renderGlobalLeaderboard } from './ui.js';
 import { formatWeekRange } from './rankingDates.js';
 
@@ -33,7 +33,7 @@ function getRankingMetaText(response) {
   return response?.rankingDay || '';
 }
 
-function updateRankingHeader(period, response = null) {
+function updateRankingHeader(period, response = null, status = '') {
   const title = document.getElementById('ranking-title');
   const desc = document.getElementById('ranking-desc');
   const meta = document.getElementById('ranking-period-meta');
@@ -42,7 +42,7 @@ function updateRankingHeader(period, response = null) {
 
   if (title) title.textContent = getRankingTitle(period);
   if (desc) desc.textContent = getRankingDescription(period);
-  if (meta) meta.textContent = getRankingMetaText(response);
+  if (meta) meta.textContent = [getRankingMetaText(response), status].filter(Boolean).join(' · ');
   for (const button of [dailyTab, weeklyTab]) {
     if (!button) continue;
     const active = button.dataset.period === period;
@@ -78,7 +78,7 @@ function createRankingOverlay() {
           <button type="button" class="ranking-period-tab" id="btn-ranking-daily" data-period="daily" data-active="true" aria-pressed="true">오늘 랭킹</button>
           <button type="button" class="ranking-period-tab" id="btn-ranking-weekly" data-period="weekly" data-active="false" aria-pressed="false">주간 랭킹</button>
         </div>
-        <p class="ranking-period-meta" id="ranking-period-meta"></p>
+        <p class="ranking-period-meta" id="ranking-period-meta" aria-live="polite"></p>
       </div>
 
       <ol class="global-ranking-list main-ranking-list" id="main-ranking-list">
@@ -103,9 +103,14 @@ async function loadMainRanking(period = currentRankingPeriod) {
   currentRankingPeriod = period === 'weekly' ? 'weekly' : 'daily';
   const requestedPeriod = currentRankingPeriod;
   const requestId = ++rankingRequestId;
-  updateRankingHeader(currentRankingPeriod);
-  list.innerHTML = '';
-  list.appendChild(makeEmptyRankItem('랭킹을 불러오는 중...'));
+  const cached = peekLeaderboard(requestedPeriod);
+  updateRankingHeader(requestedPeriod, cached?.payload, cached?.stale ? '업데이트 중…' : '');
+  if (cached) {
+    renderGlobalLeaderboard(list, cached.payload.leaders || []);
+  } else {
+    list.innerHTML = '';
+    list.appendChild(makeEmptyRankItem('랭킹을 불러오는 중...'));
+  }
 
   try {
     const response = await fetchLeaderboard(requestedPeriod);
@@ -114,8 +119,14 @@ async function loadMainRanking(period = currentRankingPeriod) {
     renderGlobalLeaderboard(list, response.leaders || []);
   } catch (error) {
     if (requestId !== rankingRequestId) return;
-    list.innerHTML = '';
-    list.appendChild(makeEmptyRankItem(error.message || '랭킹을 불러오지 못했습니다.'));
+    const current = peekLeaderboard(requestedPeriod);
+    if (current) {
+      renderGlobalLeaderboard(list, current.payload.leaders || []);
+      updateRankingHeader(requestedPeriod, current.payload, '업데이트 실패 · 이전 기록 표시');
+    } else {
+      list.innerHTML = '';
+      list.appendChild(makeEmptyRankItem(error.message || '랭킹을 불러오지 못했습니다.'));
+    }
   }
 }
 
@@ -132,6 +143,7 @@ function openRankingOverlay() {
 function closeRankingOverlay() {
   const overlay = document.getElementById('ranking-overlay');
   if (overlay?.open) {
+    rankingRequestId++;
     overlay.classList.remove('show');
     overlay.close();
   }

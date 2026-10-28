@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { createRequire } = require('node:module');
 const functionsRequire = createRequire(require.resolve('../../functions/package.json'));
 const { initializeApp: initAdmin, getApps } = functionsRequire('firebase-admin/app');
-const { getFirestore, Timestamp } = functionsRequire('firebase-admin/firestore');
+const { getFirestore, Timestamp, FieldValue } = functionsRequire('firebase-admin/firestore');
 const { getDatabase } = functionsRequire('firebase-admin/database');
 const { initializeApp, deleteApp } = require('firebase/app');
 const { getAuth, connectAuthEmulator, signInAnonymously } = require('firebase/auth');
@@ -108,7 +108,8 @@ test('랭킹 미적중·서버 캐시 적중을 계측하고 새 점수 revision
   const submitted = await api(actor, '/api/scores', { ...payload(session), score: 1234 });
   assert.equal(submitted.status, 201);
   const fresh = await api(other, '/api/leaderboard?period=daily');
-  assert.match(fresh.timing, /leaderboard_cache;desc="miss"/);
+  assert.match(fresh.timing, /leaderboard_cache;desc="firestore-hit"/);
+  assert.deepEqual(fresh.data, submitted.data.leaderboard);
   assert.equal(fresh.data.leaders[0].score, 1234);
 });
 
@@ -181,6 +182,8 @@ test('legacy daily/weekly/yesterday data, player dedupe and TOP 30 cutoff remain
   });
   batch.set(firestore.collection('scores').doc('yesterday'), { nickname: '어제왕', score: 200000, maxCombo: 1,
     mode: 'timeAttack', createdAt: Timestamp.fromMillis(day.dayStartUtcMs - 1000) });
+  // Fixture import follows the same mutation contract as production score writes.
+  batch.set(firestore.collection('ranking_state').doc('current'), { revision: FieldValue.increment(1) }, { merge: true });
   await batch.commit();
   const today = await api(actor, '/api/leaderboard?period=daily');
   assert.equal(today.status, 200); assert.equal(today.data.leaders.length, 30);

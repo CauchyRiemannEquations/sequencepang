@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { getScoreFirestore } = require('./firestore');
+const { recordRead } = require('./readMetrics');
 const { GAME_SESSION_TTL_MS, GAME_SESSION_DURATION_TOLERANCE_MS } = require('./constants');
 
 const tokenHash = token => crypto.createHash('sha256').update(token).digest('hex');
@@ -36,7 +37,7 @@ function validateSession(session, { uid, gameSessionId, sessionToken, playDurati
   return null;
 }
 
-async function commitSessionScore(input, scoreRecord, firestore = getScoreFirestore()) {
+async function commitSessionScore(input, scoreRecord, firestore = getScoreFirestore(), timing) {
   if (typeof input.gameSessionId !== 'string' || !/^[a-f0-9-]{36}$/.test(input.gameSessionId)) {
     return { error: 'missing_session' };
   }
@@ -44,6 +45,8 @@ async function commitSessionScore(input, scoreRecord, firestore = getScoreFirest
   const scoreRef = firestore.collection('scores').doc(input.gameSessionId);
   return firestore.runTransaction(async transaction => {
     const snapshot = await transaction.get(sessionRef);
+    recordRead(timing, 'session', 1);
+    timing?.add?.('scoreTransactionAttempts', 1);
     const error = validateSession(snapshot.exists ? snapshot.data() : null, input, Date.now());
     if (error) return { error };
     transaction.create(scoreRef, scoreRecord);

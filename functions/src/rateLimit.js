@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const { Timestamp } = require('firebase-admin/firestore');
 const { getScoreFirestore } = require('./firestore');
 const { measure } = require('./requestTiming');
+const { recordRead } = require('./readMetrics');
 
 function createRateLimiter(options) { return createCombinedRateLimiter([options]); }
 
@@ -21,6 +22,8 @@ function createCombinedRateLimiter(limits, { getFirestore = getScoreFirestore, n
       });
       const allowed = await measure(req.timing, 'firestore_rate_limit', () => firestore.runTransaction(async transaction => {
         const snapshots = await transaction.getAll(...counters.map(counter => counter.reference));
+        recordRead(req.timing, 'rateLimit', snapshots.length);
+        req.timing?.add?.('rateLimitTransactionAttempts', 1);
         const counts = snapshots.map(snapshot => snapshot.exists ? snapshot.data().count : 0);
         // Preserve the old ordered accounting: a UID-rejected request still
         // consumes the IP allowance, preventing retries from bypassing it.

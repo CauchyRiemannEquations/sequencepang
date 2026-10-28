@@ -130,3 +130,29 @@ test('레거시 필드 축소 후에도 기간 필터·동점·중복 제거·TO
     assert.ok(projected.some(row => row.id === '1' && !('unusedAnalytics' in row.data())));
   }
 });
+
+test('읽기 계측은 빈 쿼리 최소값과 재시도된 제한 트랜잭션을 포함하고 개인정보는 남기지 않는다', async () => {
+  const { recordRead } = require('../../functions/src/readMetrics');
+  const logs = [];
+  const middleware = createRequestTiming({ log: (...args) => logs.push(args) });
+  const req = { originalUrl: '/api/scores?ignored=private', app: { locals: {} },
+    ip: 'sensitive-ip', auth: { uid: 'sensitive-uid' }, body: { nickname: 'sensitive-name', score: 100 } };
+  const res = new EventEmitter(); res.statusCode = 201; res.set = () => {}; res.json = value => value;
+  middleware(req, res, () => {});
+  recordRead(req.timing, 'scores', 0, { query: true });
+  const firestore = { collection: () => ({ doc: id => ({ id }) }), runTransaction: async task => {
+    const attempt = { getAll: async (...refs) => refs.map(() => ({ exists: false, data: () => null })), set() {} };
+    await task(attempt); // Simulated Firestore contention retry; neither attempt logs identity.
+    return task(attempt);
+  } };
+  const limiter = createCombinedRateLimiter([{ windowMs: 60000, max: 600, keyPrefix: 'ip', subjectType: 'ip' },
+    { windowMs: 60000, max: 120, keyPrefix: 'uid' }], { getFirestore: () => firestore });
+  await limiter(req, res, error => assert.ifError(error));
+  res.json({ ok: true }); res.emit('finish');
+  assert.equal(logs[0][1].documentReadUnitsObserved, 5);
+  assert.equal(logs[0][1].documentReadsReturned, 4);
+  assert.equal(logs[0][1].rateLimitTransactionAttempts, 2);
+  assert.equal(logs[0][1].route, '/api/scores');
+  assert.ok(!JSON.stringify(logs).includes('sensitive'));
+  assert.ok(!JSON.stringify(logs).includes('ignored'));
+});

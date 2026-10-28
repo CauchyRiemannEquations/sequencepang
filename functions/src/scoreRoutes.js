@@ -21,6 +21,9 @@ const { createRateLimiter } = require('./rateLimit');
 const { isProfaneNickname } = require('./profanityFilter');
 const { measure } = require('./requestTiming');
 const { createSingleFlight } = require('./singleFlight');
+const { createRankingSnapshotCache } = require('./rankingSnapshotCache');
+const { recordRead } = require('./readMetrics');
+const supplementCaches = new WeakMap();
 const leaderboardRequests = createSingleFlight();
 
 const PROFANE_NICKNAME_MESSAGE = '사용할 수 없는 닉네임입니다.';
@@ -33,8 +36,8 @@ const RESERVED_NICKNAMES = new Set(['null', 'undefined', 'nan', 'anonymous', 'gu
 const SESSION_ERROR_MESSAGE = '점수 기록을 확인할 수 없습니다.';
 const LEADERBOARD_LIMIT = 300;
 const LEADERBOARD_RESPONSE_LIMIT = 30;
-const LEADERBOARD_CACHE_TTL_MS = 30 * 1000;
-const LEADERBOARD_FALLBACK_LIMIT = 1200;
+// Out-of-band admin edits may omit revision: never keep them stale indefinitely.
+const LEADERBOARD_MAX_AGE_MS = 5 * 60 * 1000;
 const LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT = 1200;
 // Preserve the full compatibility scan while excluding unused session/analytics
 // fields from transfer and decoding. These cover filtering, sorting and dedupe.
@@ -211,26 +214,46 @@ function buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo) {
   ].join(':');
 }
 
-async function getCachedLeaderboard(firestore, cacheKey) {
+async function getCachedLeaderboard(firestore, cacheKey, timing) {
   try {
     const [state, cached] = await Promise.all([
-      firestore.collection('ranking_state').doc('current').get(),
-      firestore.collection('leaderboard_cache').doc(cacheKey).get()
+      readRevision(firestore, timing),
+      firestore.collection('leaderboard_cache').doc(cacheKey).get().then(snapshot => {
+        recordRead(timing, 'cache', 1); return snapshot;
+      })
     ]);
-    const revision = state.data()?.revision || 0;
+    const revision = state;
     const data = cached.data();
-    return { revision, payload: data?.revision === revision && data.expiresAt.toMillis() > Date.now() ? data.payload : null };
+    return { revision, payload: data?.revision === revision && (data.freshUntil || data.expiresAt)?.toMillis?.() > Date.now() ? data.payload : null };
   } catch (error) {
     console.warn('랭킹 캐시 조회 실패:', error.message);
     return { revision: null, payload: null };
   }
 }
 
-async function setCachedLeaderboard(firestore, cacheKey, payload, revision) {
-  if (revision === null) return;
+function getRankingFreshUntil(now = Date.now()) {
+  return (Math.floor(now / LEADERBOARD_MAX_AGE_MS) + 1) * LEADERBOARD_MAX_AGE_MS;
+}
+
+async function setCachedLeaderboard(firestore, cacheKey, payload, revision, freshUntilMs = getRankingFreshUntil(), timing) {
+  if (!Number.isSafeInteger(revision) || revision < 0) return;
   try {
-    await firestore.collection('leaderboard_cache').doc(cacheKey).set({ revision, payload,
-      expiresAt: Timestamp.fromMillis(Date.now() + LEADERBOARD_CACHE_TTL_MS) });
+    const reference = firestore.collection('leaderboard_cache').doc(cacheKey);
+    // A slower old revision/window must not evict a newer completed rebuild.
+    // This adds one document read per attempt only on publication, not cache hits.
+    await firestore.runTransaction(async transaction => {
+      const existing = await transaction.get(reference);
+      recordRead(timing, 'cachePublication', 1);
+      timing?.add?.('cachePublicationAttempts', 1);
+      const current = existing.data();
+      const currentFreshUntil = (current?.freshUntil || current?.expiresAt)?.toMillis?.() || 0;
+      if (current?.revision > revision || (current?.revision === revision && currentFreshUntil >= freshUntilMs)) return;
+      transaction.set(reference, { revision, payload,
+        freshUntil: Timestamp.fromMillis(freshUntilMs),
+        // Old/rollback readers only understand expiresAt. Keep that bound equal
+        // to freshness; never expose a longer retention TTL under the same key.
+        expiresAt: Timestamp.fromMillis(freshUntilMs) });
+    });
   } catch (error) { console.warn('랭킹 캐시 저장 실패:', error.message); }
 }
 
@@ -244,42 +267,60 @@ function filterLeaderboardDocsByPeriod(documents, period, rankingSeason, dayInfo
   return documents.filter(document => matchesPeriodRecord(document.data(), period, rankingSeason, dayInfo, weekInfo));
 }
 
-async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing) {
+async function readRevision(firestore, timing) {
+  const state = await firestore.collection('ranking_state').doc('current').get();
+  recordRead(timing, 'revision', 1);
+  const revision = state.data()?.revision ?? 0;
+  if (!Number.isSafeInteger(revision) || revision < 0) throw new Error('Invalid ranking revision');
+  return revision;
+}
+
+function makeLeaderboardPayload(documents, period, rankingSeason, dayInfo, weekInfo) {
+  return {
+    leaders: buildLeadersFromDocs(documents), period, rankingSeason,
+    rankingDay: dayInfo.rankingDay, rankingWeek: weekInfo.rankingWeek,
+    rankingWeekStart: weekInfo.rankingWeekStart
+  };
+}
+
+async function readScoreQuery(query, timing, category) {
+  const snapshot = await query.get();
+  recordRead(timing, category, snapshot.docs.length, { query: true });
+  return snapshot;
+}
+
+async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing, loadSupplement) {
   try {
     if (period === 'daily') {
-      return await scoresCollection
+      return await readScoreQuery(scoresCollection
         .where('rankingSeason', '==', rankingSeason)
         .where('rankingDay', '==', dayInfo.rankingDay)
         .where('mode', '==', 'timeAttack')
         .orderBy('score', 'desc')
-        .limit(LEADERBOARD_LIMIT)
-        .get();
+        .limit(LEADERBOARD_LIMIT), timing, 'scores');
     }
 
     if (period === 'weekly') {
-      return await scoresCollection
+      return await readScoreQuery(scoresCollection
         .where('rankingSeason', '==', rankingSeason)
         .where('rankingWeek', '==', weekInfo.rankingWeek)
         .where('mode', '==', 'timeAttack')
         .orderBy('score', 'desc')
-        .limit(LEADERBOARD_LIMIT)
-        .get();
+        .limit(LEADERBOARD_LIMIT), timing, 'scores');
     }
 
     if (rankingSeason === RANKING_LEGACY_SEASON_ID) {
-      return await scoresCollection
+      return await readScoreQuery(scoresCollection
         .where('mode', '==', 'timeAttack')
         .orderBy('score', 'desc')
-        .limit(LEADERBOARD_LIMIT)
-        .get();
+        .limit(LEADERBOARD_LIMIT), timing, 'scores');
     }
 
-    return await scoresCollection
+    return await readScoreQuery(scoresCollection
       .where('rankingSeason', '==', rankingSeason)
       .where('mode', '==', 'timeAttack')
       .orderBy('score', 'desc')
-      .limit(LEADERBOARD_LIMIT)
-      .get();
+      .limit(LEADERBOARD_LIMIT), timing, 'scores');
   } catch (error) {
     if (!isFirestoreIndexError(error)) {
       throw error;
@@ -288,10 +329,9 @@ async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason,
     console.warn('랭킹 인덱스 쿼리 실패, fallback 조회로 전환:', error.message);
     timing?.set('indexFallback', true);
 
-    const fallbackSnapshot = await scoresCollection
-      .orderBy('score', 'desc')
-      .limit(LEADERBOARD_FALLBACK_LIMIT)
-      .get();
+    // The compatibility query has exactly the same global top-1200 coverage.
+    // Reuse it instead of issuing a second identical scan after an index failure.
+    const fallbackSnapshot = await loadSupplement();
 
     const filteredDocs = fallbackSnapshot.docs.filter(document => {
       const data = document.data();
@@ -303,42 +343,51 @@ async function fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason,
 }
 
 // 기간별 랭킹 대상 문서 전체 로딩 (기본 쿼리 + 레거시 보충 병합)
-async function loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing) {
-  // The compatibility supplement is independent of the indexed query. Keep its
-  // exact 1200-document coverage and merge rules, but overlap the round trips.
+async function loadPeriodDocs(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing, { firestore, revision } = {}) {
+  let supplementPromise;
+  function loadSupplement() {
+    if (!supplementPromise) {
+      const task = () => measure(timing, 'firestore_legacy', () => readScoreQuery(scoresCollection
+        .orderBy('score', 'desc').limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT)
+        .select(...LEADERBOARD_FIELDS), timing, 'legacy'));
+      if (firestore && Number.isSafeInteger(revision)) {
+        if (!supplementCaches.has(firestore)) supplementCaches.set(firestore, createRankingSnapshotCache());
+        const cached = supplementCaches.get(firestore).load(revision, task);
+        timing?.set('legacyCache', cached.source);
+        supplementPromise = cached.promise;
+      } else supplementPromise = task();
+    }
+    return supplementPromise;
+  }
+  // Same indexed 300 + global 1200 coverage, period rules and merge order as before.
   const [snapshot, supplementSnapshot] = await Promise.all([
-    measure(timing, 'firestore_scores', () => fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing)),
-    period === 'daily' || period === 'weekly'
-      ? measure(timing, 'firestore_legacy', () => scoresCollection.orderBy('score', 'desc')
-        .limit(LEADERBOARD_LEGACY_SUPPLEMENT_LIMIT).select(...LEADERBOARD_FIELDS).get())
-      : null
+    measure(timing, 'firestore_scores', () => fetchLeaderboardSnapshot(scoresCollection, period, rankingSeason, dayInfo, weekInfo, timing, loadSupplement)),
+    period === 'daily' || period === 'weekly' ? loadSupplement() : null
   ]);
   timing?.set('scoreDocumentsReturned', snapshot.docs.length);
   timing?.set('legacyDocumentsReturned', supplementSnapshot?.docs.length || 0);
-  let leaderboardDocs = [...snapshot.docs];
-
+  const mergedDocs = new Map(snapshot.docs.map(document => [document.id, document]));
   if (supplementSnapshot) {
-    const mergedDocs = new Map();
-    for (const document of leaderboardDocs) {
-      mergedDocs.set(document.id, document);
-    }
     for (const document of filterLeaderboardDocsByPeriod(supplementSnapshot.docs, period, rankingSeason, dayInfo, weekInfo)) {
-      if (!mergedDocs.has(document.id)) {
-        mergedDocs.set(document.id, document);
-      }
+      if (!mergedDocs.has(document.id)) mergedDocs.set(document.id, document);
     }
-    leaderboardDocs = Array.from(mergedDocs.values());
   }
-
-  return leaderboardDocs;
+  return Array.from(mergedDocs.values());
 }
 
 // 방금 저장한 점수의 오늘 순위 계산 (실패해도 저장 자체에는 영향 없음)
-async function computeDailyRank(firestore, scoreData) {
-  const dayInfo = getCurrentRankingDayInfo();
-  const weekInfo = getCurrentRankingWeekInfo();
-  const rankingSeason = getRankingSeason();
-  const docs = await loadPeriodDocs(firestore.collection('scores'), 'daily', rankingSeason, dayInfo, weekInfo);
+async function computeDailyResult(firestore, scoreData, timing) {
+  const now = Date.now();
+  const freshUntilMs = getRankingFreshUntil(now);
+  const dayInfo = getCurrentRankingDayInfo(now);
+  const weekInfo = getCurrentRankingWeekInfo(now);
+  const rankingSeason = getRankingSeason(now);
+  // Read after the score transaction. A racing newer write will have a different
+  // revision and cannot treat this snapshot as its fresh cache.
+  const revision = await readRevision(firestore, timing);
+  const docs = await loadPeriodDocs(firestore.collection('scores'), 'daily', rankingSeason, dayInfo, weekInfo, timing, { firestore, revision });
+  const leaderboard = makeLeaderboardPayload(docs, 'daily', rankingSeason, dayInfo, weekInfo);
+  await setCachedLeaderboard(firestore, buildLeaderboardCacheKey('daily', rankingSeason, dayInfo, weekInfo), leaderboard, revision, freshUntilMs, timing);
   const entries = buildRankedEntries(docs);
 
   const submittedPlayerIdentity = scoreData.playerId ? `player:${scoreData.playerId}` : null;
@@ -351,42 +400,59 @@ async function computeDailyRank(firestore, scoreData) {
     return getNicknameIdentity(data) === submittedNicknameIdentity;
   });
 
-  if (index === -1) return null;
-
   const cutoffEntry = entries[LEADERBOARD_RESPONSE_LIMIT - 1];
-  return {
+  return { leaderboard, dailyRank: index === -1 ? null : {
     rank: index + 1,
     totalPlayers: entries.length,
     top30Cutoff: cutoffEntry ? cutoffEntry.score : null
-  };
+  } };
+}
+
+async function computeDailyRank(firestore, scoreData, timing) {
+  return (await computeDailyResult(firestore, scoreData, timing)).dailyRank;
 }
 
 // 어제의 1등 (지나간 날짜의 기록은 불변이므로 날짜 단위로 캐시)
-const yesterdayTopCache = new Map();
-
-async function loadYesterdayTop(firestore) {
-  const yesterdayMs = Date.now() - DAY_MS;
+const yesterdayTopCache = new WeakMap();
+const yesterdayRequests = new WeakMap();
+async function loadYesterdayTop(firestore, timing) {
+  const now = Date.now();
+  const freshUntilMs = getRankingFreshUntil(now);
+  const yesterdayMs = now - DAY_MS;
   const dayInfo = getCurrentRankingDayInfo(yesterdayMs);
   const weekInfo = getCurrentRankingWeekInfo(yesterdayMs);
   const rankingSeason = getRankingSeason(yesterdayMs);
-  const cacheKey = `${rankingSeason}:${dayInfo.rankingDay}`;
-
-  if (yesterdayTopCache.has(cacheKey)) {
-    return yesterdayTopCache.get(cacheKey);
+  const cacheKey = `yesterday:${rankingSeason}:${dayInfo.rankingDay}`;
+  const memory = yesterdayTopCache.get(firestore);
+  if (memory?.key === cacheKey && memory.freshUntilMs > now) { timing?.set('cache', 'memory-hit'); return memory.payload; }
+  // Persist only the tiny public result so cold instances avoid a full scan.
+  // Bound it too: late midnight commits/admin corrections may change yesterday.
+  const reference = firestore.collection('leaderboard_cache').doc(cacheKey);
+  let data;
+  try {
+    const stored = await reference.get();
+    recordRead(timing, 'cache', 1);
+    data = stored.data();
+  } catch (error) { console.warn('어제의 1등 캐시 조회 실패:', error.message); }
+  if (data?.payload?.rankingDay === dayInfo.rankingDay && data.freshUntil?.toMillis?.() > now) {
+    timing?.set('cache', 'firestore-hit');
+    yesterdayTopCache.set(firestore, { key: cacheKey, payload: data.payload, freshUntilMs: data.freshUntil.toMillis() });
+    return data.payload;
   }
-
-  const docs = await loadPeriodDocs(firestore.collection('scores'), 'daily', rankingSeason, dayInfo, weekInfo);
-  const topEntry = buildRankedEntries(docs)[0] || null;
-  const payload = {
-    rankingDay: dayInfo.rankingDay,
-    top: topEntry
-      ? { nickname: normalizeNickname(topEntry.nickname), score: topEntry.score }
-      : null
-  };
-
-  yesterdayTopCache.clear();
-  yesterdayTopCache.set(cacheKey, payload);
-  return payload;
+  if (!yesterdayRequests.has(firestore)) yesterdayRequests.set(firestore, createSingleFlight());
+  const flight = yesterdayRequests.get(firestore).run(`${cacheKey}:${freshUntilMs}`, async () => {
+    const revision = await readRevision(firestore, timing);
+    const docs = await loadPeriodDocs(firestore.collection('scores'), 'daily', rankingSeason, dayInfo, weekInfo, timing, { firestore, revision });
+    const topEntry = buildRankedEntries(docs)[0] || null;
+    const payload = { rankingDay: dayInfo.rankingDay,
+      top: topEntry ? { nickname: normalizeNickname(topEntry.nickname), score: topEntry.score } : null };
+    try { await reference.set({ payload, freshUntil: Timestamp.fromMillis(freshUntilMs), expiresAt: Timestamp.fromMillis(freshUntilMs) }); }
+    catch (error) { console.warn('어제의 1등 캐시 저장 실패:', error.message); }
+    yesterdayTopCache.set(firestore, { key: cacheKey, payload, freshUntilMs });
+    return payload;
+  });
+  timing?.set('cache', flight.shared ? 'shared-miss' : 'miss');
+  return flight.promise;
 }
 
 function validateScorePayload(payload) {
@@ -510,32 +576,33 @@ scoreRouter.post('/scores', writeRateLimiter, async (req, res) => {
       rankingWeekStart: weekInfo.rankingWeekStart,
       createdAt: FieldValue.serverTimestamp(),
       version: SCORE_VERSION
-    }, firestore);
+    }, firestore, req.timing);
     if (result.error) {
       await recordSuspiciousScore(firestore, req.body, result.error);
       return res.status(400).json({ error: SESSION_ERROR_MESSAGE });
     }
 
     let dailyRank = null;
+    let leaderboard = null;
     try {
-      dailyRank = await computeDailyRank(firestore, scoreData);
+      ({ dailyRank, leaderboard } = await computeDailyResult(firestore, scoreData, req.timing));
     } catch (rankError) {
       console.warn('일간 순위 계산 실패:', rankError.message);
     }
 
-    return res.status(201).json({ ok: true, id: result.id, dailyRank });
+    return res.status(201).json({ ok: true, id: result.id, dailyRank, leaderboard });
   } catch (error) {
     console.error('점수 저장 실패:', error.message);
     return res.status(500).json({ error: '점수를 저장하지 못했습니다.' });
   }
 });
 
-scoreRouter.get('/yesterday-top', async (_req, res) => {
+scoreRouter.get('/yesterday-top', async (req, res) => {
   const firestore = getScoreFirestore();
   if (!firestore) return firestoreUnavailable(res);
 
   try {
-    const payload = await loadYesterdayTop(firestore);
+    const payload = await loadYesterdayTop(firestore, req.timing);
     res.set('Cache-Control', 'no-store');
     return res.json(payload);
   } catch (error) {
@@ -551,12 +618,14 @@ scoreRouter.get('/leaderboard', async (req, res) => {
   try {
     const requestedPeriod = typeof req.query.period === 'string' ? req.query.period : '';
     const period = ['daily', 'weekly', 'season'].includes(requestedPeriod) ? requestedPeriod : 'daily';
-    const rankingSeason = getRankingSeason();
-    const dayInfo = getCurrentRankingDayInfo();
-    const weekInfo = getCurrentRankingWeekInfo();
+    const now = Date.now();
+    const freshUntilMs = getRankingFreshUntil(now);
+    const rankingSeason = getRankingSeason(now);
+    const dayInfo = getCurrentRankingDayInfo(now);
+    const weekInfo = getCurrentRankingWeekInfo(now);
     const cacheKey = buildLeaderboardCacheKey(period, rankingSeason, dayInfo, weekInfo);
     // The score transaction increments a shared revision, invalidating all instances.
-    const cacheState = await measure(req.timing, 'firestore_cache_read', () => getCachedLeaderboard(firestore, cacheKey));
+    const cacheState = await measure(req.timing, 'firestore_cache_read', () => getCachedLeaderboard(firestore, cacheKey, req.timing));
     const cachedPayload = cacheState.payload;
 
     if (cachedPayload) {
@@ -567,15 +636,11 @@ scoreRouter.get('/leaderboard', async (req, res) => {
 
     // Revision is part of the key: a post-submit request must not join work
     // started before that score was saved, even on a different instance.
-    const flightKey = cacheState.revision === null ? Symbol(cacheKey) : `${cacheKey}:${cacheState.revision}`;
+    const flightKey = cacheState.revision === null ? Symbol(cacheKey) : `${cacheKey}:${cacheState.revision}:${freshUntilMs}`;
     const flight = leaderboardRequests.run(flightKey, async () => {
-      const leaderboardDocs = await loadPeriodDocs(firestore.collection('scores'), period, rankingSeason, dayInfo, weekInfo, req.timing);
-      const payload = {
-        leaders: buildLeadersFromDocs(leaderboardDocs), period, rankingSeason,
-        rankingDay: dayInfo.rankingDay, rankingWeek: weekInfo.rankingWeek,
-        rankingWeekStart: weekInfo.rankingWeekStart
-      };
-      await measure(req.timing, 'firestore_cache_write', () => setCachedLeaderboard(firestore, cacheKey, payload, cacheState.revision));
+      const leaderboardDocs = await loadPeriodDocs(firestore.collection('scores'), period, rankingSeason, dayInfo, weekInfo, req.timing, { firestore, revision: cacheState.revision });
+      const payload = makeLeaderboardPayload(leaderboardDocs, period, rankingSeason, dayInfo, weekInfo);
+      await measure(req.timing, 'firestore_cache_write', () => setCachedLeaderboard(firestore, cacheKey, payload, cacheState.revision, freshUntilMs, req.timing));
       return payload;
     });
     req.timing?.set('cache', flight.shared ? 'shared-miss' : 'miss');
@@ -593,5 +658,5 @@ module.exports = {
   normalizeNickname,
   isValidScore,
   getRankingSeason,
-  validateScorePayload, buildRankedEntries, computeDailyRank, loadPeriodDocs, recordSuspiciousScore
+  validateScorePayload, buildRankedEntries, computeDailyRank, computeDailyResult, loadYesterdayTop, loadPeriodDocs, recordSuspiciousScore, getCachedLeaderboard, setCachedLeaderboard, buildLeaderboardCacheKey, getRankingFreshUntil
 };

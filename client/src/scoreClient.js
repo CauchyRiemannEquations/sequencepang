@@ -7,12 +7,21 @@ const leaderboardCache = createLeaderboardCache(period => {
   return requestFirebaseApi(`/api/leaderboard?${params}`);
 }, { onTiming: recordApiTiming });
 
+let latestSubmission = 0;
 export async function submitScore(scoreData) {
+  const submission = ++latestSubmission;
   leaderboardCache.invalidate();
+  let response;
   try {
-    return await requestFirebaseApi('/api/scores', { body: scoreData });
+    response = await requestFirebaseApi('/api/scores', { body: scoreData });
+    return response;
   } finally {
-    leaderboardCache.invalidate();
+    const generation = leaderboardCache.invalidate();
+    // Even a superseded request may have committed a score, so invalidate on
+    // completion, but only the latest submission can supply the next snapshot.
+    if (submission === latestSubmission) {
+      leaderboardCache.prime('daily', response?.leaderboard, generation);
+    }
   }
 }
 export function createGameSession(nickname = '', playerId = null) {
@@ -21,4 +30,8 @@ export function createGameSession(nickname = '', playerId = null) {
 export function fetchYesterdayTop() { return requestFirebaseApi('/api/yesterday-top'); }
 export function fetchLeaderboard(period = 'daily') {
   return leaderboardCache.fetch(period);
+}
+
+export function peekLeaderboard(period = 'daily') {
+  return leaderboardCache.peek(period);
 }

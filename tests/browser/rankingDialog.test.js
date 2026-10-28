@@ -13,7 +13,7 @@ test('ranking dialog traps keyboard focus, closes with Escape and restores its o
   const css = ['style.css', 'rankingHome.css', 'style.lovable.css'].map(name =>
     readFileSync(new URL(`../../client/src/${name}`, import.meta.url), 'utf8')).join('\n');
   await page.setContent(`<style>${css}</style><button id="btn-single-start">게임 시작</button><button id="btn-multi-lobby">함께</button><button id="btn-show-ranking">랭킹</button>`);
-  await page.addScriptTag({ content: `const fetchLeaderboard = async period => ({ period, leaders: [] }); const renderGlobalLeaderboard = () => {}; const formatWeekRange = () => ''; ${source}; initHomeRankingUI();` });
+  await page.addScriptTag({ content: `const peekLeaderboard = () => null; const fetchLeaderboard = async period => ({ period, leaders: [] }); const renderGlobalLeaderboard = () => {}; const formatWeekRange = () => ''; ${source}; initHomeRankingUI();` });
   assert.equal(await page.locator('#ranking-overlay').isVisible(), false);
   await page.locator('#btn-show-ranking').click();
   assert.equal(await page.locator('#ranking-overlay').evaluate(el => el.matches(':modal')), true);

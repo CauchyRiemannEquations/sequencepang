@@ -16,7 +16,8 @@ function createRequestTiming({ now = () => performance.now(), log = info } = {})
         try { return await task(); }
         finally { durations[name] = (durations[name] || 0) + now() - start; }
       },
-      set(name, value) { details[name] = value; }
+      set(name, value) { details[name] = value; },
+      add(name, value) { details[name] = (details[name] || 0) + value; }
     };
     const json = res.json;
     res.json = function (body) {
@@ -29,8 +30,9 @@ function createRequestTiming({ now = () => performance.now(), log = info } = {})
       return json.call(this, body);
     };
     res.once('finish', () => {
-      if (req.originalUrl.split('?')[0] !== '/api/leaderboard') return;
-      log('ranking_timing', { status: res.statusCode, instanceFirstRequest: first,
+      const route = req.originalUrl.split('?')[0];
+      if (!['/api/leaderboard', '/api/yesterday-top', '/api/scores'].includes(route)) return;
+      log('ranking_timing', { route, status: res.statusCode, instanceFirstRequest: first,
         moduleLoadMs: req.app.locals.moduleLoadMs || 0, durations, ...details });
     });
     next();
