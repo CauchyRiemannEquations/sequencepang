@@ -114,7 +114,8 @@ function injectBgmStyle() {
   const style = document.createElement('style');
   style.id = 'bgm-style';
   style.textContent = `
-    .sound-dialog { box-sizing: border-box; width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow: auto; padding: 24px; border: 1px solid #dbe8c8; border-radius: 24px; background: #fff8e6; color: #244c3b; font-family: 'Jua', sans-serif; }
+    /* Restore native dialog centering after the global margin reset. */
+    .sound-dialog { box-sizing: border-box; width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); margin: auto; overflow: auto; padding: 24px; border: 1px solid #dbe8c8; border-radius: 24px; background: #fff8e6; color: #244c3b; font-family: 'Jua', sans-serif; }
     .sound-dialog::backdrop { background: #012b2cbb; }
     .sound-dialog h2 { margin: 0 0 16px; font-size: 27px; font-weight: normal; }
     .sound-dialog p { margin: 16px 0; font-size: 14px; line-height: 1.6; color: #53674e; }
