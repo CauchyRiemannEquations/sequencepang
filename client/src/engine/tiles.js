@@ -1,6 +1,3 @@
-// 타일 생성. 숫자 범위는 풀(pool)로 주입받는다 — 일반(1~9), 하이퍼팡(1~12),
-// 빅넘버(10~19)는 물론, 향후 음수 피버용 풀(min<0)도 같은 경로로 꽂을 수 있다.
-
 export function createTilePool({ min, max }) {
   return { min, max };
 }
@@ -34,11 +31,12 @@ export function createFeverTile({ tier = 'normal', feverTypes, pool, rng = Math.
   };
 }
 
-// 피버 중 타일 표시값 변환 (add/multiply). fever가 비활성이면 원본 그대로.
+// 피버 효과는 드래그 판정과 렌더링에 같은 값을 제공한다.
 export function getDisplayValue(tileData, fever = null) {
   if (!tileData) return '';
   if (tileData.type === 'fever') return tileData.feverLabel;
   if (!fever || !fever.active) return tileData.baseValue;
+  if (fever.type === 'negative') return fever.negativeValues.get(tileData) ?? tileData.baseValue;
   if (fever.type === 'add') return tileData.baseValue + fever.amount;
   if (fever.type === 'multiply') return tileData.baseValue * fever.amount;
   return tileData.baseValue;

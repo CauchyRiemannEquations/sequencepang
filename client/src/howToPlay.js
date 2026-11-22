@@ -42,7 +42,8 @@ export function initHowToPlayUI() {
         <div class="htp-pop">피버 블록 등장!</div>
         <div class="htp-finger">👆</div>
       </div>
-      <p class="htp-caption"><strong>4개 이상</strong> 이으면 피버 블록 등장! 터치하면 8초간 보드가 <strong>+2 · +3 · ×2</strong>로 변신, 점수 ×1.5</p>
+      <p class="htp-caption">서로 다른 숫자 <strong>4개</strong>를 수열로 이으면 피버 블록이 나와요. 블록을 누르면 <strong>8초간 점수 ×1.5</strong>! +2 · +3 · ×2 블록은 모든 숫자를 바꿔요.</p>
+      <p class="htp-caption"><strong>± 음수 피버</strong>에서는 음수와 0도 쓸 수 있어요. <strong>−2 → 0 → 2</strong>는 공차가 2이고, <strong>1 → −2 → 4</strong>는 공비가 −2예요.</p>
     </section>`;
 
   const demoSuper = `

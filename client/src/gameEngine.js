@@ -64,6 +64,7 @@ import {
   getDisplayValue as getTileDisplayValue
 } from './engine/tiles.js';
 import { createBoard, collapseAndRefill, isNeighbor } from './engine/board.js';
+import { createNegativeFeverValues, rollNegativeFeverValue } from './engine/negativeFever.js';
 import { classifyChain, getTimeBonus } from './engine/sequence.js';
 import { getChainTier, getCrossCells } from './engine/chainTier.js';
 import {
@@ -84,7 +85,6 @@ export function initGameApp() {
   // 게임 엔진 상태 데이터
   // ----------------------------------------------------
 
-  // 타일 숫자 풀 — 향후 음수 피버는 여기 풀 하나 추가로 대응한다
   const normalTilePool = createTilePool({ min: TILE_NUMBER_MIN, max: TILE_NUMBER_MAX });
   const hyperTilePool = createTilePool({ min: TILE_NUMBER_MIN, max: HYPER_PANG_TILE_MAX });
   const bigNumberTilePool = createTilePool({ min: BIG_NUMBER_TILE_MIN, max: BIG_NUMBER_TILE_MAX });
@@ -121,7 +121,9 @@ export function initGameApp() {
   function createNormalTileData() {
     // 빅넘버 슈퍼피버 중에는 새 타일이 10~19 원본 숫자로 등장
     const useBigNumber = fever.active && fever.type === 'bigNumber';
-    return withStar(createNormalTile(useBigNumber ? bigNumberTilePool : getCurrentTilePool()), STAR_SPAWN_RATE);
+    const tile = withStar(createNormalTile(useBigNumber ? bigNumberTilePool : getCurrentTilePool()), STAR_SPAWN_RATE);
+    if (fever.negativeValues) fever.negativeValues.set(tile, rollNegativeFeverValue(tile.baseValue));
+    return tile;
   }
 
   // 개발 모드에서 ?feverTest=1 을 붙이면 적용 시각 전에도 이벤트를 미리 체험 가능
@@ -218,6 +220,7 @@ export function initGameApp() {
     type: null,
     amount: 0,
     label: '',
+    negativeValues: null,
     scoreMultiplier: FEVER_SCORE_MULTIPLIER,
     durationMs: FEVER_DURATION_MS,
     timeLeftMs: 0,
@@ -351,13 +354,12 @@ export function initGameApp() {
     const percentage = fever.active
       ? Math.max(0, Math.min(100, (fever.timeLeftMs / fever.durationMs) * 100))
       : 0;
-    const feverName = fever.tier === 'super' ? '슈퍼피버' : '피버';
     hud.setFeverPanel({
       visible: isVisible,
       superActive: isSuperActive,
       percentage,
       text: fever.active
-        ? `${feverName} ${fever.label} · ${(fever.timeLeftMs / 1000).toFixed(1)}s · 점수 ×${fever.scoreMultiplier}`
+        ? `${fever.label} · ${(fever.timeLeftMs / 1000).toFixed(1)}s · 점수 ×${fever.scoreMultiplier}`
         : '피버 종료!'
     });
   }
@@ -377,6 +379,7 @@ export function initGameApp() {
     fever.type = null;
     fever.amount = 0;
     fever.label = '';
+    fever.negativeValues = null;
     fever.scoreMultiplier = FEVER_SCORE_MULTIPLIER;
     fever.durationMs = FEVER_DURATION_MS;
     fever.timeLeftMs = 0;
@@ -496,10 +499,10 @@ export function initGameApp() {
     if (chain.allSame) return '공비 ×1';
     const label = chain.ruleLabel;
     if (typeof label === 'object' && label.type === 'fraction') {
-      return `공비 ${label.numerator}/${label.denominator}`;
+      return `공비 ${String(label.numerator).replace('-', '−')}/${label.denominator}`;
     }
     const value = typeof label === 'object' ? label.value : label;
-    return `공비 ×${value}`;
+    return `공비 ×${String(value).replace('-', '−')}`;
   }
 
   function positionChainBadge() {
@@ -590,7 +593,8 @@ export function initGameApp() {
     showInfoToast(message, 'fever');
   }
 
-  function startFeverMode(type, amount, label, tier = 'normal') {
+  function startFeverMode(tile, origin) {
+    const { feverType: type, feverAmount: amount, feverLabel: label, feverTier: tier = 'normal' } = tile;
     tickTimer();
     if (fever.active || fever.ending || isGameOver || !isGameActive || pangCinematicActive) return;
 
@@ -604,11 +608,13 @@ export function initGameApp() {
     fever.tier = tier;
     fever.type = type;
     fever.amount = amount;
-    fever.label = label;
+    const tierName = tier === 'super' ? '슈퍼피버' : '피버';
+    fever.label = type === 'negative' ? '음수 피버' : `${tierName} ${label}`;
     fever.scoreMultiplier = tier === 'super' ? SUPER_FEVER_SCORE_MULTIPLIER : FEVER_SCORE_MULTIPLIER;
     fever.durationMs = tier === 'super' ? SUPER_FEVER_DURATION_MS : getNormalFeverDurationMs();
     fever.timeLeftMs = fever.durationMs;
-    showFeverNotice(`${tier === 'super' ? '슈퍼피버' : '피버'} ${label}!`);
+    showFeverNotice(`${fever.label}!`);
+    if (type === 'negative') fever.negativeValues = createNegativeFeverValues(boardData, origin);
     // 빅넘버는 리필만 기다리면 조합할 재료가 늦게 모이므로 발동 즉시 일부 타일을 교체
     if (type === 'bigNumber') {
       seedBigNumberTiles();
@@ -634,6 +640,7 @@ export function initGameApp() {
     fever.type = null;
     fever.amount = 0;
     fever.label = '';
+    fever.negativeValues = null;
     fever.scoreMultiplier = FEVER_SCORE_MULTIPLIER;
     fever.durationMs = FEVER_DURATION_MS;
     fever.timeLeftMs = 0;
@@ -1106,7 +1113,7 @@ export function initGameApp() {
       if (tileData?.type === 'fever') {
         boardData[r][c] = createNormalTileData();
         boardView.updateTile(r, c, boardData[r][c]);
-        startFeverMode(tileData.feverType, tileData.feverAmount, tileData.feverLabel, tileData.feverTier || 'normal');
+        startFeverMode(tileData, cell);
         return;
       }
     }

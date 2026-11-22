@@ -52,7 +52,10 @@
     { "name": "0 포함 AP", "values": [0, 1, 2], "state": "valid", "kind": "AP", "diff": 1 },
     { "name": "0 상수열은 GP 허용", "values": [0, 0, 0], "state": "valid", "kind": "GP", "allSame": true },
     { "name": "0 포함 비상수 GP 불허", "values": [2, 0, 0], "state": "broken" },
-    { "name": "음수 diff AP (음수 피버 대비)", "values": [-2, -4, -6], "state": "valid", "kind": "AP", "diff": -2 }
+    { "name": "음수 피버: 0을 가로지르는 등차", "values": [-2, 0, 2], "state": "valid", "kind": "AP", "diff": 2 },
+    { "name": "음수 피버: 교대 부호 등비", "values": [1, -2, 4, -8], "state": "valid", "kind": "GP", "ratio": -2 },
+    { "name": "음수 피버: 역방향 음의 분수 공비", "values": [-8, 4, -2, 1], "state": "valid", "kind": "GP", "ruleFraction": [-1, 2] },
+    { "name": "음수 diff AP", "values": [-2, -4, -6], "state": "valid", "kind": "AP", "diff": -2 }
   ],
   "feverDisplayCases": [
     { "name": "add +2", "baseValue": 3, "feverType": "add", "amount": 2, "expected": 5 },
