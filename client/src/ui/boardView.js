@@ -3,19 +3,28 @@
 
 const TILE_FALL_PX = 56; // 타일 한 칸 낙하 거리 (기존 renderGravityRefill과 동일)
 
+function formatMinus(value) {
+  return value < 0 ? `−${Math.abs(value)}` : value;
+}
+
 export function createBoardView({ boardElement, boardWrapper, size, getDisplayValue, isBigNumberTile }) {
   let tileEls = [];
   let pangLayer = null;
   let fallRuns = new WeakMap();
 
   function updateTileElement(tileElement, tileData) {
-    tileElement.textContent = getDisplayValue(tileData);
+    const value = getDisplayValue(tileData);
+    const negative = value < 0;
+    tileElement.textContent = formatMinus(value);
     tileElement.classList.toggle('fever-tile', tileData?.type === 'fever');
     tileElement.classList.toggle('super-fever-tile', tileData?.type === 'fever' && tileData?.feverTier === 'super');
     tileElement.classList.toggle('big-number-tile', tileData?.type === 'normal' && isBigNumberTile(tileData));
+    tileElement.classList.toggle('nonpositive-tile', negative || value === 0);
     tileElement.classList.toggle('star-number', !!tileData?.isStar);
     tileElement.dataset.isStar = String(!!tileData?.isStar);
-    tileElement.setAttribute('aria-label', `${tileData?.isStar ? '별 숫자 ' : ''}${getDisplayValue(tileData)}`);
+    const spokenValue = negative ? `마이너스 ${Math.abs(value)}` : value;
+    const label = tileData?.feverType === 'negative' ? '음수 피버 블록' : spokenValue;
+    tileElement.setAttribute('aria-label', `${tileData?.isStar ? '별 숫자 ' : ''}${label}`);
     tileElement.dataset.tileType = tileData?.type || 'normal';
     tileElement.dataset.baseValue = tileData?.baseValue ?? '';
     tileElement.dataset.feverTier = tileData?.feverTier ?? '';
@@ -69,14 +78,14 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
 
       for (let r = 0; r < size; r++) {
         const tile = tileEls[r][c];
-        if (spawnedKeys.has(`${r}:${c}`) || tile.textContent != getDisplayValue(boardData[r][c]) || tile.dataset.tileType !== boardData[r][c]?.type) newRowCount++;
+        if (spawnedKeys.has(`${r}:${c}`) || tile.textContent != formatMinus(getDisplayValue(boardData[r][c])) || tile.dataset.tileType !== boardData[r][c]?.type) newRowCount++;
       }
 
       let newIdx = 0;
       for (let r = 0; r < size; r++) {
         const tile = tileEls[r][c];
         const tileData = boardData[r][c];
-        const newVal = getDisplayValue(tileData);
+        const newVal = formatMinus(getDisplayValue(tileData));
 
         if (spawnedKeys.has(`${r}:${c}`) || tile.textContent != newVal || tile.dataset.tileType !== tileData?.type) {
           updateTileElement(tile, tileData);
@@ -252,11 +261,11 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
 
   function createRuleValueElement(ruleValue) {
     if (typeof ruleValue === 'string') {
-      return document.createTextNode(ruleValue);
+      return document.createTextNode(formatMinus(ruleValue));
     }
 
     if (ruleValue.type === 'text') {
-      return document.createTextNode(ruleValue.value);
+      return document.createTextNode(formatMinus(ruleValue.value));
     }
 
     const fraction = document.createElement('span');
@@ -264,7 +273,7 @@ export function createBoardView({ boardElement, boardWrapper, size, getDisplayVa
 
     const numerator = document.createElement('span');
     numerator.className = 'sequence-fraction-num';
-    numerator.textContent = ruleValue.numerator;
+    numerator.textContent = formatMinus(ruleValue.numerator);
 
     const bar = document.createElement('span');
     bar.className = 'sequence-fraction-bar';

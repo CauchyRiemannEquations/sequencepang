@@ -24,7 +24,7 @@ export function classifyChain(values) {
   }
 
   let isGP = true;
-  const ratio = values[1] / values[0];
+  const ratio = allSame ? 1 : values[0] === 0 ? null : values[1] / values[0];
   if (!allSame && values.some(value => value === 0)) {
     isGP = false;
   } else {
@@ -80,8 +80,8 @@ export function formatRatioValue(numerator, denominator) {
   const divisor = getGcd(Math.abs(numerator), Math.abs(denominator));
   return {
     type: 'fraction',
-    numerator: numerator / divisor,
-    denominator: denominator / divisor
+    numerator: Math.sign(denominator) * numerator / divisor,
+    denominator: Math.abs(denominator) / divisor
   };
 }
 

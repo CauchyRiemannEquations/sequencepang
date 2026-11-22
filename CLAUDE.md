@@ -61,13 +61,7 @@ tests/engine/      node --test. parityVectors.json = 점수·판정 기대값 �
 4. 새 분석 필드는 `functions/src/scoreRoutes.js` `ANALYTICS_FIELDS`에 추가해야 저장된다.
 5. `npm run build` + `npm test` 통과 확인.
 
-## 음수 피버 확장 지점 (다음 업데이트 예정)
+## 음수 피버
 
-- 타일 숫자 풀이 주입형이라 `createTilePool({ min: -9, max: 9 })`처럼 음수 풀을
-  만들어 `gameEngine.js`의 `createNormalTileData()` 분기에 꽂으면 된다
-  (`normalTilePool`/`hyperTilePool`/`bigNumberTilePool` 참고).
-- `classifyChain`은 0·음수 입력에서 예외가 없고, 0이 포함된 비상수열은 GP로
-  인정하지 않는다(0÷0 우연 통과 차단). 관련 테스트: `tests/engine/sequence.test.js`,
-  `tiles.test.js`의 음수 풀 케이스.
-- 피버 타입은 `gameConstants.js`의 `FEVER_TYPES`/`SUPER_FEVER_TYPES` 배열에
-  weight와 함께 추가한다.
+- 일반 피버 블록 `±`를 누르면 일부 타일의 표시값이 바뀌고, 발동 시 양수와 음수를 함께 쓰는 경로가 하나 이상 생긴다. 종료 시 남은 타일의 기본값을 다시 표시한다.
+- 일반 판정과 마찬가지로 `classifyChain`이 공차·공비를 판정한다. 0을 포함한 비상수열은 등차만 가능하고 음의 공비는 허용한다.

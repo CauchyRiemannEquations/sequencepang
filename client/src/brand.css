@@ -215,6 +215,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #fff2a5; outline-offs
 }
 .tile.sequence-invalid:not(.fever-tile) { border-color: #ff83a9; background: #ffd2e0; color: #821c42; box-shadow: 0 3px 0 #d26084; }
 .tile.big-number-tile:not(.selected) { color: #7536b4; }
+.tile.nonpositive-tile:not(.selected) { color: #254e83; }
 .tile.star-number { outline-color: #c19b2e; }
 .tile.star-number::after { color: #a16b0c; text-shadow: 0 1px 0 #fff4b9; }
 .countdown-text { color: var(--pang-yellow); text-shadow: 0 5px 0 #865809, 0 12px 30px #001b2288; }

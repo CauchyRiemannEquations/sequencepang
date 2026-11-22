@@ -28,9 +28,10 @@ export const SUPER_FEVER_SCORE_MULTIPLIER = 2;
 // 피버 중 수열 성공 시간 보너스는 절반만 피버 시간에 가산
 export const FEVER_TIME_BONUS_RATE = 0.5;
 export const FEVER_TYPES = [
-  { type: 'add', amount: 2, label: '+2', weight: 40 },
-  { type: 'add', amount: 3, label: '+3', weight: 40 },
-  { type: 'multiply', amount: 2, label: '×2', weight: 20 }
+  { type: 'add', amount: 2, label: '+2', weight: 32 },
+  { type: 'add', amount: 3, label: '+3', weight: 32 },
+  { type: 'multiply', amount: 2, label: '×2', weight: 16 },
+  { type: 'negative', amount: 0, label: '±', weight: 20 }
 ];
 // bigNumber: 보드 변환 대신 새로 채워지는 타일이 10~19 원본 숫자로 등장
 export const SUPER_FEVER_TYPES = [
