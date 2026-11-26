@@ -102,7 +102,10 @@ test('크로스팡은 십자 대상만 순서대로, 풀보드팡은 전판을 �
     const duration = view.triggerPangBurst(cells, origin, {
       tier, durationMs: PANG_BURST_MS, staggerMs: PANG_BURST_STAGGER_MS, settleMs: PANG_BURST_SETTLE_MS
     });
-    assert.equal(duration, PANG_BURST_MS + PANG_BURST_SETTLE_MS + (tier === 'cross' ? 3 * PANG_BURST_STAGGER_MS : 0));
+    assert.ok(duration >= 1000, '두 팡 모두 이름과 보너스를 읽을 시간을 확보한다');
+    assert.equal(duration, PANG_BURST_MS + (tier === 'cross' ? 3 * PANG_BURST_STAGGER_MS : 0),
+      '마지막 타일 폭발 직후 빈 보드를 기다리지 않고 리필한다');
+    assert.equal(wrapper.style.getPropertyValue('--pang-scene-duration'), `${duration}ms`);
     assert.equal(wrapper.children.length, 1);
     const copy = wrapper.children[0].children.at(-1);
     assert.equal(copy.children[0].textContent, tier === 'full' ? '풀보드팡!' : '크로스팡!');

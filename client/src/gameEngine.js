@@ -204,6 +204,7 @@ export function initGameApp() {
   let hyperPangActive = false;
   let hyperPangPaused = false;
   let pangCinematicActive = false; // 크로스팡·풀보드팡 필살기 연출 중 모든 게임 시간 정지
+  const pendingNormalRefills = new Map();
   let gameOverAfterPang = false; // 0초 유예에서 팡 성공 시 연출 완료 뒤 게임오버
   let timeoutGraceActive = false; // 0초 도달 시 드래그 유예 상태
   let timeoutGraceTimer = null;
@@ -749,6 +750,7 @@ export function initGameApp() {
     hyperPangPaused = false;
     pangCinematicActive = false;
     gameOverAfterPang = false;
+    takePendingNormalRefills();
     boardView.clearPangBurst();
     gameContainer.classList.remove('hyper-pang');
     boardWrapper.classList.remove('hyper-pang');
@@ -865,18 +867,7 @@ export function initGameApp() {
     timeoutGraceTimer = setTimeout(() => {
       // 유예 안에 손을 떼지 않으면 현재 선택으로 강제 판정 후 종료
       if (!timeoutGraceActive || isGameOver) return;
-      isDragging = false;
-      dragController.clearPointer();
-      // 유예 플래그는 판정이 끝날 때까지 유지 (하이퍼팡 모달 진입 차단용)
-      // — triggerGameOver가 clearTimeoutGrace를 호출한다
-      if (selectedTiles.length >= 3) {
-        evaluateSequence();
-      } else {
-        clearSelection();
-      }
-      timeLeft = 0;
-      updateTimerUI();
-      triggerGameOver();
+      finishDrag();
     }, TIMEOUT_GRACE_MS);
   }
 
@@ -939,6 +930,7 @@ export function initGameApp() {
       syncTimerRunning();
       pangCinematicActive = false;
       gameOverAfterPang = false;
+      takePendingNormalRefills();
       boardView.clearPangBurst();
       gameContainer.classList.remove('game-active', 'last-spurt');
       timerContainer.classList.remove('last-spurt');
@@ -1161,7 +1153,10 @@ export function initGameApp() {
 
   function handleEnd() {
     tickTimer();
-    if (!isDragging) return;
+    if (isDragging) finishDrag();
+  }
+
+  function finishDrag() {
     isDragging = false;
     dragController.clearPointer();
 
@@ -1382,10 +1377,12 @@ export function initGameApp() {
           ...matchedTiles.map(t => ({ row: t.row, col: t.col })),
           ...pangExtraCells
         ];
+        // 앞선 일반 팡도 같은 보드에서 판정됐다. 연출이 끝나면 함께 한 번만 리필한다.
+        const refillCells = removedCells.concat(takePendingNormalRefills());
         const origin = { row: lastCell.row, col: lastCell.col };
 
         setTimeout(() => {
-          if (isGameOver) return;
+          if (!pangCinematicActive) return;
           const cinematicMs = boardView.triggerPangBurst(removedCells, origin, {
             tier: chainTier,
             label: chainTier === 'full' ? FULL_PANG_LABEL : CROSS_PANG_LABEL,
@@ -1396,8 +1393,8 @@ export function initGameApp() {
           });
 
           setTimeout(() => {
-            if (isGameOver) return;
-            eliminateAndRefill(removedCells);
+            if (!pangCinematicActive) return;
+            eliminateAndRefill(refillCells);
             pangCinematicActive = false;
             syncTimerRunning();
 
@@ -1415,10 +1412,12 @@ export function initGameApp() {
         // 제거 대상을 판정 시점에 스냅샷 — 350ms 안에 새 드래그가 시작돼도
         // 그 타일이 함께 제거되지 않는다
         const removedCells = matchedTiles.map(t => ({ row: t.row, col: t.col }));
-        setTimeout(() => {
+        const timer = setTimeout(() => {
+          pendingNormalRefills.delete(timer);
           eliminateAndRefill(removedCells);
           maybeTriggerHyperPang();
         }, 350);
+        pendingNormalRefills.set(timer, removedCells);
       }
 
     } else {
@@ -1465,6 +1464,16 @@ export function initGameApp() {
     boardView.clearPangBurst();
     boardView.renderGravityRefill(boardData, { spawned });
     clearSelection();
+  }
+
+  function takePendingNormalRefills() {
+    const cells = [];
+    for (const [timer, removedCells] of pendingNormalRefills) {
+      clearTimeout(timer);
+      cells.push(...removedCells);
+    }
+    pendingNormalRefills.clear();
+    return cells;
   }
 
   function clearSelection() {

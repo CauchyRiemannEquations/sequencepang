@@ -61,9 +61,9 @@ export const CROSS_PANG_TIME_BONUS_S = 1.0;
 export const FULL_PANG_TIME_BONUS_S = 3.0;
 export const CROSS_PANG_LABEL = '크로스팡!';
 export const FULL_PANG_LABEL = '풀보드팡!';
-// 짧게 터뜨린 뒤 즉시 리필한다. 판정부터 리필까지 게임·콤보·피버 타이머 정지.
-export const PANG_BURST_MS = 240;
-export const PANG_BURST_STAGGER_MS = 12;
+// 이름과 보너스를 읽는 동안 타일이 터지고, 마지막 폭발이 끝나면 즉시 리필한다.
+export const PANG_BURST_MS = 1080;
+export const PANG_BURST_STAGGER_MS = 28;
 export const PANG_BURST_SETTLE_MS = 0;
 export const PANG_BURST_LEAD_IN_MS = 0;
 export const GAME_NOTICE_DURATION_MS = 900;
