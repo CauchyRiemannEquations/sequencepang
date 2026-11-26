@@ -616,19 +616,19 @@
       isolation: isolate;
       overflow: hidden;
       pointer-events: none;
-      animation: pangBoardKick var(--pang-scene-duration,300ms) ease-out both;
+      animation: pangBoardKick var(--pang-scene-duration) ease-out both;
     }
     .board-wrapper.pang-cinematic--full { --pang-color: #e879f9; --pang-ink: #581c87; }
     .tile.pang-burst {
       z-index: 54;
       will-change: transform, opacity;
-      animation: pangDetonate var(--pang-duration,240ms) cubic-bezier(.4,0,1,1) var(--pang-delay,0ms) both !important;
+      animation: pangDetonate var(--pang-duration) cubic-bezier(.4,0,1,1) var(--pang-delay,0ms) both !important;
     }
     .tile.pang-full-target { animation-name: pangFullDetonate !important; }
     .pang-cinematic-layer {
       position: absolute;
       inset: 0;
-      z-index: 64;
+      z-index: 120; /* 수열 힌트와 플로팅 점수 위에 팡 이름을 표시한다. */
       border-radius: inherit;
       overflow: hidden;
       pointer-events: none;
@@ -638,7 +638,7 @@
       inset: 0;
       opacity: 0;
       background: radial-gradient(circle at var(--pang-origin-x) var(--pang-origin-y), #fff, transparent 66%);
-      animation: pangFlash var(--pang-scene-duration,300ms) ease-out both;
+      animation: pangFlash var(--pang-scene-duration) ease-out both;
     }
     .pang-core, .pang-shockwave {
       left: var(--pang-origin-x);
@@ -650,8 +650,8 @@
       opacity: 0;
       box-shadow: 0 0 18px var(--pang-color), inset 0 0 14px var(--pang-color);
     }
-    .pang-core { background: #fff; animation: pangCoreCharge var(--pang-scene-duration,300ms) ease-out both; }
-    .pang-shockwave { animation: pangShockwave calc(var(--pang-scene-duration,300ms) * .78) calc(var(--pang-scene-duration,300ms) * .12) ease-out both; }
+    .pang-core { background: #fff; animation: pangCoreCharge var(--pang-scene-duration) ease-out both; }
+    .pang-shockwave { animation: pangShockwave calc(var(--pang-scene-duration) * .78) calc(var(--pang-scene-duration) * .12) ease-out both; }
     .pang-cinematic-layer--full .pang-shockwave { border-width: 6px; animation-name: pangFullShockwave; }
     .pang-ray-horizontal, .pang-ray-vertical {
       background: #ecfeff;
@@ -661,12 +661,12 @@
     .pang-ray-horizontal {
       left: 0; top: var(--pang-origin-y); width: 100%; height: 10px;
       transform-origin: var(--pang-origin-x) center;
-      animation: pangRayHorizontal calc(var(--pang-scene-duration,300ms) * .76) calc(var(--pang-scene-duration,300ms) * .08) ease-out both;
+      animation: pangRayHorizontal calc(var(--pang-scene-duration) * .76) calc(var(--pang-scene-duration) * .08) ease-out both;
     }
     .pang-ray-vertical {
       left: var(--pang-origin-x); top: 0; width: 10px; height: 100%;
       transform-origin: center var(--pang-origin-y);
-      animation: pangRayVertical calc(var(--pang-scene-duration,300ms) * .76) calc(var(--pang-scene-duration,300ms) * .08) ease-out both;
+      animation: pangRayVertical calc(var(--pang-scene-duration) * .76) calc(var(--pang-scene-duration) * .08) ease-out both;
     }
     .pang-cinematic-layer--full .pang-ray-horizontal,
     .pang-cinematic-layer--full .pang-ray-vertical { display: none; }
@@ -674,7 +674,7 @@
       left: 50%; top: 27%; width: 100%;
       display: grid; justify-items: center; gap: 5px;
       text-align: center;
-      animation: pangTitleSlam var(--pang-scene-duration,800ms) cubic-bezier(.16,1,.3,1) both;
+      animation: pangTitleSlam var(--pang-scene-duration) cubic-bezier(.16,1,.3,1) both;
     }
     .pang-cinematic-title {
       color: #fff;
@@ -727,9 +727,9 @@
       100% { opacity: 0; transform: translateX(-50%) scaleY(1); }
     }
     @keyframes pangTitleSlam {
-      0% { opacity: 0; transform: translate(-50%,-50%) scale(.4) rotate(-7deg); }
-      22% { opacity: 1; transform: translate(-50%,-50%) scale(1.12) rotate(2deg); }
-      36%,76% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+      0% { opacity: 0; transform: translate(-50%,-50%) scale(.85) rotate(-3deg); }
+      8% { opacity: 1; transform: translate(-50%,-50%) scale(1.06) rotate(1deg); }
+      18%,86% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
       100% { opacity: 0; transform: translate(-50%,-65%) scale(1.04); }
     }
     @keyframes pangBoardKick {
@@ -740,7 +740,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .board-wrapper.pang-cinematic { animation: none; }
-      .tile.pang-burst { animation: pangReducedFade var(--pang-duration,240ms) ease-in var(--pang-delay,0ms) both !important; }
+      .tile.pang-burst { animation: pangReducedFade var(--pang-duration) ease-in var(--pang-delay,0ms) both !important; }
       .pang-cinematic-layer > span:not(.pang-cinematic-copy) { display: none; }
       .pang-cinematic-copy { animation: none; opacity: 1; transform: translate(-50%,-50%); }
       .game-status-slot .game-toast { transition: none; }
